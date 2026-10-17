@@ -1,0 +1,40 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  CUSTOMER
+  RESTAURANT
+  COURIER
+  OPERATOR
+}
+
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  name         String
+  passwordHash String
+  // Enforcing R-REG-01 with the one role column
+  role         Role
+
+  // Customer only
+  deliveryLat  Float?
+  deliveryLng  Float?
+
+  // Restaurant staff only (plain string for now; ORD team can turn it into a FK later)
+  restaurantId String?
+
+  createdAt    DateTime @default(now())
+
+  @@index([role])
+}
