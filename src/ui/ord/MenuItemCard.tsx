@@ -4,10 +4,11 @@ type MenuItemCardData = {
   name: string;
   description: string;
   price: number;
+  available:boolean;
   image: string;
 };
 
-export default function MenuItemCard({name, description, price, image,
+export default function MenuItemCard({name, description, price, image, available
 }: MenuItemCardData) {
   return (
     <article
@@ -60,6 +61,43 @@ export default function MenuItemCard({name, description, price, image,
         >
           ${price.toFixed(2)}
         </p>
+
+        
+    <span
+      style={{
+        display: "inline-block",
+        marginTop: "12px",
+        padding: "6px 12px",
+        borderRadius: "20px",
+        fontSize: "13px",
+        fontWeight: 600,
+        backgroundColor: available ? "#DCEEDC" : "#F2D8D5",
+        color: available ? "#28633A" : "#923C32",
+      }}
+    >
+      {available ? "Available" : "Sold out"}
+    </span>
+
+      <button
+    type="button"
+    disabled
+    style={{
+      display: "block",
+      width: "100%",
+      marginTop: "16px",
+      padding: "10px 16px",
+      backgroundColor: available ? "#C66B32" : "#BCA99B",
+      color: "#FFFFFF",
+      border: "none",
+      borderRadius: "8px",
+      fontFamily: "inherit",
+      fontWeight: 600,
+      cursor: "not-allowed",
+    }}
+  >
+    {available ? "Add to Cart" : "Unavailable"}
+  </button>
+
       </div>
     </article>
   );
