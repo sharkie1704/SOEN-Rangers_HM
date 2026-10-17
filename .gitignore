@@ -30,3 +30,13 @@ Thumbs.db
 
 # TypeScript build cache
 *.tsbuildinfo
+
+.neon
+.agents
+.claude
+.windsurf
+
+neon.ts
+skills-lock.json
+
+/src/generated/prisma
