@@ -34,7 +34,5 @@ model User {
   // Restaurant staff only (plain string for now; ORD team can turn it into a FK later)
   restaurantId String?
 
-  createdAt    DateTime @default(now())
-
   @@index([role])
 }
