@@ -3,9 +3,10 @@ type RestaurantCardData = {
   name: string;
   category: string;
   image: string;
+  status: "open" | "paused" | "closed";
 };
 
-export default function RestaurantCard({ name, category,image,
+export default function RestaurantCard({ name, category,status,image,
 }: RestaurantCardData) {
   return (
     <article
@@ -44,6 +45,31 @@ export default function RestaurantCard({ name, category,image,
         >
           {category}
         </p>
+
+         <span
+        style={{
+            display: "inline-block",
+            marginTop: "12px",
+            padding: "6px 12px",
+            borderRadius: "20px",
+            fontSize: "13px",
+            fontWeight: 600,
+            backgroundColor:
+            status === "open"
+                ? "#DCEEDC"
+                : status === "paused"
+                ? "#FFF0CD"
+                : "#F2D8D5",
+            color:
+            status === "open"
+                ? "#28633A"
+                : status === "paused"
+                ? "#835900"
+                : "#923C32",
+        }}
+        >
+        {status.charAt(0).toUpperCase() + status.slice(1)}
+        </span>
       </div>
     </article>
   );
