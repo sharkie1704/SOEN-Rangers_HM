@@ -46,7 +46,7 @@ export abstract class AccountRegistrar<T extends BaseRegistrationData = BaseRegi
   // Common checks
   protected validate(data: T): void {
     if (!data.name?.trim()) throw new Error("Name is required");
-    if (!/^\S+@\S+\.\S+$/.test(data.email ?? "")) throw new Error("Valid email is required");
+    if (!/^\S+@\S+\.\S+$/.test((data.email ?? "").trim())) throw new Error("Valid email is required");
     if ((data.password ?? "").length < 8) throw new Error("Password must be at least 8 characters");
   }
 
