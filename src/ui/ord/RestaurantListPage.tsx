@@ -48,7 +48,7 @@ export default function RestaurantListPage({
         fontFamily: "'Poppins', sans-serif",
       }}
     >
-      <h1 style={{ color: "#4B3028", textAlign: "center",marginBottom: "16px" }}>
+      <h1 style={{ color: "#4B3028", textAlign: "center", fontSize: "32px", lineHeight: 1.2, margin: "52px 0 16px" }}>
          Discover the best sweet treats in Montréal
       </h1>
 
