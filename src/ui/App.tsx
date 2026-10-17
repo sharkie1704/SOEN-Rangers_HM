@@ -1,4 +1,8 @@
 // routes
+
+import RestaurantListPage from "./ord/RestaurantListPage";
+
 export default function App() {
-  return <h1>DessertDash</h1>;
+  return <RestaurantListPage />;
 }
+
