@@ -4,11 +4,13 @@ type RestaurantCardData = {
   category: string;
   image: string;
   status: "open" | "paused" | "closed";
+  onViewMenu: () => void;
 };
 
-export default function RestaurantCard({ name, category,status,image,
+export default function RestaurantCard({ name, category,status,image,onViewMenu
 }: RestaurantCardData) {
   return (
+
     <article
       style={{
         backgroundColor: "#EADBC8",
@@ -17,6 +19,8 @@ export default function RestaurantCard({ name, category,status,image,
         overflow: "hidden",
       }}
     >
+
+      {/* Show the restaurant image */}
       <img
         src={image}
         alt={name}
@@ -26,7 +30,7 @@ export default function RestaurantCard({ name, category,status,image,
           objectFit: "cover",
         }}
       />
-
+      {/* Restaurant name */}
       <div style={{ padding: "20px" }}>
         <h2
           style={{
@@ -36,7 +40,8 @@ export default function RestaurantCard({ name, category,status,image,
         >
           {name}
         </h2>
-
+        
+        {/* Restaurant category */}
         <p
           style={{
             color: "#4B3028",
@@ -46,6 +51,7 @@ export default function RestaurantCard({ name, category,status,image,
           {category}
         </p>
 
+        {/* Status  */}
          <span
         style={{
             display: "inline-block",
@@ -70,6 +76,26 @@ export default function RestaurantCard({ name, category,status,image,
         >
         {status.charAt(0).toUpperCase() + status.slice(1)}
         </span>
+
+        {/* Open the restaurant's menu */}
+        <button
+        type="button"
+        onClick={onViewMenu}
+        style={{
+            display: "block",
+            marginTop: "16px",
+            padding: "10px 18px",
+            backgroundColor: "#C66B32",
+            color: "#FFFFFF",
+            border: "none",
+            borderRadius: "8px",
+            fontFamily: "inherit",
+            fontWeight: 600,
+            cursor: "pointer",
+        }}
+        >
+        View Menu →
+        </button>
       </div>
     </article>
   );
