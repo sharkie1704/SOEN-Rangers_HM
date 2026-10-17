@@ -1,31 +1,81 @@
 import MenuItemCard from "./MenuItemCard";
 
 
+type MenuItem = {
+  id: number;
+  name: string;
+  description: string;
+  price: number;
+  image: string;
+};
 
 // Temporary menu items for the page layout
-const menuItems = [
-  {
-    id: 1,
-    name: "Strawberry Shortcake",
-    description: "Vanilla cake with fresh cream and strawberries.",
-    price: 8.5,
-    image: "https://images.unsplash.com/photo-1464305795204-6f5bbfc7fb81?w=800&auto=format&fit=crop&q=85",
-  },
-  {
-    id: 2,
-    name: "Chocolate Brownie",
-    description: "Rich chocolate brownie with a soft, fudgy centre.",
-    price: 6.75,
-    image: "https://images.unsplash.com/photo-1606313564200-e75d5e30476c?w=800&auto=format&fit=crop&q=85",
-  },
-  {
-    id: 3,
-    name: "Classic Cheesecake",
-    description: "Creamy cheesecake with a buttery biscuit crust.",
-    price: 7.95,
-    image: "https://images.unsplash.com/photo-1533134242443-d4fd215305ad?w=800&auto=format&fit=crop&q=85",
-  },
-];
+const menus : Record<number, MenuItem[]>  = {
+   1: [
+    {
+      id: 101,
+      name: "Strawberry Shortcake",
+      description: "Vanilla cake with fresh cream and strawberries.",
+      price: 8.50,
+      image: "https://images.unsplash.com/photo-1464305795204-6f5bbfc7fb81?w=800&auto=format&fit=crop&q=85",
+    },
+    {
+      id: 102,
+      name: "Chocolate Brownie",
+      description: "Rich chocolate brownie with a fudgy centre.",
+      price: 6.75,
+      image: "https://images.unsplash.com/photo-1606313564200-e75d5e30476c?w=800&auto=format&fit=crop&q=85",
+    },
+  ],
+  2: [
+    {
+      id: 201,
+      name: "Chocolate Lava Cake",
+      description: "Warm chocolate cake with a molten centre.",
+      price: 9.25,
+      image: "https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=800&auto=format&fit=crop&q=85",
+    },
+    {
+      id: 202,
+      name: "Fudge Brownie",
+      description: "A rich brownie for chocolate lovers.",
+      price: 7.00,
+      image: "https://images.unsplash.com/photo-1606313564200-e75d5e30476c?w=800&auto=format&fit=crop&q=85",
+    },
+  ],
+  3: [
+    {
+      id: 301,
+      name: "French Macarons",
+      description: "Delicate macarons in assorted flavours.",
+      price: 8.95,
+      image: "https://images.unsplash.com/photo-1569864358642-9d1684040f43?w=800&auto=format&fit=crop&q=85",
+    },
+    {
+      id: 302,
+      name: "Classic Cheesecake",
+      description: "Creamy cheesecake with a biscuit crust.",
+      price: 7.95,
+      image: "https://images.unsplash.com/photo-1533134242443-d4fd215305ad?w=800&auto=format&fit=crop&q=85",
+    },
+  ],
+  4: [
+    {
+      id: 401,
+      name: "Ice Cream Sundae",
+      description: "Vanilla ice cream with chocolate sauce.",
+      price: 7.50,
+      image: "https://images.unsplash.com/photo-1563805042-7684c019e1cb?w=800&auto=format&fit=crop&q=85",
+    },
+    {
+      id: 402,
+      name: "Chocolate Chip Cookies",
+      description: "Soft cookies with chocolate chips.",
+      price: 5.50,
+      image: "https://images.unsplash.com/photo-1499636136210-6f4ee915583e?w=800&auto=format&fit=crop&q=85",
+    },
+  ],
+};
 
 type RestaurantMenuPageInputs = {
   restaurantId: number;
@@ -35,6 +85,9 @@ type RestaurantMenuPageInputs = {
 export default function RestaurantMenuPage({
   restaurantId, onBack,
 }: RestaurantMenuPageInputs) {
+const menuItems = menus[restaurantId] ?? [];
+
+
   return (
     <main
       style={{
