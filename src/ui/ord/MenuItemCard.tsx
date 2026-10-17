@@ -1,14 +1,16 @@
-
+import "./button-interactions.css";
 
 type MenuItemCardData = {
+  id: number;
   name: string;
   description: string;
   price: number;
   available:boolean;
   image: string;
+  onAddToCart: () => void;
 };
 
-export default function MenuItemCard({name, description, price, image, available
+export default function MenuItemCard({name, description, price, image, available, onAddToCart
 }: MenuItemCardData) {
   return (
     <article
@@ -80,7 +82,9 @@ export default function MenuItemCard({name, description, price, image, available
 
       <button
     type="button"
-    disabled
+    className="interactive-button"
+    disabled={!available}
+    onClick={onAddToCart}
     style={{
       display: "block",
       width: "100%",
@@ -92,7 +96,7 @@ export default function MenuItemCard({name, description, price, image, available
       borderRadius: "8px",
       fontFamily: "inherit",
       fontWeight: 600,
-      cursor: "not-allowed",
+      cursor: available ? "pointer" : "not-allowed",
     }}
   >
     {available ? "Add to Cart" : "Unavailable"}
