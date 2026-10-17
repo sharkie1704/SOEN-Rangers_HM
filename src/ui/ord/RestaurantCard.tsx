@@ -1,4 +1,6 @@
 
+import "./button-interactions.css";
+
 type RestaurantCardData = {
   name: string;
   category: string;
@@ -80,6 +82,7 @@ export default function RestaurantCard({ name, category,status,image,onViewMenu
         {/* Open the restaurant's menu */}
         <button
         type="button"
+        className="interactive-button"
         onClick={onViewMenu}
         style={{
             display: "block",

@@ -1,0 +1,33 @@
+.interactive-button {
+  transition: transform 160ms ease, box-shadow 160ms ease, background-color 160ms ease;
+}
+
+.interactive-button:not(:disabled):hover {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 12px rgb(75 48 40 / 20%);
+}
+
+.interactive-button:not(:disabled):active {
+  transform: translateY(0) scale(0.98);
+  box-shadow: 0 2px 5px rgb(75 48 40 / 18%);
+}
+
+.interactive-button:focus-visible {
+  outline: 3px solid #4B3028;
+  outline-offset: 3px;
+}
+
+.interactive-button:disabled {
+  transition: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .interactive-button {
+    transition: none;
+  }
+
+  .interactive-button:not(:disabled):hover,
+  .interactive-button:not(:disabled):active {
+    transform: none;
+  }
+}
