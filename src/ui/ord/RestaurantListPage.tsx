@@ -1,6 +1,10 @@
 
 import RestaurantCard from "./RestaurantCard";
 
+type RestaurantListPageInputs = {
+  onSelectRestaurant: (restaurantId: number) => void;
+};
+
 const restaurants = [
   {
     id: 1,
@@ -32,7 +36,8 @@ const restaurants = [
   },
 ];
 
-export default function RestaurantListPage() {
+export default function RestaurantListPage({
+  onSelectRestaurant,}: RestaurantListPageInputs) {
   return (
     <main
       style={{
@@ -71,6 +76,7 @@ export default function RestaurantListPage() {
             category={restaurant.category}
             status={restaurant.status as "open" | "paused" | "closed"}
             image={restaurant.image}
+            onViewMenu={() => onSelectRestaurant(restaurant.id)}
           />
         ))}
       </section>
