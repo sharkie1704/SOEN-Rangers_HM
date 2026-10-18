@@ -13,6 +13,6 @@ export interface CatalogMenuItem {
 
 // Read-only view of restaurants and menus that OrderService prices orders from
 export interface MenuCatalog {
-  findRestaurant(restaurantId: string): CatalogRestaurant | undefined;
-  findMenuItem(menuItemId: number): CatalogMenuItem | undefined;
+  findRestaurant(restaurantId: string): Promise<CatalogRestaurant | undefined>;
+  findMenuItem(menuItemId: number): Promise<CatalogMenuItem | undefined>;
 }

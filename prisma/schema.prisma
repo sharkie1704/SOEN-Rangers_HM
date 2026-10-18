@@ -36,3 +36,99 @@ model User {
 
   @@index([role])
 }
+
+// ---------- ORD ----------
+
+enum RestaurantStatus {
+  OPEN
+  PAUSED
+  CLOSED
+}
+
+enum OrderStatus {
+  PLACED
+  ACCEPTED
+  PREPARING
+  READY
+  REJECTED
+  CANCELLED
+}
+
+enum OrderAction {
+  ACCEPT
+  REJECT
+  CANCEL
+  START_PREPARING
+  MARK_READY
+}
+
+model Restaurant {
+  id          String           @id @default(uuid())
+  name        String
+  category    String
+  description String
+  imageUrl    String
+  status      RestaurantStatus @default(OPEN)
+
+  menuItems MenuItem[]
+  orders    Order[]
+}
+
+model MenuItem {
+  id           Int        @id @default(autoincrement())
+  restaurantId String
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  name         String
+  description  String
+  imageUrl     String
+  priceCents   Int
+  available    Boolean    @default(true)
+
+  @@index([restaurantId])
+}
+
+// IDs are taken from the sequences up front (nextOrderId/nextEventId), so the
+// domain objects have their IDs before they are saved
+model Order {
+  id           Int         @id @default(autoincrement())
+  restaurantId String
+  restaurant   Restaurant  @relation(fields: [restaurantId], references: [id])
+  // User.id; no FK yet so REG's User model stays untouched
+  customerId   String
+  status       OrderStatus
+  placedAt     DateTime
+
+  lines  OrderLine[]
+  events OrderEvent[]
+
+  @@index([restaurantId, status])
+  @@index([customerId])
+}
+
+// Snapshot of the menu item at order time, so no FK to MenuItem
+model OrderLine {
+  id             Int    @id @default(autoincrement())
+  orderId        Int
+  order          Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  position       Int
+  menuItemId     Int
+  name           String
+  quantity       Int
+  unitPriceCents Int
+
+  @@unique([orderId, position])
+}
+
+model OrderEvent {
+  id         Int         @id @default(autoincrement())
+  orderId    Int
+  order      Order       @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  actorId    String
+  action     OrderAction
+  fromStatus OrderStatus
+  toStatus   OrderStatus
+  reason     String?
+  occurredAt DateTime
+
+  @@index([orderId])
+}

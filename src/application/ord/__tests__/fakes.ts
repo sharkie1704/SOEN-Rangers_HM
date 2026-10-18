@@ -3,22 +3,24 @@ import { PreparationQueue } from "../../../domain/ord/PreparationQueue.ts";
 import type { OrderRepository } from "../OrderRepository.ts";
 import type { CatalogMenuItem, CatalogRestaurant, MenuCatalog } from "../MenuCatalog.ts";
 
+// Keeps live Order instances, so save() has nothing to do
 export class InMemoryOrderRepository implements OrderRepository {
   private orders = new Map<number, Order>();
   private queues = new Map<string, PreparationQueue>();
   private orderSeq = 0;
   private eventSeq = 0;
 
-  nextOrderId(): number { return ++this.orderSeq; }
-  nextEventId(): number { return ++this.eventSeq; }
-  add(order: Order): void { this.orders.set(order.id, order); }
-  findById(orderId: number): Order | undefined { return this.orders.get(orderId); }
+  async nextOrderId(): Promise<number> { return ++this.orderSeq; }
+  async nextEventId(): Promise<number> { return ++this.eventSeq; }
+  async add(order: Order): Promise<void> { this.orders.set(order.id, order); }
+  async save(): Promise<void> {}
+  async findById(orderId: number): Promise<Order | undefined> { return this.orders.get(orderId); }
 
-  findByRestaurant(restaurantId: string): readonly Order[] {
+  async findByRestaurant(restaurantId: string): Promise<readonly Order[]> {
     return [...this.orders.values()].filter((o) => o.restaurantId === restaurantId);
   }
 
-  getPreparationQueue(restaurantId: string): PreparationQueue {
+  async getPreparationQueue(restaurantId: string): Promise<PreparationQueue> {
     let queue = this.queues.get(restaurantId);
     if (!queue) {
       queue = new PreparationQueue(restaurantId);
@@ -42,6 +44,6 @@ export class FakeMenuCatalog implements MenuCatalog {
     return this;
   }
 
-  findRestaurant(restaurantId: string): CatalogRestaurant | undefined { return this.restaurants.get(restaurantId); }
-  findMenuItem(menuItemId: number): CatalogMenuItem | undefined { return this.items.get(menuItemId); }
+  async findRestaurant(restaurantId: string): Promise<CatalogRestaurant | undefined> { return this.restaurants.get(restaurantId); }
+  async findMenuItem(menuItemId: number): Promise<CatalogMenuItem | undefined> { return this.items.get(menuItemId); }
 }

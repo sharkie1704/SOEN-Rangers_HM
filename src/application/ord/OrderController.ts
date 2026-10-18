@@ -11,31 +11,31 @@ export class OrderController {
     this.service = service;
   }
 
-  place(actor: OrderActor | null, input: PlaceOrderDTO): OrderDTO {
+  place(actor: OrderActor | null, input: PlaceOrderDTO): Promise<OrderDTO> {
     return this.service.place(actor, input);
   }
 
-  get(actor: OrderActor | null, orderId: number): OrderDTO {
+  get(actor: OrderActor | null, orderId: number): Promise<OrderDTO> {
     return this.service.get(actor, orderId);
   }
 
-  accept(actor: OrderActor | null, orderId: number): OrderTransitionDTO {
+  accept(actor: OrderActor | null, orderId: number): Promise<OrderTransitionDTO> {
     return this.service.accept(actor, orderId);
   }
 
-  reject(actor: OrderActor | null, orderId: number, reason: string): OrderTransitionDTO {
+  reject(actor: OrderActor | null, orderId: number, reason: string): Promise<OrderTransitionDTO> {
     return this.service.reject(actor, orderId, reason);
   }
 
-  cancel(actor: OrderActor | null, orderId: number): OrderTransitionDTO {
+  cancel(actor: OrderActor | null, orderId: number): Promise<OrderTransitionDTO> {
     return this.service.cancel(actor, orderId);
   }
 
-  startPreparing(actor: OrderActor | null, orderId: number): OrderTransitionDTO {
+  startPreparing(actor: OrderActor | null, orderId: number): Promise<OrderTransitionDTO> {
     return this.service.startPreparing(actor, orderId);
   }
 
-  markReady(actor: OrderActor | null, orderId: number): OrderTransitionDTO {
+  markReady(actor: OrderActor | null, orderId: number): Promise<OrderTransitionDTO> {
     return this.service.markReady(actor, orderId);
   }
 }

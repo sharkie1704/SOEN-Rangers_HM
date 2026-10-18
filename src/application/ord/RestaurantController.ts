@@ -9,11 +9,11 @@ export class RestaurantController {
     this.service = service;
   }
 
-  incomingOrders(actor: OrderActor | null, restaurantId: string): readonly OrderDTO[] {
+  incomingOrders(actor: OrderActor | null, restaurantId: string): Promise<readonly OrderDTO[]> {
     return this.service.incoming(actor, restaurantId);
   }
 
-  preparationQueue(actor: OrderActor | null, restaurantId: string): readonly OrderDTO[] {
+  preparationQueue(actor: OrderActor | null, restaurantId: string): Promise<readonly OrderDTO[]> {
     return this.service.queue(actor, restaurantId);
   }
 }
