@@ -1,25 +1,14 @@
 // For Node
-import "dotenv/config"; // must stay first so JWT_SECRET is loaded before container.ts runs
-import express from "express";
-import cookieParser from "cookie-parser";
-import { requireAuth } from "./container";
+import "dotenv/config";
+import { createApp } from "./app";
+import { PrismaUserRepository } from "./technical-services/reg/PrismaUserRepository";
+import { BcryptPasswordHasher } from "./technical-services/reg/BcryptPasswordHasher";
+import { JwtSessionTokenService } from "./technical-services/reg/JwtSessionTokenService";
 
-const app = express();
-
-app.use(express.json());
-app.use(cookieParser());
-
-// Public routes (no session needed)
-app.get("/api/health", (_req, res) => {
-  res.json({ status: "ok" });
-});
-
-// BTW everything mounted after this line requires a valid session (R-REG-02)
-app.use("/api", requireAuth);
-
-// Temporary route to check the gate works. To be deleted once real routes exist
-app.get("/api/me", (req, res) => {
-  res.json(req.user);
+const app = createApp({
+  users: new PrismaUserRepository(),
+  hasher: new BcryptPasswordHasher(),
+  tokens: new JwtSessionTokenService(process.env.JWT_SECRET ?? ""),
 });
 
 const PORT = Number(process.env.PORT ?? 3000);
