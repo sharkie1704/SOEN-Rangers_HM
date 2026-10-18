@@ -5,7 +5,8 @@
   "description": "DessertDash - SOEN 343 project",
   "scripts": {
     "check": "tsc --noEmit",
-    "dev": "vite",
+    "dev": "concurrently \"npm:dev:server\" \"npm:dev:client\"",
+    "dev:client": "vite",
     "dev:server": "tsx watch src/server.ts",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
