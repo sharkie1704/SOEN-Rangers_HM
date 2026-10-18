@@ -13,7 +13,8 @@
     "db:generate": "prisma generate",
     "db:studio": "prisma studio",
     "postinstall": "prisma generate",
-    "test": "vitest run",
+    "test": "vitest run --exclude \"**/*.int.test.ts\"",
+    "test:int": "vitest run int",
     "test:watch": "vitest"
   },
   "dependencies": {
