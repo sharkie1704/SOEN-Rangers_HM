@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import { User } from "./User";
 import { UserRepository } from "./ports/UserRepository";
 import { PasswordHasher } from "./ports/PasswordHasher";
+import { DuplicateEmailError, ValidationError } from "./Errors";
 
 export interface BaseRegistrationData {
   name: string;
@@ -28,7 +29,7 @@ export abstract class AccountRegistrar<T extends BaseRegistrationData = BaseRegi
     const email = data.email.trim().toLowerCase();
 
     if (await this.users.findByEmail(email)) {
-      throw new Error("An account with this email already exists");
+      throw new DuplicateEmailError();
     }
 
     const props: NewAccountProps = {
@@ -45,9 +46,9 @@ export abstract class AccountRegistrar<T extends BaseRegistrationData = BaseRegi
 
   // Common checks
   protected validate(data: T): void {
-    if (!data.name?.trim()) throw new Error("Name is required");
-    if (!/^\S+@\S+\.\S+$/.test(data.email ?? "")) throw new Error("Valid email is required");
-    if ((data.password ?? "").length < 8) throw new Error("Password must be at least 8 characters");
+    if (!data.name?.trim()) throw new ValidationError("Name is required");
+    if (!/^\S+@\S+\.\S+$/.test((data.email ?? "").trim())) throw new ValidationError("Valid email is required");
+    if ((data.password ?? "").length < 8) throw new ValidationError("Password must be at least 8 characters");
   }
 
   // Factory method:
