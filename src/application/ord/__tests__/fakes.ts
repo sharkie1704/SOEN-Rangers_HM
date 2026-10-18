@@ -1,6 +1,7 @@
 import type { Order } from "../../../domain/ord/Order.ts";
 import { PreparationQueue } from "../../../domain/ord/PreparationQueue.ts";
 import type { OrderRepository } from "../OrderRepository.ts";
+import type { CatalogMenuItem, CatalogRestaurant, MenuCatalog } from "../MenuCatalog.ts";
 
 export class InMemoryOrderRepository implements OrderRepository {
   private orders = new Map<number, Order>();
@@ -25,4 +26,22 @@ export class InMemoryOrderRepository implements OrderRepository {
     }
     return queue;
   }
+}
+
+export class FakeMenuCatalog implements MenuCatalog {
+  restaurants = new Map<string, CatalogRestaurant>();
+  items = new Map<number, CatalogMenuItem>();
+
+  addRestaurant(restaurantId: string, isOpen = true): this {
+    this.restaurants.set(restaurantId, { restaurantId, isOpen });
+    return this;
+  }
+
+  addItem(item: Omit<CatalogMenuItem, "available"> & { available?: boolean }): this {
+    this.items.set(item.menuItemId, { available: true, ...item });
+    return this;
+  }
+
+  findRestaurant(restaurantId: string): CatalogRestaurant | undefined { return this.restaurants.get(restaurantId); }
+  findMenuItem(menuItemId: number): CatalogMenuItem | undefined { return this.items.get(menuItemId); }
 }

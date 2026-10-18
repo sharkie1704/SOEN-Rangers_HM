@@ -3,7 +3,7 @@ import { Role } from "../../../domain/reg/Role.ts";
 import { OrderService } from "../OrderService.ts";
 import type { OrderActor } from "../OrderActor.ts";
 import type { OrderDTO } from "../OrderDTO.ts";
-import { InMemoryOrderRepository } from "./fakes.ts";
+import { FakeMenuCatalog, InMemoryOrderRepository } from "./fakes.ts";
 
 const alice: OrderActor = { userId: "cust-alice", role: Role.CUSTOMER };
 const bob: OrderActor = { userId: "cust-bob", role: Role.CUSTOMER };
@@ -14,11 +14,11 @@ let service: OrderService;
 let order: OrderDTO;
 
 beforeEach(() => {
-  service = new OrderService(new InMemoryOrderRepository());
-  order = service.place(alice, {
-    restaurantId: "rest-a",
-    lines: [{ menuItemId: 1, name: "Macaron", quantity: 2, unitPriceCents: 350 }],
-  });
+  const menu = new FakeMenuCatalog()
+    .addRestaurant("rest-a")
+    .addItem({ menuItemId: 1, restaurantId: "rest-a", name: "Macaron", unitPriceCents: 350 });
+  service = new OrderService(new InMemoryOrderRepository(), menu);
+  order = service.place(alice, { restaurantId: "rest-a", lines: [{ menuItemId: 1, quantity: 2 }] });
 });
 
 function expectForbidden(fn: () => unknown) {
@@ -49,7 +49,7 @@ describe("OrderService identity", () => {
 
 describe("OrderService customer permissions", () => {
   it("only customers can place orders", () => {
-    expectForbidden(() => service.place(staffA, { restaurantId: "rest-a", lines: order.lines }));
+    expectForbidden(() => service.place(staffA, { restaurantId: "rest-a", lines: [{ menuItemId: 1, quantity: 1 }] }));
   });
 
   it("customers can view and cancel only their own orders", () => {

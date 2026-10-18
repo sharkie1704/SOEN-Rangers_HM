@@ -1,18 +1,24 @@
 import { Order } from "../../domain/ord/Order.ts";
 import { OrderError, requireId, requireStringId } from "../../domain/ord/OrderError.ts";
 import { Role } from "../../domain/reg/Role.ts";
+import type { OrderLineDTO } from "../../domain/ord/OrderLineDTO.ts";
 import type { StateChangeEvent } from "../../domain/ord/StateChangeEvent.ts";
+import type { MenuCatalog } from "./MenuCatalog.ts";
 import type { OrderActor } from "./OrderActor.ts";
 import type { OrderRepository } from "./OrderRepository.ts";
 import { toOrderDTO, type OrderDTO } from "./OrderDTO.ts";
-import type { PlaceOrderDTO } from "./PlaceOrderDTO.ts";
+import type { PlaceOrderDTO, PlaceOrderLineDTO } from "./PlaceOrderDTO.ts";
 import type { OrderTransitionDTO } from "./OrderTransitionDTO.ts";
+
+export const MAX_LINE_QUANTITY = 50;
 
 export class OrderService {
   private readonly repository: OrderRepository;
+  private readonly menu: MenuCatalog;
 
-  constructor(repository: OrderRepository) {
+  constructor(repository: OrderRepository, menu: MenuCatalog) {
     this.repository = repository;
+    this.menu = menu;
   }
 
   place(actor: OrderActor | null, input: PlaceOrderDTO): OrderDTO {
@@ -23,11 +29,19 @@ export class OrderService {
     if (!Array.isArray(input.lines) || input.lines.length === 0) {
       throw new OrderError("INVALID_INPUT", "An order must contain at least one item.");
     }
+    const restaurantId = requireStringId(input.restaurantId, "Restaurant ID");
+    const restaurant = this.menu.findRestaurant(restaurantId);
+    if (!restaurant) {
+      throw new OrderError("NOT_FOUND", "Restaurant was not found.");
+    }
+    if (!restaurant.isOpen) {
+      throw new OrderError("CONFLICT", "Restaurant is not accepting orders.");
+    }
     const order = new Order({
       id: this.repository.nextOrderId(),
-      restaurantId: input.restaurantId,
+      restaurantId,
       customerId: customer.userId,
-      lines: input.lines,
+      lines: this.priceLines(restaurantId, input.lines),
     });
     this.repository.add(order);
     return toOrderDTO(order);
@@ -89,6 +103,32 @@ export class OrderService {
     const { order, restaurantActor } = this.restaurantOrder(actor, orderId);
     const event = this.repository.getPreparationQueue(order.restaurantId).markReady(order, restaurantActor.userId, this.repository.nextEventId());
     return this.result(order, event);
+  }
+
+  // Name and price always come from the menu, never from the client
+  private priceLines(restaurantId: string, lines: readonly PlaceOrderLineDTO[]): OrderLineDTO[] {
+    const seen = new Set<number>();
+    return lines.map((line) => {
+      const menuItemId = requireId(line.menuItemId, "Menu item ID");
+      if (seen.has(menuItemId)) {
+        throw new OrderError("INVALID_INPUT", `Menu item ${menuItemId} is listed more than once.`);
+      }
+      seen.add(menuItemId);
+      if (!Number.isSafeInteger(line.quantity) || line.quantity <= 0 || line.quantity > MAX_LINE_QUANTITY) {
+        throw new OrderError("INVALID_INPUT", `Quantity must be an integer between 1 and ${MAX_LINE_QUANTITY}.`);
+      }
+      const item = this.menu.findMenuItem(menuItemId);
+      if (!item) {
+        throw new OrderError("NOT_FOUND", `Menu item ${menuItemId} was not found.`);
+      }
+      if (item.restaurantId !== restaurantId) {
+        throw new OrderError("INVALID_INPUT", `Menu item ${menuItemId} does not belong to this restaurant.`);
+      }
+      if (!item.available) {
+        throw new OrderError("CONFLICT", `${item.name} is sold out.`);
+      }
+      return { menuItemId, name: item.name, quantity: line.quantity, unitPriceCents: item.unitPriceCents };
+    });
   }
 
   private findOrder(orderId: number): Order {
