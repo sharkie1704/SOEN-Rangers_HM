@@ -13,16 +13,16 @@ const staffB: OrderActor = { userId: "staff-b", role: Role.RESTAURANT, restauran
 let service: OrderService;
 let order: OrderDTO;
 
-beforeEach(() => {
+beforeEach(async () => {
   const menu = new FakeMenuCatalog()
     .addRestaurant("rest-a")
     .addItem({ menuItemId: 1, restaurantId: "rest-a", name: "Macaron", unitPriceCents: 350 });
   service = new OrderService(new InMemoryOrderRepository(), menu);
-  order = service.place(alice, { restaurantId: "rest-a", lines: [{ menuItemId: 1, quantity: 2 }] });
+  order = await service.place(alice, { restaurantId: "rest-a", lines: [{ menuItemId: 1, quantity: 2 }] });
 });
 
-function expectForbidden(fn: () => unknown) {
-  expect(fn).toThrow(expect.objectContaining({ code: "FORBIDDEN" }));
+async function expectForbidden(promise: Promise<unknown>) {
+  await expect(promise).rejects.toMatchObject({ code: "FORBIDDEN" });
 }
 
 describe("OrderService identity", () => {
@@ -31,8 +31,8 @@ describe("OrderService identity", () => {
     expect(order.restaurantId).toBe("rest-a");
   });
 
-  it("records the acting user's string ID on state change events", () => {
-    const { event } = service.accept(staffA, order.id);
+  it("records the acting user's string ID on state change events", async () => {
+    const { event } = await service.accept(staffA, order.id);
     expect(event.actorId).toBe("staff-a");
   });
 
@@ -42,47 +42,47 @@ describe("OrderService identity", () => {
     ["restaurant actor without restaurant", { userId: "staff-x", role: Role.RESTAURANT, restaurantId: "" }],
     ["operator", { userId: "op-1", role: Role.OPERATOR }],
     ["courier", { userId: "cour-1", role: Role.COURIER }],
-  ])("rejects %s", (_label, actor) => {
-    expectForbidden(() => service.get(actor as OrderActor | null, order.id));
+  ])("rejects %s", async (_label, actor) => {
+    await expectForbidden(service.get(actor as OrderActor | null, order.id));
   });
 });
 
 describe("OrderService customer permissions", () => {
-  it("only customers can place orders", () => {
-    expectForbidden(() => service.place(staffA, { restaurantId: "rest-a", lines: [{ menuItemId: 1, quantity: 1 }] }));
+  it("only customers can place orders", async () => {
+    await expectForbidden(service.place(staffA, { restaurantId: "rest-a", lines: [{ menuItemId: 1, quantity: 1 }] }));
   });
 
-  it("customers can view and cancel only their own orders", () => {
-    expect(service.get(alice, order.id).id).toBe(order.id);
-    expectForbidden(() => service.get(bob, order.id));
-    expectForbidden(() => service.cancel(bob, order.id));
-    expect(service.cancel(alice, order.id).order.status).toBe("Cancelled");
+  it("customers can view and cancel only their own orders", async () => {
+    expect((await service.get(alice, order.id)).id).toBe(order.id);
+    await expectForbidden(service.get(bob, order.id));
+    await expectForbidden(service.cancel(bob, order.id));
+    expect((await service.cancel(alice, order.id)).order.status).toBe("Cancelled");
   });
 
-  it("customers cannot perform restaurant transitions", () => {
-    expectForbidden(() => service.accept(alice, order.id));
-    expectForbidden(() => service.reject(alice, order.id, "no"));
-    expectForbidden(() => service.incoming(alice, "rest-a"));
+  it("customers cannot perform restaurant transitions", async () => {
+    await expectForbidden(service.accept(alice, order.id));
+    await expectForbidden(service.reject(alice, order.id, "no"));
+    await expectForbidden(service.incoming(alice, "rest-a"));
   });
 });
 
 describe("OrderService restaurant permissions", () => {
-  it("staff manage orders for their own restaurant only", () => {
-    expectForbidden(() => service.get(staffB, order.id));
-    expectForbidden(() => service.accept(staffB, order.id));
-    expectForbidden(() => service.incoming(staffB, "rest-a"));
-    expectForbidden(() => service.queue(staffB, "rest-a"));
-    expect(service.incoming(staffA, "rest-a").map((o) => o.id)).toEqual([order.id]);
+  it("staff manage orders for their own restaurant only", async () => {
+    await expectForbidden(service.get(staffB, order.id));
+    await expectForbidden(service.accept(staffB, order.id));
+    await expectForbidden(service.incoming(staffB, "rest-a"));
+    await expectForbidden(service.queue(staffB, "rest-a"));
+    expect((await service.incoming(staffA, "rest-a")).map((o) => o.id)).toEqual([order.id]);
   });
 
-  it("staff cannot cancel on behalf of a customer", () => {
-    expectForbidden(() => service.cancel(staffA, order.id));
+  it("staff cannot cancel on behalf of a customer", async () => {
+    await expectForbidden(service.cancel(staffA, order.id));
   });
 
-  it("staff drive the order through the queue", () => {
-    service.accept(staffA, order.id);
-    expect(service.queue(staffA, "rest-a").map((o) => o.id)).toEqual([order.id]);
-    service.startPreparing(staffA, order.id);
-    expect(service.markReady(staffA, order.id).order.status).toBe("Ready");
+  it("staff drive the order through the queue", async () => {
+    await service.accept(staffA, order.id);
+    expect((await service.queue(staffA, "rest-a")).map((o) => o.id)).toEqual([order.id]);
+    await service.startPreparing(staffA, order.id);
+    expect((await service.markReady(staffA, order.id)).order.status).toBe("Ready");
   });
 });

@@ -1,5 +1,6 @@
 export { Order } from "./ord/Order.ts";
 export type { CreateOrderDTO } from "./ord/CreateOrderDTO.ts";
+export type { RestoredOrderDTO } from "./ord/RestoredOrderDTO.ts";
 export { OrderLine } from "./ord/OrderLine.ts";
 export type { OrderLineDTO } from "./ord/OrderLineDTO.ts";
 export { OrderError, type OrderErrorCode } from "./ord/OrderError.ts";

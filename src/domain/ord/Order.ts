@@ -1,9 +1,11 @@
 import { OrderError, requireId, requireStringId, requireText } from "./OrderError.ts";
 import { OrderLine } from "./OrderLine.ts";
 import type { CreateOrderDTO } from "./CreateOrderDTO.ts";
+import type { RestoredOrderDTO } from "./RestoredOrderDTO.ts";
 import type { OrderAction, OrderStatus, StateChangeEvent } from "./StateChangeEvent.ts";
 import { OrderState } from "./states/OrderState.ts";
 import { PlacedState } from "./states/PlacedState.ts";
+import { stateFor } from "./states/stateFor.ts";
 
 export class Order {
   readonly id: number;
@@ -14,7 +16,7 @@ export class Order {
   #state: OrderState = new PlacedState();
   #events: StateChangeEvent[] = [];
 
-  constructor(input: CreateOrderDTO) {
+  constructor(input: CreateOrderDTO, placedAt: Date = new Date()) {
     this.id = requireId(input.id, "Order ID");
     this.restaurantId = requireStringId(input.restaurantId, "Restaurant ID");
     this.customerId = requireStringId(input.customerId, "Customer ID");
@@ -25,8 +27,16 @@ export class Order {
     if (!Number.isSafeInteger(this.totalCents)) {
       throw new OrderError("INVALID_INPUT", "Order total exceeds the supported amount.");
     }
-    this.#placedAt = new Date();
+    this.#placedAt = new Date(placedAt);
     Object.freeze(this);
+  }
+
+  // Rebuilds an order loaded from storage without replaying its transitions
+  static restore(input: RestoredOrderDTO): Order {
+    const order = new Order(input, input.placedAt);
+    order.#state = stateFor(input.status);
+    order.#events = input.events.map((event) => order.copyEvent(event));
+    return order;
   }
 
   get placedAt(): Date {

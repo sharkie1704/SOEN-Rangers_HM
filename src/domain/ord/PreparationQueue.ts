@@ -11,6 +11,21 @@ export class PreparationQueue {
     Object.freeze(this);
   }
 
+  // Rebuilds a queue from storage; orders must already be in acceptance order
+  static restore(restaurantId: string, orders: readonly Order[]): PreparationQueue {
+    const queue = new PreparationQueue(restaurantId);
+    for (const order of orders) {
+      if (order.restaurantId !== queue.restaurantId) {
+        throw new OrderError("INVALID_INPUT", "Order belongs to a different restaurant.");
+      }
+      if (order.status !== "Accepted" && order.status !== "Preparing") {
+        throw new OrderError("INVALID_INPUT", `Order ${order.id} in ${order.status} state cannot be queued.`);
+      }
+      queue.#orders.push(order);
+    }
+    return queue;
+  }
+
   get orders(): readonly Order[] {
     return Object.freeze([...this.#orders]);
   }
@@ -21,6 +36,10 @@ export class PreparationQueue {
 
   get front(): Order | undefined {
     return this.#orders[0];
+  }
+
+  find(orderId: number): Order | undefined {
+    return this.#orders.find((order) => order.id === orderId);
   }
 
   accept(order: Order, actorId: string, eventId: number): StateChangeEvent {

@@ -2,6 +2,7 @@ import { Order } from "../../domain/ord/Order.ts";
 import { OrderError, requireId, requireStringId } from "../../domain/ord/OrderError.ts";
 import { Role } from "../../domain/reg/Role.ts";
 import type { OrderLineDTO } from "../../domain/ord/OrderLineDTO.ts";
+import type { PreparationQueue } from "../../domain/ord/PreparationQueue.ts";
 import type { StateChangeEvent } from "../../domain/ord/StateChangeEvent.ts";
 import type { MenuCatalog } from "./MenuCatalog.ts";
 import type { OrderActor } from "./OrderActor.ts";
@@ -21,7 +22,7 @@ export class OrderService {
     this.menu = menu;
   }
 
-  place(actor: OrderActor | null, input: PlaceOrderDTO): OrderDTO {
+  async place(actor: OrderActor | null, input: PlaceOrderDTO): Promise<OrderDTO> {
     const customer = this.requireActor(actor);
     if (customer.role !== Role.CUSTOMER) {
       throw new OrderError("FORBIDDEN", "Only customers can place orders.");
@@ -30,26 +31,27 @@ export class OrderService {
       throw new OrderError("INVALID_INPUT", "An order must contain at least one item.");
     }
     const restaurantId = requireStringId(input.restaurantId, "Restaurant ID");
-    const restaurant = this.menu.findRestaurant(restaurantId);
+    const restaurant = await this.menu.findRestaurant(restaurantId);
     if (!restaurant) {
       throw new OrderError("NOT_FOUND", "Restaurant was not found.");
     }
     if (!restaurant.isOpen) {
       throw new OrderError("CONFLICT", "Restaurant is not accepting orders.");
     }
+    const lines = await this.priceLines(restaurantId, input.lines);
     const order = new Order({
-      id: this.repository.nextOrderId(),
+      id: await this.repository.nextOrderId(),
       restaurantId,
       customerId: customer.userId,
-      lines: this.priceLines(restaurantId, input.lines),
+      lines,
     });
-    this.repository.add(order);
+    await this.repository.add(order);
     return toOrderDTO(order);
   }
 
-  get(actor: OrderActor | null, orderId: number): OrderDTO {
+  async get(actor: OrderActor | null, orderId: number): Promise<OrderDTO> {
     const authenticated = this.requireActor(actor);
-    const order = this.findOrder(orderId);
+    const order = await this.findOrder(orderId);
     if (authenticated.role === Role.RESTAURANT) {
       this.requireRestaurantActor(authenticated, order.restaurantId);
     } else if (authenticated.userId !== order.customerId) {
@@ -58,57 +60,61 @@ export class OrderService {
     return toOrderDTO(order);
   }
 
-  incoming(actor: OrderActor | null, restaurantId: string): readonly OrderDTO[] {
+  async incoming(actor: OrderActor | null, restaurantId: string): Promise<readonly OrderDTO[]> {
     this.requireRestaurantActor(actor, restaurantId);
-    return this.repository.findByRestaurant(restaurantId)
+    return (await this.repository.findByRestaurant(restaurantId))
       .filter((order) => order.status === "Placed")
       .map(toOrderDTO);
   }
 
-  queue(actor: OrderActor | null, restaurantId: string): readonly OrderDTO[] {
+  async queue(actor: OrderActor | null, restaurantId: string): Promise<readonly OrderDTO[]> {
     this.requireRestaurantActor(actor, restaurantId);
-    return this.repository.getPreparationQueue(restaurantId).orders.map(toOrderDTO);
+    return (await this.repository.getPreparationQueue(restaurantId)).orders.map(toOrderDTO);
   }
 
-  accept(actor: OrderActor | null, orderId: number): OrderTransitionDTO {
-    const { order, restaurantActor } = this.restaurantOrder(actor, orderId);
-    const event = this.repository.getPreparationQueue(order.restaurantId).accept(order, restaurantActor.userId, this.repository.nextEventId());
-    return this.result(order, event);
+  async accept(actor: OrderActor | null, orderId: number): Promise<OrderTransitionDTO> {
+    const { order, restaurantActor } = await this.restaurantOrder(actor, orderId);
+    const queue = await this.repository.getPreparationQueue(order.restaurantId);
+    const event = queue.accept(order, restaurantActor.userId, await this.repository.nextEventId());
+    return this.save(order, event);
   }
 
-  reject(actor: OrderActor | null, orderId: number, reason: string): OrderTransitionDTO {
-    const { order, restaurantActor } = this.restaurantOrder(actor, orderId);
-    return this.result(order, order.reject(restaurantActor.userId, reason, this.repository.nextEventId()));
+  async reject(actor: OrderActor | null, orderId: number, reason: string): Promise<OrderTransitionDTO> {
+    const { order, restaurantActor } = await this.restaurantOrder(actor, orderId);
+    return this.save(order, order.reject(restaurantActor.userId, reason, await this.repository.nextEventId()));
   }
 
-  cancel(actor: OrderActor | null, orderId: number): OrderTransitionDTO {
+  async cancel(actor: OrderActor | null, orderId: number): Promise<OrderTransitionDTO> {
     const customer = this.requireActor(actor);
     if (customer.role !== Role.CUSTOMER) {
       throw new OrderError("FORBIDDEN", "Only customers can cancel their orders.");
     }
-    const order = this.findOrder(orderId);
+    const order = await this.findOrder(orderId);
     if (order.customerId !== customer.userId) {
       throw new OrderError("FORBIDDEN", "Customers can only cancel their own orders.");
     }
-    return this.result(order, order.cancel(customer.userId, this.repository.nextEventId()));
+    return this.save(order, order.cancel(customer.userId, await this.repository.nextEventId()));
   }
 
-  startPreparing(actor: OrderActor | null, orderId: number): OrderTransitionDTO {
-    const { order, restaurantActor } = this.restaurantOrder(actor, orderId);
-    const event = this.repository.getPreparationQueue(order.restaurantId).startPreparing(order, restaurantActor.userId, this.repository.nextEventId());
-    return this.result(order, event);
+  async startPreparing(actor: OrderActor | null, orderId: number): Promise<OrderTransitionDTO> {
+    const { order, restaurantActor } = await this.restaurantOrder(actor, orderId);
+    const queue = await this.repository.getPreparationQueue(order.restaurantId);
+    const queued = this.queuedOrder(queue, order);
+    return this.save(queued, queue.startPreparing(queued, restaurantActor.userId, await this.repository.nextEventId()));
   }
 
-  markReady(actor: OrderActor | null, orderId: number): OrderTransitionDTO {
-    const { order, restaurantActor } = this.restaurantOrder(actor, orderId);
-    const event = this.repository.getPreparationQueue(order.restaurantId).markReady(order, restaurantActor.userId, this.repository.nextEventId());
-    return this.result(order, event);
+  async markReady(actor: OrderActor | null, orderId: number): Promise<OrderTransitionDTO> {
+    const { order, restaurantActor } = await this.restaurantOrder(actor, orderId);
+    const queue = await this.repository.getPreparationQueue(order.restaurantId);
+    const queued = this.queuedOrder(queue, order);
+    return this.save(queued, queue.markReady(queued, restaurantActor.userId, await this.repository.nextEventId()));
   }
 
   // Name and price always come from the menu, never from the client
-  private priceLines(restaurantId: string, lines: readonly PlaceOrderLineDTO[]): OrderLineDTO[] {
+  private async priceLines(restaurantId: string, lines: readonly PlaceOrderLineDTO[]): Promise<OrderLineDTO[]> {
     const seen = new Set<number>();
-    return lines.map((line) => {
+    const priced: OrderLineDTO[] = [];
+    for (const line of lines) {
       const menuItemId = requireId(line.menuItemId, "Menu item ID");
       if (seen.has(menuItemId)) {
         throw new OrderError("INVALID_INPUT", `Menu item ${menuItemId} is listed more than once.`);
@@ -117,7 +123,7 @@ export class OrderService {
       if (!Number.isSafeInteger(line.quantity) || line.quantity <= 0 || line.quantity > MAX_LINE_QUANTITY) {
         throw new OrderError("INVALID_INPUT", `Quantity must be an integer between 1 and ${MAX_LINE_QUANTITY}.`);
       }
-      const item = this.menu.findMenuItem(menuItemId);
+      const item = await this.menu.findMenuItem(menuItemId);
       if (!item) {
         throw new OrderError("NOT_FOUND", `Menu item ${menuItemId} was not found.`);
       }
@@ -127,12 +133,13 @@ export class OrderService {
       if (!item.available) {
         throw new OrderError("CONFLICT", `${item.name} is sold out.`);
       }
-      return { menuItemId, name: item.name, quantity: line.quantity, unitPriceCents: item.unitPriceCents };
-    });
+      priced.push({ menuItemId, name: item.name, quantity: line.quantity, unitPriceCents: item.unitPriceCents });
+    }
+    return priced;
   }
 
-  private findOrder(orderId: number): Order {
-    const order = this.repository.findById(requireId(orderId, "Order ID"));
+  private async findOrder(orderId: number): Promise<Order> {
+    const order = await this.repository.findById(requireId(orderId, "Order ID"));
     if (!order) {
       throw new OrderError("NOT_FOUND", "Order was not found.");
     }
@@ -159,13 +166,19 @@ export class OrderService {
     return authenticated;
   }
 
-  private restaurantOrder(actor: OrderActor | null, orderId: number) {
+  private async restaurantOrder(actor: OrderActor | null, orderId: number) {
     this.requireActor(actor);
-    const order = this.findOrder(orderId);
+    const order = await this.findOrder(orderId);
     return { order, restaurantActor: this.requireRestaurantActor(actor, order.restaurantId) };
   }
 
-  private result(order: Order, event: StateChangeEvent): OrderTransitionDTO {
+  // A repository may load the queue's orders as separate instances, so transition the queued one
+  private queuedOrder(queue: PreparationQueue, order: Order): Order {
+    return queue.find(order.id) ?? order;
+  }
+
+  private async save(order: Order, event: StateChangeEvent): Promise<OrderTransitionDTO> {
+    await this.repository.save(order);
     return Object.freeze({ order: toOrderDTO(order), eventId: event.eventId, event });
   }
 }
