@@ -1,3 +1,5 @@
+import { Role } from "../../domain/reg/Role.ts";
+
 export type OrderActor =
-  | { readonly userId: number; readonly role: "customer" }
-  | { readonly userId: number; readonly role: "restaurant"; readonly restaurantId: number };
+  | { readonly userId: string; readonly role: Role.CUSTOMER }
+  | { readonly userId: string; readonly role: Role.RESTAURANT; readonly restaurantId: string };

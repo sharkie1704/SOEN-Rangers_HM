@@ -1,4 +1,4 @@
-import { OrderError, requireId, requireText } from "./OrderError.ts";
+import { OrderError, requireId, requireStringId, requireText } from "./OrderError.ts";
 import { OrderLine } from "./OrderLine.ts";
 import type { CreateOrderDTO } from "./CreateOrderDTO.ts";
 import type { OrderAction, OrderStatus, StateChangeEvent } from "./StateChangeEvent.ts";
@@ -7,8 +7,8 @@ import { PlacedState } from "./states/PlacedState.ts";
 
 export class Order {
   readonly id: number;
-  readonly restaurantId: number;
-  readonly customerId: number;
+  readonly restaurantId: string;
+  readonly customerId: string;
   readonly lines: readonly OrderLine[];
   readonly #placedAt: Date;
   #state: OrderState = new PlacedState();
@@ -16,8 +16,8 @@ export class Order {
 
   constructor(input: CreateOrderDTO) {
     this.id = requireId(input.id, "Order ID");
-    this.restaurantId = requireId(input.restaurantId, "Restaurant ID");
-    this.customerId = requireId(input.customerId, "Customer ID");
+    this.restaurantId = requireStringId(input.restaurantId, "Restaurant ID");
+    this.customerId = requireStringId(input.customerId, "Customer ID");
     if (!Array.isArray(input.lines) || input.lines.length === 0) {
       throw new OrderError("INVALID_INPUT", "An order must contain at least one item.");
     }
@@ -49,31 +49,31 @@ export class Order {
     return this.#events.find((event) => event.action === "reject")?.reason;
   }
 
-  accept(actorId: number, eventId: number): StateChangeEvent {
+  accept(actorId: string, eventId: number): StateChangeEvent {
     return this.transition(this.#state.accept(), "accept", actorId, eventId);
   }
 
-  reject(actorId: number, reason: string, eventId: number): StateChangeEvent {
+  reject(actorId: string, reason: string, eventId: number): StateChangeEvent {
     return this.transition(this.#state.reject(), "reject", actorId, eventId, requireText(reason, "Rejection reason"));
   }
 
-  cancel(actorId: number, eventId: number): StateChangeEvent {
+  cancel(actorId: string, eventId: number): StateChangeEvent {
     return this.transition(this.#state.cancel(), "cancel", actorId, eventId);
   }
 
-  startPreparing(actorId: number, eventId: number): StateChangeEvent {
+  startPreparing(actorId: string, eventId: number): StateChangeEvent {
     return this.transition(this.#state.startPreparing(), "start-preparing", actorId, eventId);
   }
 
-  markReady(actorId: number, eventId: number): StateChangeEvent {
+  markReady(actorId: string, eventId: number): StateChangeEvent {
     return this.transition(this.#state.markReady(), "mark-ready", actorId, eventId);
   }
 
-  private transition(nextState: OrderState, action: OrderAction, actorId: number, eventId: number, reason?: string): StateChangeEvent {
+  private transition(nextState: OrderState, action: OrderAction, actorId: string, eventId: number, reason?: string): StateChangeEvent {
     const event: StateChangeEvent = Object.freeze({
       eventId: requireId(eventId, "Event ID"),
       orderId: this.id,
-      actorId: requireId(actorId, "Actor ID"),
+      actorId: requireStringId(actorId, "Actor ID"),
       action,
       from: this.status,
       to: nextState.status,
