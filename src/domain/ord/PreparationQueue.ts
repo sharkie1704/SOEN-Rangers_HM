@@ -1,13 +1,13 @@
 import { Order } from "./Order.ts";
-import { OrderError, requireId } from "./OrderError.ts";
+import { OrderError, requireStringId } from "./OrderError.ts";
 import type { StateChangeEvent } from "./StateChangeEvent.ts";
 
 export class PreparationQueue {
-  readonly restaurantId: number;
+  readonly restaurantId: string;
   #orders: Order[] = [];
 
-  constructor(restaurantId: number) {
-    this.restaurantId = requireId(restaurantId, "Restaurant ID");
+  constructor(restaurantId: string) {
+    this.restaurantId = requireStringId(restaurantId, "Restaurant ID");
     Object.freeze(this);
   }
 
@@ -23,7 +23,7 @@ export class PreparationQueue {
     return this.#orders[0];
   }
 
-  accept(order: Order, actorId: number, eventId: number): StateChangeEvent {
+  accept(order: Order, actorId: string, eventId: number): StateChangeEvent {
     if (order.restaurantId !== this.restaurantId) {
       throw new OrderError("INVALID_INPUT", "Order belongs to a different restaurant.");
     }
@@ -35,12 +35,12 @@ export class PreparationQueue {
     return event;
   }
 
-  startPreparing(order: Order, actorId: number, eventId: number): StateChangeEvent {
+  startPreparing(order: Order, actorId: string, eventId: number): StateChangeEvent {
     this.requireQueued(order);
     return order.startPreparing(actorId, eventId);
   }
 
-  markReady(order: Order, actorId: number, eventId: number): StateChangeEvent {
+  markReady(order: Order, actorId: string, eventId: number): StateChangeEvent {
     this.requireQueued(order);
     if (this.front !== order) {
       throw new OrderError("NOT_QUEUE_FRONT", "Only the front order can be marked Ready.");

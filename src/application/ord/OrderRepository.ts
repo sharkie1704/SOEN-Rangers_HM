@@ -6,6 +6,6 @@ export interface OrderRepository {
   nextEventId(): number;
   add(order: Order): void;
   findById(orderId: number): Order | undefined;
-  findByRestaurant(restaurantId: number): readonly Order[];
-  getPreparationQueue(restaurantId: number): PreparationQueue;
+  findByRestaurant(restaurantId: string): readonly Order[];
+  getPreparationQueue(restaurantId: string): PreparationQueue;
 }

@@ -4,8 +4,8 @@ import type { OrderStatus, StateChangeEvent } from "../../domain/ord/StateChange
 
 export interface OrderDTO {
   readonly id: number;
-  readonly restaurantId: number;
-  readonly customerId: number;
+  readonly restaurantId: string;
+  readonly customerId: string;
   readonly status: OrderStatus;
   readonly lines: readonly Readonly<OrderLineDTO>[];
   readonly totalCents: number;

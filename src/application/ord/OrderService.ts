@@ -1,5 +1,6 @@
 import { Order } from "../../domain/ord/Order.ts";
-import { OrderError, requireId } from "../../domain/ord/OrderError.ts";
+import { OrderError, requireId, requireStringId } from "../../domain/ord/OrderError.ts";
+import { Role } from "../../domain/reg/Role.ts";
 import type { StateChangeEvent } from "../../domain/ord/StateChangeEvent.ts";
 import type { OrderActor } from "./OrderActor.ts";
 import type { OrderRepository } from "./OrderRepository.ts";
@@ -16,7 +17,7 @@ export class OrderService {
 
   place(actor: OrderActor | null, input: PlaceOrderDTO): OrderDTO {
     const customer = this.requireActor(actor);
-    if (customer.role !== "customer") {
+    if (customer.role !== Role.CUSTOMER) {
       throw new OrderError("FORBIDDEN", "Only customers can place orders.");
     }
     if (!Array.isArray(input.lines) || input.lines.length === 0) {
@@ -35,7 +36,7 @@ export class OrderService {
   get(actor: OrderActor | null, orderId: number): OrderDTO {
     const authenticated = this.requireActor(actor);
     const order = this.findOrder(orderId);
-    if (authenticated.role === "restaurant") {
+    if (authenticated.role === Role.RESTAURANT) {
       this.requireRestaurantActor(authenticated, order.restaurantId);
     } else if (authenticated.userId !== order.customerId) {
       throw new OrderError("FORBIDDEN", "Customers can only view their own orders.");
@@ -43,14 +44,14 @@ export class OrderService {
     return toOrderDTO(order);
   }
 
-  incoming(actor: OrderActor | null, restaurantId: number): readonly OrderDTO[] {
+  incoming(actor: OrderActor | null, restaurantId: string): readonly OrderDTO[] {
     this.requireRestaurantActor(actor, restaurantId);
     return this.repository.findByRestaurant(restaurantId)
       .filter((order) => order.status === "Placed")
       .map(toOrderDTO);
   }
 
-  queue(actor: OrderActor | null, restaurantId: number): readonly OrderDTO[] {
+  queue(actor: OrderActor | null, restaurantId: string): readonly OrderDTO[] {
     this.requireRestaurantActor(actor, restaurantId);
     return this.repository.getPreparationQueue(restaurantId).orders.map(toOrderDTO);
   }
@@ -68,7 +69,7 @@ export class OrderService {
 
   cancel(actor: OrderActor | null, orderId: number): OrderTransitionDTO {
     const customer = this.requireActor(actor);
-    if (customer.role !== "customer") {
+    if (customer.role !== Role.CUSTOMER) {
       throw new OrderError("FORBIDDEN", "Only customers can cancel their orders.");
     }
     const order = this.findOrder(orderId);
@@ -99,20 +100,20 @@ export class OrderService {
   }
 
   private requireActor(actor: OrderActor | null): OrderActor {
-    if (!actor || !Number.isSafeInteger(actor.userId) || actor.userId <= 0
-      || (actor.role !== "customer" && actor.role !== "restaurant")) {
+    if (!actor || typeof actor.userId !== "string" || actor.userId.trim().length === 0
+      || (actor.role !== Role.CUSTOMER && actor.role !== Role.RESTAURANT)) {
       throw new OrderError("FORBIDDEN", "An authenticated customer or restaurant account is required.");
     }
-    if (actor.role === "restaurant" && (!Number.isSafeInteger(actor.restaurantId) || actor.restaurantId <= 0)) {
+    if (actor.role === Role.RESTAURANT && (typeof actor.restaurantId !== "string" || actor.restaurantId.trim().length === 0)) {
       throw new OrderError("FORBIDDEN", "A valid restaurant ID is required for restaurant accounts.");
     }
     return actor;
   }
 
-  private requireRestaurantActor(actor: OrderActor | null, restaurantId: number): Extract<OrderActor, { role: "restaurant" }> {
+  private requireRestaurantActor(actor: OrderActor | null, restaurantId: string): Extract<OrderActor, { role: Role.RESTAURANT }> {
     const authenticated = this.requireActor(actor);
-    requireId(restaurantId, "Restaurant ID");
-    if (authenticated.role !== "restaurant" || authenticated.restaurantId !== restaurantId) {
+    requireStringId(restaurantId, "Restaurant ID");
+    if (authenticated.role !== Role.RESTAURANT || authenticated.restaurantId !== restaurantId) {
       throw new OrderError("FORBIDDEN", "Restaurant accounts can only manage orders for their own restaurant.");
     }
     return authenticated;

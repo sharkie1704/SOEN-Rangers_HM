@@ -16,7 +16,7 @@ export type OrderAction =
 export interface StateChangeEvent {
   readonly eventId: number;
   readonly orderId: number;
-  readonly actorId: number;
+  readonly actorId: string;
   readonly action: OrderAction;
   readonly from: OrderStatus;
   readonly to: OrderStatus;
