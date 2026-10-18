@@ -37,3 +37,26 @@ export class AuthenticateController {
     return null;
   }
 }
+
+function extractToken(req: Request): string | null {
+  const cookieToken = req.cookies?.[SESSION_COOKIE];
+  if (typeof cookieToken === "string" && cookieToken) return cookieToken;
+
+  const header = req.headers.authorization;
+  if (header?.startsWith("Bearer ")) return header.slice(7);
+  return null;
+}
+
+export function authenticate(tokens: SessionTokenService) {
+  return (req: Request, res: Response, next: NextFunction): void => {
+    const token = extractToken(req);
+    const session = token ? tokens.verify(token) : null;
+
+    if (!session || session.isExpired()) {
+      res.status(401).json({ error: "Authentication required" });
+      return;
+    }
+    req.user = session.toAuthenticatedUser();
+    next();
+  };
+}
