@@ -1,6 +1,6 @@
 # SOEN-Rangers_HM
 
-DessertDash
+DessertDash uses React, TypeScript, and Vite.
 
 ## Setup
 
