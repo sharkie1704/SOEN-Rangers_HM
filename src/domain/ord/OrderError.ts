@@ -29,3 +29,11 @@ export function requireId(value: number, field: string): number {
   }
   return value;
 }
+
+// User and restaurant IDs come from REG as strings (User.id is a uuid)
+export function requireStringId(value: string, field: string): string {
+  if (typeof value !== "string" || value.trim().length === 0) {
+    throw new OrderError("INVALID_INPUT", `${field} is required.`);
+  }
+  return value;
+}
