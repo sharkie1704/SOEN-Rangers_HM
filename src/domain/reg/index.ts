@@ -14,3 +14,6 @@ export * from "./OperatorRegistrar";
 export * from "./ports/UserRepository";
 export * from "./ports/PasswordHasher";
 export * from "./ports/SessionTokenService";
+
+export * from "./Session";
+export * from "./Errors";
