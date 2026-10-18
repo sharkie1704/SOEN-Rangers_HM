@@ -6,6 +6,7 @@ import { Staff } from "../../domain/reg/Staff";
 import { Courier } from "../../domain/reg/Courier";
 import { Operator } from "../../domain/reg/Operator";
 import { UserRepository } from "../../domain/reg/ports/UserRepository";
+import { DuplicateEmailError } from "../../domain/reg";
 
 
 interface UserRow {
@@ -32,7 +33,7 @@ export class PrismaUserRepository implements UserRepository {
     } catch (e) {
       // Two simultaneous signups can both pass findByEmail; the DB constraint is the last line of defence.
       if ((e as { code?: string })?.code === "P2002") {
-        throw new Error("An account with this email already exists");
+        throw new DuplicateEmailError();
       }
       throw e;
     }
