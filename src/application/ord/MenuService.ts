@@ -20,7 +20,6 @@ export class MenuService {
 
   async add(actor: OrderActor | null, input: Omit<MenuItemProps, "id">): Promise<MenuItem> {
     this.requireOwner(actor, input.restaurantId);
-    // Build once with a placeholder id so the domain validates name/price before anything is stored
     new MenuItem({ ...input, id: 1 });
     return this.repository.add(input);
   }
