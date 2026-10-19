@@ -6,6 +6,7 @@ import { OperatorRegistrar } from "../../../domain/reg/OperatorRegistrar";
 import { InMemoryUserRepository, FakePasswordHasher } from "../../../domain/reg/__tests__/fakes";
 import type { RestaurantReadRepository,} from "../../ord/RestaurantReadRepository";
 import type { MenuRepository } from "../../ord/MenuRepository";
+import { InMemoryRestaurantStatusRepository } from "../../ord/__tests__/fakes";
 
 const customer = {
   role: "CUSTOMER",
@@ -25,6 +26,7 @@ beforeEach(() => {
   app = createApp({ users, hasher, tokens: new JwtSessionTokenService("test-secret-at-least-16-chars"),
      restaurants: fakeRestaurants,
      menu: fakeMenu,
+     restaurantStatus: new InMemoryRestaurantStatusRepository(),
    });
 });
 const fakeRestaurants: RestaurantReadRepository = {
