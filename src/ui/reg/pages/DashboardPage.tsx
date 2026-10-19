@@ -1,6 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 import CustomerFlow from "../../ord/CustomerFlow";
+import MenuEditorPage from "../../ord/MenuEditorPage";
 
 export default function DashboardPage() {
   const { user, logout } = useAuth();
@@ -21,7 +22,7 @@ export default function DashboardPage() {
       </header>
 
       {user.role === "CUSTOMER" && < CustomerFlow />}
-      {user.role === "RESTAURANT" && <p>TODO: restaurant dashboard (queue, menu) for restaurant {user.restaurantId}</p>}
+      {user.role === "RESTAURANT" && user.restaurantId && <MenuEditorPage restaurantId={user.restaurantId} />}
       {user.role === "OPERATOR" && <p>TODO: operator dashboard (all orders, pause/reopen, reset)</p>}
       {user.role === "COURIER" && <p>Couriers have no screen in Phase II.</p>}
     </main>
