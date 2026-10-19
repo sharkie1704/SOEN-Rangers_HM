@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { api, ApiError } from "../reg/api/client";
+import "./button-interactions.css";
 
 export type EditableMenuItem = {
   id: number;
@@ -14,6 +15,13 @@ export type EditableMenuItem = {
 type MenuEditorPageInputs = {
   restaurantId: string;
 };
+
+// Team palette: cream background, beige rows, chocolate text, caramel borders, orange actions
+const page = { backgroundColor: "#FFF9F2", minHeight: "100vh", padding: "32px 24px", fontFamily: "'Poppins', sans-serif", color: "#4B3028" };
+const row = { display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" as const, padding: "12px 16px", backgroundColor: "#F3E6D6", border: "1px solid #D9B48F", borderRadius: "8px" };
+const input = { padding: "6px 8px", border: "1px solid #D9B48F", borderRadius: "6px", fontFamily: "inherit" };
+const primary = { padding: "6px 14px", backgroundColor: "#C66B32", color: "#FFFFFF", border: "none", borderRadius: "6px", fontFamily: "inherit", fontWeight: 600, cursor: "pointer" };
+const secondary = { ...primary, backgroundColor: "transparent", color: "#C66B32", border: "1px solid #C66B32" };
 
 function formatPrice(priceCents: number): string {
   return `$${(priceCents / 100).toFixed(2)}`;
@@ -120,43 +128,51 @@ export default function MenuEditorPage({ restaurantId }: MenuEditorPageInputs) {
   }
 
   return (
-    <section>
-      <h2>Manage your menu</h2>
+    <section style={page}>
+      <div style={{ maxWidth: "800px", margin: "0 auto" }}>
+        <h2 style={{ fontSize: "28px", margin: "0 0 16px" }}>Manage your menu</h2>
 
-      {loading && <p>Loading menu...</p>}
-      {error && <p className="error">{error}</p>}
-      {message && <p role="status">{message}</p>}
+        {loading && <p>Loading menu...</p>}
+        {error && <p className="error">{error}</p>}
+        {message && <p role="status" style={{ fontWeight: 600 }}>{message}</p>}
 
-      <form onSubmit={addItem}>
-        <label>Name <input value={newName} onChange={(e) => setNewName(e.target.value)} required /></label>{" "}
-        <label>Price ($) <input type="number" step="0.01" min="0.01" value={newPrice} onChange={(e) => setNewPrice(e.target.value)} required /></label>{" "}
-        <button type="submit">Add item</button>
-      </form>
-      {!loading && !error && items.length === 0 && <p>Your menu is empty.</p>}
+        <form onSubmit={addItem} style={{ ...row, marginBottom: "16px" }}>
+          <label>Name <input style={input} value={newName} onChange={(e) => setNewName(e.target.value)} required /></label>
+          <label>Price ($) <input style={{ ...input, width: "90px" }} type="number" step="0.01" min="0.01" value={newPrice} onChange={(e) => setNewPrice(e.target.value)} required /></label>
+          <button type="submit" className="interactive-button" style={primary}>Add item</button>
+        </form>
+        {!loading && !error && items.length === 0 && <p>Your menu is empty.</p>}
 
-      <ul>
-        {items.map((item) => (
-          <li key={item.id}>
-            {editingId === item.id ? (
-              <form onSubmit={(e) => { e.preventDefault(); saveEdit(item); }}>
-                <label>Name <input value={editName} onChange={(e) => setEditName(e.target.value)} required /></label>{" "}
-                <label>Price ($) <input type="number" step="0.01" min="0.01" value={editPrice} onChange={(e) => setEditPrice(e.target.value)} required /></label>{" "}
-                <button type="submit">Save</button>{" "}
-                <button type="button" onClick={() => setEditingId(null)}>Cancel</button>
-              </form>
-            ) : (
-              <>
-                {item.name} ({formatPrice(item.priceCents)}) {item.available ? "Available" : "Sold out"}{" "}
-                <button onClick={() => startEdit(item)}>Edit</button>{" "}
-                <button onClick={() => toggleAvailable(item)}>
-                  {item.available ? "Mark sold out" : "Mark available"}
-                </button>{" "}
-                <button onClick={() => removeItem(item)}>Remove</button>
-              </>
-            )}
-          </li>
-        ))}
-      </ul>
+        <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "grid", gap: "8px" }}>
+          {items.map((item) => (
+            <li key={item.id}>
+              {editingId === item.id ? (
+                <form onSubmit={(e) => { e.preventDefault(); saveEdit(item); }} style={row}>
+                  <label>Name <input style={input} value={editName} onChange={(e) => setEditName(e.target.value)} required /></label>
+                  <label>Price ($) <input style={{ ...input, width: "90px" }} type="number" step="0.01" min="0.01" value={editPrice} onChange={(e) => setEditPrice(e.target.value)} required /></label>
+                  <button type="submit" className="interactive-button" style={primary}>Save</button>
+                  <button type="button" className="interactive-button" style={secondary} onClick={() => setEditingId(null)}>Cancel</button>
+                </form>
+              ) : (
+                <div style={row}>
+                  <strong>{item.name}</strong>
+                  <span>{formatPrice(item.priceCents)}</span>
+                  <span style={{ color: item.available ? "#2F6B2F" : "#8A2E2E", fontWeight: 600 }}>
+                    {item.available ? "Available" : "Sold out"}
+                  </span>
+                  <span style={{ marginLeft: "auto", display: "flex", gap: "8px" }}>
+                    <button className="interactive-button" style={secondary} onClick={() => startEdit(item)}>Edit</button>
+                    <button className="interactive-button" style={primary} onClick={() => toggleAvailable(item)}>
+                      {item.available ? "Mark sold out" : "Mark available"}
+                    </button>
+                    <button className="interactive-button" style={secondary} onClick={() => removeItem(item)}>Remove</button>
+                  </span>
+                </div>
+              )}
+            </li>
+          ))}
+        </ul>
+      </div>
     </section>
   );
 }
