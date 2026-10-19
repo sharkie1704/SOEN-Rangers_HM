@@ -66,6 +66,25 @@ export default function MenuEditorPage({ restaurantId }: MenuEditorPageInputs) {
     }
   }
 
+  const [newName, setNewName] = useState("");
+  const [newPrice, setNewPrice] = useState("");
+
+  async function addItem(e: React.FormEvent) {
+    e.preventDefault();
+    try {
+      const res = await api<{ item: EditableMenuItem }>(
+        `/api/restaurants/${encodeURIComponent(restaurantId)}/menu`,
+        { method: "POST", body: { name: newName, priceCents: Math.round(Number(newPrice) * 100) } },
+      );
+      setItems((current) => [...current, res.item]);
+      setMessage(`${res.item.name} added`);
+      setNewName("");
+      setNewPrice("");
+    } catch (e) {
+      showError(e);
+    }
+  }
+
   async function removeItem(item: EditableMenuItem) {
     try {
       await api<void>(itemPath(item.id), { method: "DELETE" });
@@ -83,6 +102,12 @@ export default function MenuEditorPage({ restaurantId }: MenuEditorPageInputs) {
       {loading && <p>Loading menu...</p>}
       {error && <p role="alert">{error}</p>}
       {message && <p role="status">{message}</p>}
+
+      <form onSubmit={addItem}>
+        <label>Name <input value={newName} onChange={(e) => setNewName(e.target.value)} required /></label>{" "}
+        <label>Price ($) <input type="number" step="0.01" min="0.01" value={newPrice} onChange={(e) => setNewPrice(e.target.value)} required /></label>{" "}
+        <button type="submit">Add item</button>
+      </form>
       {!loading && !error && items.length === 0 && <p>Your menu is empty.</p>}
 
       <ul>
