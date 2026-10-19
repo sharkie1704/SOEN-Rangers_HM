@@ -18,6 +18,7 @@ type Restaurant = {
   name: string;
   category: string;
   description: string;
+  status: "OPEN" | "PAUSED" | "CLOSED";
 };
 
 type ApiMenuItem = Omit<MenuItem, "price" | "image"> & {
@@ -159,6 +160,34 @@ export default function RestaurantMenuPage({
           >
             {restaurant?.name ?? "Restaurant"}
           </h1>
+          {/* Display the restaurant status only when its data is loaded */}
+          {restaurant && (  
+          <span
+            style={{
+              display: "inline-block",
+              marginTop: "12px",
+              padding: "6px 12px",
+              borderRadius: "20px",
+              fontSize: "13px",
+              fontWeight: 600,
+              backgroundColor:
+                restaurant.status === "OPEN"
+                  ? "#DCEEDC"
+                  : restaurant.status === "PAUSED"
+                  ? "#FFF0CD"
+                  : "#F2D8D5",
+              color:
+                restaurant.status === "OPEN"
+                  ? "#28633A"
+                  : restaurant.status === "PAUSED"
+                  ? "#835900"
+                  : "#923C32",
+            }}
+          >
+            {restaurant.status.charAt(0) +
+              restaurant.status.slice(1).toLowerCase()}
+          </span>
+        )}
 
           
         </header>
