@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth, type RegisterData } from "../auth/AuthContext";
+import { registrationErrorMessage } from "../api/authErrorMessages";
 
 type PublicRole = "CUSTOMER" | "COURIER" | "RESTAURANT"; // no OPERATOR: the API refuses it anyway
 
@@ -30,7 +31,7 @@ export default function RegistrationPage() {
       await register(data);
       navigate("/");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Registration failed");
+      setError(registrationErrorMessage(err));
     }
   }
 
@@ -47,19 +48,19 @@ export default function RegistrationPage() {
         </label>
         <label>Name <input value={name} onChange={(e) => setName(e.target.value)} required /></label>
         <label>Email <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required /></label>
-        <label>Password (8+ characters) <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required /></label>
+        <label>Password (8-72 characters) <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} minLength={8} maxLength={72} required /></label>
 
         {role === "CUSTOMER" && (
           <>
-            <label>Latitude <input type="number" step="any" value={lat} onChange={(e) => setLat(e.target.value)} required /></label>
-            <label>Longitude <input type="number" step="any" value={lng} onChange={(e) => setLng(e.target.value)} required /></label>
+            <label>Latitude <input type="number" step="any" min={-90} max={90} value={lat} onChange={(e) => setLat(e.target.value)} required /></label>
+            <label>Longitude <input type="number" step="any" min={-180} max={180} value={lng} onChange={(e) => setLng(e.target.value)} required /></label>
           </>
         )}
         {role === "RESTAURANT" && (
           <label>Restaurant id <input value={restaurantId} onChange={(e) => setRestaurantId(e.target.value)} required /></label>
         )}
 
-        {error && <p className="error">{error}</p>}
+        {error && <p className="error" role="alert">{error}</p>}
         <button type="submit">Create account</button>
       </form>
       <p>Already registered? <Link to="/login">Log in</Link></p>
