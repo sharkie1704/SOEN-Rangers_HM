@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
+import { loginErrorMessage } from "../api/authErrorMessages";
 
 export default function LoginPage() {
   const { login } = useAuth();
@@ -16,7 +17,7 @@ export default function LoginPage() {
       await login(email, password);
       navigate("/");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Login failed");
+      setError(loginErrorMessage(err));
     }
   }
 
@@ -26,7 +27,7 @@ export default function LoginPage() {
       <form onSubmit={onSubmit}>
         <label>Email <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required /></label>
         <label>Password <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required /></label>
-        {error && <p className="error">{error}</p>}
+        {error && <p className="error" role="alert">{error}</p>}
         <button type="submit">Log in</button>
       </form>
       <p>No account? <Link to="/register">Register</Link></p>
