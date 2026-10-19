@@ -6,7 +6,6 @@ import type { MenuItem } from "../../domain/ord/MenuItem.ts";
 import type { MenuService } from "./MenuService.ts";
 import type { OrderActor } from "./OrderActor.ts";
 
-// The domain object has private fields, so build the JSON shape explicitly
 function toMenuItemDTO(item: MenuItem) {
   return {
     id: item.id,
@@ -19,8 +18,6 @@ function toMenuItemDTO(item: MenuItem) {
   };
 }
 
-// Turns the logged-in user (set by the session gate) into the actor the service expects.
-// Couriers and operators have no ORD menu commands, so they get no actor and the service refuses them.
 function toActor(user: AuthenticatedUser | undefined): OrderActor | null {
   if (!user) return null;
   if (user.role === Role.CUSTOMER) {
@@ -81,7 +78,6 @@ export class MenuController {
     });
   };
 
-  // One place that turns domain errors into HTTP responses, so every handler behaves the same
   private async run(res: Response, work: () => Promise<void>): Promise<void> {
     try {
       await work();

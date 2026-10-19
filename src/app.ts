@@ -59,7 +59,6 @@ export function createApp({ users, hasher, tokens, restaurants, menu }: AppDeps)
   app.get("/api/restaurants/:restaurantId", restaurantController.getRestaurant);
   app.get("/api/restaurants/:restaurantId/menu", restaurantController.getMenu);
 
-  // UC-ORD-08 Manage Menu: restaurant staff, own restaurant only (checked in MenuService)
   app.post("/api/restaurants/:restaurantId/menu", menuController.add);
   app.patch("/api/restaurants/:restaurantId/menu/:itemId", menuController.update);
   app.delete("/api/restaurants/:restaurantId/menu/:itemId", menuController.remove);
