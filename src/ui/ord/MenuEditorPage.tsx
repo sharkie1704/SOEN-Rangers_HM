@@ -16,11 +16,17 @@ type MenuEditorPageInputs = {
   restaurantId: string;
 };
 
-const page = { backgroundColor: "#FFF9F2", minHeight: "100vh", padding: "32px 24px", fontFamily: "'Poppins', sans-serif", color: "#4B3028" };
-const row = { display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" as const, padding: "12px 16px", backgroundColor: "#F3E6D6", border: "1px solid #D9B48F", borderRadius: "8px" };
-const input = { padding: "6px 8px", border: "1px solid #D9B48F", borderRadius: "6px", fontFamily: "inherit" };
-const primary = { padding: "6px 14px", backgroundColor: "#C66B32", color: "#FFFFFF", border: "none", borderRadius: "6px", fontFamily: "inherit", fontWeight: 600, cursor: "pointer" };
-const secondary = { ...primary, backgroundColor: "transparent", color: "#C66B32", border: "1px solid #C66B32" };
+export const page = { backgroundColor: "#FFF9F2", minHeight: "100vh", padding: "32px 24px", fontFamily: "'Poppins', sans-serif", color: "#4B3028" };
+export const row = { display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" as const, padding: "12px 16px", backgroundColor: "#F3E6D6", border: "1px solid #D9B48F", borderRadius: "8px" };
+export const input = { padding: "6px 8px", border: "1px solid #D9B48F", borderRadius: "6px", fontFamily: "inherit" };
+export const primary = { padding: "6px 14px", backgroundColor: "#C66B32", color: "#FFFFFF", border: "none", borderRadius: "6px", fontFamily: "inherit", fontWeight: 600, cursor: "pointer" };
+export const secondary = { ...primary, backgroundColor: "transparent", color: "#C66B32", border: "1px solid #C66B32" };
+
+export type RestaurantStatus = "OPEN" | "PAUSED" | "CLOSED";
+
+export function statusLabel(status: RestaurantStatus): string {
+  return { OPEN: "Open", PAUSED: "Paused", CLOSED: "Closed" }[status];
+}
 
 function formatPrice(priceCents: number): string {
   return `$${(priceCents / 100).toFixed(2)}`;
@@ -28,6 +34,7 @@ function formatPrice(priceCents: number): string {
 
 export default function MenuEditorPage({ restaurantId }: MenuEditorPageInputs) {
   const [items, setItems] = useState<EditableMenuItem[]>([]);
+  const [restaurantStatus, setRestaurantStatus] = useState<RestaurantStatus | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -38,10 +45,15 @@ export default function MenuEditorPage({ restaurantId }: MenuEditorPageInputs) {
 
     async function loadMenu() {
       try {
-        const menu = await api<{ menuItems: EditableMenuItem[] }>(
-          `/api/restaurants/${encodeURIComponent(restaurantId)}/menu`,
-        );
-        if (!cancelled) setItems(menu.menuItems);
+        const path = `/api/restaurants/${encodeURIComponent(restaurantId)}`;
+        const [details, menu] = await Promise.all([
+          api<{ restaurant: { status: RestaurantStatus } }>(path),
+          api<{ menuItems: EditableMenuItem[] }>(`${path}/menu`),
+        ]);
+        if (!cancelled) {
+          setRestaurantStatus(details.restaurant.status);
+          setItems(menu.menuItems);
+        }
       } catch {
         if (!cancelled) setError("Could not load your menu. Please try again.");
       } finally {
@@ -58,6 +70,19 @@ export default function MenuEditorPage({ restaurantId }: MenuEditorPageInputs) {
 
   function showError(e: unknown) {
     setMessage(e instanceof ApiError ? `Error: ${e.message}` : "Error: request failed");
+  }
+
+  async function pauseRestaurant() {
+    try {
+      const res = await api<{ restaurant: { status: RestaurantStatus }; eventId: number }>(
+        `/api/restaurants/${encodeURIComponent(restaurantId)}/status`,
+        { method: "PATCH", body: { status: "PAUSED" } },
+      );
+      setRestaurantStatus(res.restaurant.status);
+      setMessage(`Restaurant paused (event #${res.eventId})`);
+    } catch (e) {
+      showError(e);
+    }
   }
 
   async function toggleAvailable(item: EditableMenuItem) {
@@ -130,6 +155,20 @@ export default function MenuEditorPage({ restaurantId }: MenuEditorPageInputs) {
     <section style={page}>
       <div style={{ maxWidth: "800px", margin: "0 auto" }}>
         <h2 style={{ fontSize: "28px", margin: "0 0 16px" }}>Manage your menu</h2>
+
+        {restaurantStatus && (
+          <div style={{ ...row, marginBottom: "16px" }}>
+            <span>Restaurant status: <strong>{statusLabel(restaurantStatus)}</strong></span>
+            {restaurantStatus === "OPEN" && (
+              <button className="interactive-button" style={{ ...primary, marginLeft: "auto" }} onClick={pauseRestaurant}>
+                Pause restaurant
+              </button>
+            )}
+            {restaurantStatus === "PAUSED" && (
+              <span style={{ marginLeft: "auto" }}>Only an operator can reopen it.</span>
+            )}
+          </div>
+        )}
 
         {loading && <p>Loading menu...</p>}
         {error && <p className="error">{error}</p>}

@@ -6,6 +6,7 @@ import { BcryptPasswordHasher } from "./technical-services/reg/BcryptPasswordHas
 import { JwtSessionTokenService } from "./technical-services/reg/JwtSessionTokenService";
 import { PrismaRestaurantReadRepository } from "./technical-services/ord/PrismaRestaurantReadRepository";
 import { PrismaMenuRepository } from "./technical-services/ord/PrismaMenuRepository";
+import { PrismaRestaurantStatusRepository } from "./technical-services/ord/PrismaRestaurantStatusRepository";
 
 const app = createApp({
   users: new PrismaUserRepository(),
@@ -13,6 +14,7 @@ const app = createApp({
   tokens: new JwtSessionTokenService(process.env.JWT_SECRET ?? ""),
   restaurants: new PrismaRestaurantReadRepository(),
   menu: new PrismaMenuRepository(),
+  restaurantStatus: new PrismaRestaurantStatusRepository(),
 });
 
 const PORT = Number(process.env.PORT ?? 3000);
