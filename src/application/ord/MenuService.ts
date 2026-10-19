@@ -20,7 +20,7 @@ export class MenuService {
 
   async add(actor: OrderActor | null, input: Omit<MenuItemProps, "id">): Promise<MenuItem> {
     this.requireOwner(actor, input.restaurantId);
-    new MenuItem({ ...input, id: 1 });
+    MenuItem.assertValid(input);
     return this.repository.add(input);
   }
 

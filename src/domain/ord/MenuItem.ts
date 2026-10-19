@@ -49,6 +49,11 @@ export class MenuItem {
     return true;
   }
 
+  static assertValid(props: Omit<MenuItemProps, "id">): void {
+    MenuItem.validName(props.name);
+    MenuItem.validPrice(props.priceCents);
+  }
+
   private static validName(name: string): string {
     return requireText(name, "Item name");
   }
