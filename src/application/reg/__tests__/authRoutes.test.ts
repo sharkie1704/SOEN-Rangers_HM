@@ -4,6 +4,7 @@ import { createApp } from "../../../app";
 import { JwtSessionTokenService } from "../../../technical-services/reg/JwtSessionTokenService";
 import { OperatorRegistrar } from "../../../domain/reg/OperatorRegistrar";
 import { InMemoryUserRepository, FakePasswordHasher } from "../../../domain/reg/__tests__/fakes";
+import type { RestaurantReadRepository,} from "../../ord/RestaurantReadRepository";
 
 const customer = {
   role: "CUSTOMER",
@@ -20,8 +21,15 @@ let app: ReturnType<typeof createApp>;
 beforeEach(() => {
   users = new InMemoryUserRepository();
   hasher = new FakePasswordHasher();
-  app = createApp({ users, hasher, tokens: new JwtSessionTokenService("test-secret-at-least-16-chars") });
+  app = createApp({ users, hasher, tokens: new JwtSessionTokenService("test-secret-at-least-16-chars"),
+     restaurants: fakeRestaurants,
+   });
 });
+const fakeRestaurants: RestaurantReadRepository = {
+  listRestaurants: async () => [],
+  findRestaurantById: async () => undefined,
+  findMenuByRestaurantId: async () => [],
+};
 
 describe("POST /api/auth/register", () => {
   it("creates a customer and never returns the password hash", async () => {

@@ -1,43 +1,63 @@
 
+import { useEffect, useState } from "react";
 import RestaurantCard from "./RestaurantCard";
 
 type RestaurantListPageInputs = {
-  onSelectRestaurant: (restaurantId: number) => void;
+  onSelectRestaurant: (restaurantId: string) => void;
 };
 
-const restaurants = [
-  {
-    id: 1,
-    name: "Sweet Dreams",
-    category: "Cakes & Pastries",
-     status: "closed",
-    image: "https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=800&auto=format&fit=crop&q=85",
-  },
-  {
-    id: 2,
-    name: "Chocolate Heaven",
-    category: "Chocolate & Waffles",
-    status: "open",
-    image: "https://images.unsplash.com/photo-1641864624167-25c921ee00e9?w=800&auto=format&fit=crop&q=85",
-  },
-  {
-    id: 3,
-    name: "La Petite Pâtisserie",
-    category: "French Desserts",
-     status: "paused",
-    image: "https://images.unsplash.com/photo-1563805042-7684c019e1cb?w=800&auto=format&fit=crop&q=85",
-  },
-  {
-    id: 4,
-    name: "Sugar Rush",
-    category: "Ice Cream & Sweets",
-     status: "open",
-    image: "https://images.unsplash.com/photo-1551024506-0bccd828d307?w=800&auto=format&fit=crop&q=85",
-  },
-];
+type Restaurant = {
+  id: string;
+  name: string;
+  category: string;
+  description: string;
+  imageUrl: string;
+  status: "OPEN" | "PAUSED" | "CLOSED";
+};
+
+
 
 export default function RestaurantListPage({
   onSelectRestaurant,}: RestaurantListPageInputs) {
+    const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
+const [loading, setLoading] = useState(true);
+const [error, setError] = useState("");
+
+useEffect(() => {
+  let cancelled = false;
+
+  async function loadRestaurants() {
+    try {
+      const response = await fetch("/api/restaurants", {
+        credentials: "include",
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to load restaurants");
+      }
+
+      const data: { restaurants: Restaurant[] } = await response.json();
+
+      if (!cancelled) {
+        setRestaurants(data.restaurants);
+      }
+    } catch {
+      if (!cancelled) {
+        setError("Could not load restaurants. Please try again.");
+      }
+    } finally {
+      if (!cancelled) {
+        setLoading(false);
+      }
+    }
+  }
+
+  loadRestaurants();
+
+  return () => {
+    cancelled = true;
+  };
+}, []);
   return (
     <main
       style={{
@@ -61,7 +81,7 @@ export default function RestaurantListPage({
         style={{
           display: "grid",
           gridTemplateColumns:
-            "repeat(auto-fit, minmax(min(100%, 250px), 1fr))",
+            "repeat(auto-fill, minmax(min(100%, 250px), 1fr))",
           maxWidth: "1200px",
           marginLeft: "auto",
           marginRight: "auto",
@@ -69,13 +89,20 @@ export default function RestaurantListPage({
           marginTop: "48px",
         }}
       >
+        {loading && <p>Loading restaurants...</p>}
+
+         {error && <p role="alert">{error}</p>}
+
+      {!loading && !error && restaurants.length === 0 && (
+      <p>No restaurants available yet.</p>
+)}
         {restaurants.map((restaurant) => (
           <RestaurantCard
             key={restaurant.id}
             name={restaurant.name}
             category={restaurant.category}
-            status={restaurant.status as "open" | "paused" | "closed"}
-            image={restaurant.image}
+            status={restaurant.status.toLowerCase() as "open" | "paused" | "closed"}
+            image={restaurant.imageUrl}
             onViewMenu={() => onSelectRestaurant(restaurant.id)}
           />
         ))}

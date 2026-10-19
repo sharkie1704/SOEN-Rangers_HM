@@ -13,13 +13,18 @@ import { LoginController } from "./application/reg/LoginController";
 import { LogoutController } from "./application/reg/LogoutController";
 import { CreateOperatorAccountController } from "./application/reg/CreateOperatorAccountController";
 
+import type { RestaurantReadRepository } from "./application/ord/RestaurantReadRepository";
+import { RestaurantQueryController } from "./application/ord/RestaurantQueryController";
+
 export interface AppDeps {
   users: UserRepository;
   hasher: PasswordHasher;
   tokens: SessionTokenService;
+  restaurants: RestaurantReadRepository;
 }
 
-export function createApp({ users, hasher, tokens }: AppDeps) {
+export function createApp({ users, hasher, tokens, restaurants }: AppDeps) {
+  
   const app = express();
   app.use(express.json());
   app.use(cookieParser());
@@ -32,15 +37,22 @@ export function createApp({ users, hasher, tokens }: AppDeps) {
   const login = new LoginController(users, hasher, tokens);
   const logout = new LogoutController();
   const createOperator = new CreateOperatorAccountController(new OperatorRegistrar(users, hasher));
+  const restaurantController = new RestaurantQueryController(restaurants);
 
   // Public: the only routes reachable without a session
   app.post("/api/auth/register", register.handle);
   app.post("/api/auth/login", login.handle);
   app.post("/api/auth/logout", logout.handle);
 
+
+
   // Session gate (R-REG-02): every other /api route requires authentication.
   // Please put your own routes after this line !
+  
   app.use("/api", authenticate(tokens));
+  app.get("/api/restaurants", restaurantController.listRestaurants);
+  app.get("/api/restaurants/:restaurantId", restaurantController.getRestaurant);
+  app.get("/api/restaurants/:restaurantId/menu", restaurantController.getMenu);
 
   app.get("/api/auth/me", (req, res) => {
     res.json({ user: req.user });
