@@ -4,7 +4,7 @@ import RestaurantMenuPage from "./RestaurantMenuPage";
 import PlaceOrderPage, { type CartItem } from "./PlaceOrderPage";
 
 export default function CustomerFlow() {
-  const [selectedRestaurantId, setSelectedRestaurantId] = useState<number | null>(null);
+  const [selectedRestaurantId, setSelectedRestaurantId] = useState<string | null>(null);
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [showCart, setShowCart] = useState(false);
 
@@ -13,7 +13,7 @@ export default function CustomerFlow() {
     return (
       <PlaceOrderPage
         cartItems={cartItems}
-        restaurantId={selectedRestaurantId ?? 0}
+        restaurantId={selectedRestaurantId ?? ""}
         onCartChange={setCartItems}
         onBack={() => setShowCart(false)}
         onBackToRestaurants={() => {

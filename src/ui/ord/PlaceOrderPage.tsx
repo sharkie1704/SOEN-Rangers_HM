@@ -10,7 +10,7 @@ export type CartItem = {
     image: string;
 };
 
-const restaurantNames: Record<number, string> = {
+const restaurantNames: Record<string, string> = {
     1: "Sweet Dreams",
     2: "Chocolate Heaven",
     3: "La Petite Pâtisserie",
@@ -19,7 +19,7 @@ const restaurantNames: Record<number, string> = {
 
 type PlaceOrderPageInputs = {
     cartItems: CartItem[]; // the cart is owned by App.tsx so the menu page can see it too
-    restaurantId: number;
+    restaurantId: string;
     onCartChange: (items: CartItem[]) => void;
     onBack: () => void; // back to the restaurant's menu
     onBackToRestaurants: () => void; // after the order is placed
