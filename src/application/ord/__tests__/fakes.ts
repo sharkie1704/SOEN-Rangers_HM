@@ -4,6 +4,8 @@ import type { OrderRepository } from "../OrderRepository.ts";
 import type { CatalogMenuItem, CatalogRestaurant, MenuCatalog } from "../MenuCatalog.ts";
 import { MenuItem, type MenuItemProps } from "../../../domain/ord/MenuItem.ts";
 import type { MenuItemEvent, MenuRepository } from "../MenuRepository.ts";
+import { Restaurant, type RestaurantStatus } from "../../../domain/ord/Restaurant.ts";
+import type { RestaurantStatusEvent, RestaurantStatusRepository } from "../RestaurantStatusRepository.ts";
 
 // Keeps live Order instances, so save() has nothing to do
 export class InMemoryOrderRepository implements OrderRepository {
@@ -73,4 +75,20 @@ export class InMemoryMenuRepository implements MenuRepository {
   }
 
   async recordEvent(event: MenuItemEvent): Promise<void> { this.events.push(event); }
+}
+
+export class InMemoryRestaurantStatusRepository implements RestaurantStatusRepository {
+  restaurants = new Map<string, Restaurant>();
+  events: RestaurantStatusEvent[] = [];
+  private eventSeq = 0;
+
+  withRestaurant(id: string, status: RestaurantStatus = "OPEN"): this {
+    this.restaurants.set(id, new Restaurant(id, status));
+    return this;
+  }
+
+  async nextEventId(): Promise<number> { return ++this.eventSeq; }
+  async findById(restaurantId: string): Promise<Restaurant | undefined> { return this.restaurants.get(restaurantId); }
+  async save(): Promise<void> {}
+  async recordEvent(event: RestaurantStatusEvent): Promise<void> { this.events.push(event); }
 }

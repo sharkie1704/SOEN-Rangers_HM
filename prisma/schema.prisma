@@ -144,3 +144,14 @@ model MenuItemEvent {
 
   @@index([menuItemId])
 }
+
+model RestaurantStatusEvent {
+  id           Int              @id @default(autoincrement())
+  restaurantId String
+  actorId      String
+  fromStatus   RestaurantStatus
+  toStatus     RestaurantStatus
+  occurredAt   DateTime
+
+  @@index([restaurantId])
+}

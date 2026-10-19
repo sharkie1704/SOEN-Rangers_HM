@@ -7,7 +7,7 @@ import {
   FakePasswordHasher,
 } from "../../../domain/reg/__tests__/fakes";
 import type { RestaurantReadRepository } from "../RestaurantReadRepository";
-import { InMemoryMenuRepository } from "./fakes";
+import { InMemoryMenuRepository, InMemoryRestaurantStatusRepository } from "./fakes";
 
 // Sample data used by our tests 
 const restaurant = {
@@ -49,6 +49,7 @@ beforeEach(() => {
     tokens: new JwtSessionTokenService("test-secret-at-least-16-chars"),
     restaurants,
     menu: new InMemoryMenuRepository(),
+    restaurantStatus: new InMemoryRestaurantStatusRepository(),
   });
 });
 

@@ -38,11 +38,24 @@ const statusByCode: Record<OrderErrorCode, number> = {
   NOT_QUEUE_FRONT: 409,
 };
 
+export async function runOrderCommand(res: Response, work: () => Promise<void>): Promise<void> {
+  try {
+    await work();
+  } catch (error) {
+    if (error instanceof OrderError) {
+      res.status(statusByCode[error.code]).json({ error: error.message, code: error.code });
+      return;
+    }
+    console.error(error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+}
+
 export class MenuController {
   constructor(private readonly menu: MenuService) {}
 
   add = async (req: Request, res: Response): Promise<void> => {
-    await this.run(res, async () => {
+    await runOrderCommand(res, async () => {
       const { name, description = "", imageUrl = "", priceCents, available = true } = req.body ?? {};
       const item = await this.menu.add(toActor(req.user), {
         restaurantId: String(req.params.restaurantId),
@@ -57,7 +70,7 @@ export class MenuController {
   };
 
   update = async (req: Request, res: Response): Promise<void> => {
-    await this.run(res, async () => {
+    await runOrderCommand(res, async () => {
       const actor = toActor(req.user);
       const itemId = Number(req.params.itemId);
       const { name, priceCents, available } = req.body ?? {};
@@ -72,22 +85,9 @@ export class MenuController {
   };
 
   remove = async (req: Request, res: Response): Promise<void> => {
-    await this.run(res, async () => {
+    await runOrderCommand(res, async () => {
       await this.menu.remove(toActor(req.user), Number(req.params.itemId));
       res.status(204).end();
     });
   };
-
-  private async run(res: Response, work: () => Promise<void>): Promise<void> {
-    try {
-      await work();
-    } catch (error) {
-      if (error instanceof OrderError) {
-        res.status(statusByCode[error.code]).json({ error: error.message, code: error.code });
-        return;
-      }
-      console.error(error);
-      res.status(500).json({ error: "Internal server error" });
-    }
-  }
 }
