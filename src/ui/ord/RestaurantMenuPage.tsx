@@ -189,7 +189,25 @@ export default function RestaurantMenuPage({
           </span>
         )}
 
-          
+          {/* Inform customers when ordering is unavailable */}
+          {restaurant &&
+            (restaurant.status === "PAUSED" ||
+              restaurant.status === "CLOSED") && (
+              <p
+                role="status"
+                style={{
+                  color: "#923C32",
+                  textAlign: "center",
+                  padding: "12px",
+                  backgroundColor: "#FFF3E8",
+                  borderRadius: "8px",
+                  marginTop: "12px",
+                }}
+              >
+                This restaurant is currently {restaurant.status.toLowerCase()}.
+                You can browse the menu, but ordering is unavailable.
+              </p>
+            )}
         </header>
 
         {/* Menu section */}
