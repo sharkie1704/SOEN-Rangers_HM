@@ -16,7 +16,6 @@ type MenuEditorPageInputs = {
   restaurantId: string;
 };
 
-// Team palette: cream background, beige rows, chocolate text, caramel borders, orange actions
 const page = { backgroundColor: "#FFF9F2", minHeight: "100vh", padding: "32px 24px", fontFamily: "'Poppins', sans-serif", color: "#4B3028" };
 const row = { display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" as const, padding: "12px 16px", backgroundColor: "#F3E6D6", border: "1px solid #D9B48F", borderRadius: "8px" };
 const input = { padding: "6px 8px", border: "1px solid #D9B48F", borderRadius: "6px", fontFamily: "inherit" };

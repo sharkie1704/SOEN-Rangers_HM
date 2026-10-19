@@ -50,7 +50,6 @@ export class FakeMenuCatalog implements MenuCatalog {
   async findMenuItem(menuItemId: number): Promise<CatalogMenuItem | undefined> { return this.items.get(menuItemId); }
 }
 
-// Keeps live MenuItem instances and the recorded events, so tests can inspect both
 export class InMemoryMenuRepository implements MenuRepository {
   items = new Map<number, MenuItem>();
   events: MenuItemEvent[] = [];
