@@ -43,7 +43,6 @@ export class MenuItem {
     this._priceCents = MenuItem.validPrice(priceCents);
   }
 
-  // True only when availability actually changed, so the service records an event only for real changes
   setAvailable(available: boolean): boolean {
     if (this._available === available) return false;
     this._available = available;
