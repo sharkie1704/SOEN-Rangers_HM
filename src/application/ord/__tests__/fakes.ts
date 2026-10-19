@@ -2,6 +2,8 @@ import type { Order } from "../../../domain/ord/Order.ts";
 import { PreparationQueue } from "../../../domain/ord/PreparationQueue.ts";
 import type { OrderRepository } from "../OrderRepository.ts";
 import type { CatalogMenuItem, CatalogRestaurant, MenuCatalog } from "../MenuCatalog.ts";
+import { MenuItem, type MenuItemProps } from "../../../domain/ord/MenuItem.ts";
+import type { MenuItemEvent, MenuRepository } from "../MenuRepository.ts";
 
 // Keeps live Order instances, so save() has nothing to do
 export class InMemoryOrderRepository implements OrderRepository {
@@ -46,4 +48,30 @@ export class FakeMenuCatalog implements MenuCatalog {
 
   async findRestaurant(restaurantId: string): Promise<CatalogRestaurant | undefined> { return this.restaurants.get(restaurantId); }
   async findMenuItem(menuItemId: number): Promise<CatalogMenuItem | undefined> { return this.items.get(menuItemId); }
+}
+
+// Keeps live MenuItem instances and the recorded events, so tests can inspect both
+export class InMemoryMenuRepository implements MenuRepository {
+  items = new Map<number, MenuItem>();
+  events: MenuItemEvent[] = [];
+  private itemSeq = 0;
+  private eventSeq = 0;
+
+  async nextEventId(): Promise<number> { return ++this.eventSeq; }
+
+  async add(item: Omit<MenuItemProps, "id">): Promise<MenuItem> {
+    const created = new MenuItem({ ...item, id: ++this.itemSeq });
+    this.items.set(created.id, created);
+    return created;
+  }
+
+  async save(): Promise<void> {}
+  async remove(menuItemId: number): Promise<void> { this.items.delete(menuItemId); }
+  async findById(menuItemId: number): Promise<MenuItem | undefined> { return this.items.get(menuItemId); }
+
+  async findByRestaurant(restaurantId: string): Promise<readonly MenuItem[]> {
+    return [...this.items.values()].filter((i) => i.restaurantId === restaurantId);
+  }
+
+  async recordEvent(event: MenuItemEvent): Promise<void> { this.events.push(event); }
 }
