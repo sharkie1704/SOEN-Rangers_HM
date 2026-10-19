@@ -124,7 +124,7 @@ export default function MenuEditorPage({ restaurantId }: MenuEditorPageInputs) {
       <h2>Manage your menu</h2>
 
       {loading && <p>Loading menu...</p>}
-      {error && <p role="alert">{error}</p>}
+      {error && <p className="error">{error}</p>}
       {message && <p role="status">{message}</p>}
 
       <form onSubmit={addItem}>
@@ -138,12 +138,12 @@ export default function MenuEditorPage({ restaurantId }: MenuEditorPageInputs) {
         {items.map((item) => (
           <li key={item.id}>
             {editingId === item.id ? (
-              <>
-                <input value={editName} onChange={(e) => setEditName(e.target.value)} />{" "}
-                <input type="number" step="0.01" min="0.01" value={editPrice} onChange={(e) => setEditPrice(e.target.value)} />{" "}
-                <button onClick={() => saveEdit(item)}>Save</button>{" "}
-                <button onClick={() => setEditingId(null)}>Cancel</button>
-              </>
+              <form onSubmit={(e) => { e.preventDefault(); saveEdit(item); }}>
+                <label>Name <input value={editName} onChange={(e) => setEditName(e.target.value)} required /></label>{" "}
+                <label>Price ($) <input type="number" step="0.01" min="0.01" value={editPrice} onChange={(e) => setEditPrice(e.target.value)} required /></label>{" "}
+                <button type="submit">Save</button>{" "}
+                <button type="button" onClick={() => setEditingId(null)}>Cancel</button>
+              </form>
             ) : (
               <>
                 {item.name} ({formatPrice(item.priceCents)}) {item.available ? "Available" : "Sold out"}{" "}
