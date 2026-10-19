@@ -134,3 +134,15 @@ model OrderEvent {
 
   @@index([orderId])
 }
+
+// R-ORD-05: every availability change on a menu item gets an event id.
+// No FK to MenuItem, so the history survives if the item is later removed.
+model MenuItemEvent {
+  id         Int      @id @default(autoincrement())
+  menuItemId Int
+  actorId    String
+  available  Boolean
+  occurredAt DateTime
+
+  @@index([menuItemId])
+}
