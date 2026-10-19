@@ -85,6 +85,30 @@ export default function MenuEditorPage({ restaurantId }: MenuEditorPageInputs) {
     }
   }
 
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editName, setEditName] = useState("");
+  const [editPrice, setEditPrice] = useState("");
+
+  function startEdit(item: EditableMenuItem) {
+    setEditingId(item.id);
+    setEditName(item.name);
+    setEditPrice((item.priceCents / 100).toFixed(2));
+  }
+
+  async function saveEdit(item: EditableMenuItem) {
+    try {
+      const res = await api<{ item: EditableMenuItem }>(itemPath(item.id), {
+        method: "PATCH",
+        body: { name: editName, priceCents: Math.round(Number(editPrice) * 100) },
+      });
+      setItems((current) => current.map((i) => (i.id === res.item.id ? res.item : i)));
+      setMessage(`${res.item.name} updated`);
+      setEditingId(null);
+    } catch (e) {
+      showError(e);
+    }
+  }
+
   async function removeItem(item: EditableMenuItem) {
     try {
       await api<void>(itemPath(item.id), { method: "DELETE" });
@@ -113,11 +137,23 @@ export default function MenuEditorPage({ restaurantId }: MenuEditorPageInputs) {
       <ul>
         {items.map((item) => (
           <li key={item.id}>
-            {item.name} ({formatPrice(item.priceCents)}) {item.available ? "Available" : "Sold out"}{" "}
-            <button onClick={() => toggleAvailable(item)}>
-              {item.available ? "Mark sold out" : "Mark available"}
-            </button>{" "}
-            <button onClick={() => removeItem(item)}>Remove</button>
+            {editingId === item.id ? (
+              <>
+                <input value={editName} onChange={(e) => setEditName(e.target.value)} />{" "}
+                <input type="number" step="0.01" min="0.01" value={editPrice} onChange={(e) => setEditPrice(e.target.value)} />{" "}
+                <button onClick={() => saveEdit(item)}>Save</button>{" "}
+                <button onClick={() => setEditingId(null)}>Cancel</button>
+              </>
+            ) : (
+              <>
+                {item.name} ({formatPrice(item.priceCents)}) {item.available ? "Available" : "Sold out"}{" "}
+                <button onClick={() => startEdit(item)}>Edit</button>{" "}
+                <button onClick={() => toggleAvailable(item)}>
+                  {item.available ? "Mark sold out" : "Mark available"}
+                </button>{" "}
+                <button onClick={() => removeItem(item)}>Remove</button>
+              </>
+            )}
           </li>
         ))}
       </ul>
