@@ -134,3 +134,13 @@ model OrderEvent {
 
   @@index([orderId])
 }
+
+model MenuItemEvent {
+  id         Int      @id @default(autoincrement())
+  menuItemId Int
+  actorId    String
+  available  Boolean
+  occurredAt DateTime
+
+  @@index([menuItemId])
+}
