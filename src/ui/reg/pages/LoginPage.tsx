@@ -22,15 +22,18 @@ export default function LoginPage() {
   }
 
   return (
-    <main>
-      <h1>Log in</h1>
-      <form onSubmit={onSubmit}>
-        <label>Email <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required /></label>
-        <label>Password <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required /></label>
-        {error && <p className="error" role="alert">{error}</p>}
-        <button type="submit">Log in</button>
-      </form>
-      <p>No account? <Link to="/register">Register</Link></p>
+    <main className="auth-page">
+      <section className="auth-card">
+        <h1>Welcome back</h1>
+        <p className="auth-intro">Log in to continue to DessertDash.</p>
+        <form className="auth-form" onSubmit={onSubmit}>
+          <label>Email <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required /></label>
+          <label>Password <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required /></label>
+          {error && <p className="auth-error" role="alert">{error}</p>}
+          <button className="auth-submit" type="submit">Log in</button>
+        </form>
+        <p className="auth-switch">No account? <Link to="/register">Create one</Link></p>
+      </section>
     </main>
   );
 }
