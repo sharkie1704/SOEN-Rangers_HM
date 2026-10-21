@@ -13,19 +13,60 @@
   font-family: Poppins, sans-serif;
 }
 
-.auth-card {
+.auth-layout {
+  display: grid;
   width: min(100%, 460px);
+  gap: 16px;
+}
+
+.auth-card {
   padding: 32px;
   border: 1px solid #C89F7A;
+  border-top: 5px solid #C66B32;
   border-radius: 16px;
   background: #FFFFFF;
   box-shadow: 0 10px 30px rgb(75 48 40 / 8%);
 }
 
-.auth-card h1 {
+.auth-welcome {
+  padding: 4px 2px;
+}
+
+.auth-welcome h1 {
+  margin: 0 0 6px;
+  color: #4B3028;
+  font-size: 1.5rem;
+}
+
+.auth-welcome details {
+  color: #6D554A;
+  font-size: 0.9rem;
+}
+
+.auth-welcome summary {
+  width: fit-content;
+  color: #A95123;
+  cursor: pointer;
+  font-weight: 600;
+  text-underline-offset: 3px;
+}
+
+.auth-welcome summary:focus-visible {
+  outline: 3px solid rgb(198 107 50 / 30%);
+  outline-offset: 3px;
+}
+
+.auth-welcome details p {
+  margin: 0;
+  padding-top: 8px;
+  color: #6D554A;
+  line-height: 1.5;
+}
+
+.auth-card h2 {
   margin: 0;
   color: #4B3028;
-  font-size: 1.8rem;
+  font-size: 1.5rem;
 }
 
 .auth-intro {
