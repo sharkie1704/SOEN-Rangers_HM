@@ -33,7 +33,7 @@ export function createApp({ users, hasher, tokens, restaurants }: AppDeps) {
     customer: new CustomerRegistrar(users, hasher),
     courier: new CourierRegistrar(users, hasher),
     staff: new StaffRegistrar(users, hasher),
-  });
+  }, restaurants);
   const login = new LoginController(users, hasher, tokens);
   const logout = new LogoutController();
   const createOperator = new CreateOperatorAccountController(new OperatorRegistrar(users, hasher));
