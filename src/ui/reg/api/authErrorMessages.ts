@@ -8,6 +8,9 @@ export function registrationErrorMessage(error: unknown): string {
     if (error.status === 403) {
       return "This account type cannot be registered here. Contact an administrator for help.";
     }
+    if (error.status === 404) {
+      return "We couldn't find a restaurant with that ID. Check it and try again.";
+    }
     if (error.status === 400) {
       const fieldMessages = error.details
         .map(({ path }) => registrationFieldMessage(path))
