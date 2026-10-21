@@ -27,7 +27,14 @@ beforeEach(() => {
 });
 const fakeRestaurants: RestaurantReadRepository = {
   listRestaurants: async () => [],
-  findRestaurantById: async () => undefined,
+  findRestaurantById: async (id) => id === "restaurant-1" ? {
+    id: "restaurant-1",
+    name: "Test Restaurant",
+    category: "Dessert",
+    description: "Test restaurant",
+    imageUrl: "",
+    status: "OPEN",
+  } : undefined,
   findMenuByRestaurantId: async () => [],
 };
 
@@ -62,6 +69,33 @@ describe("POST /api/auth/register", () => {
   it("returns 400 for a weak password or unknown role", async () => {
     expect((await request(app).post("/api/auth/register").send({ ...customer, password: "short" })).status).toBe(400);
     expect((await request(app).post("/api/auth/register").send({ ...customer, role: "ADMIN" })).status).toBe(400);
+  });
+
+  it("creates restaurant staff when the restaurant ID exists", async () => {
+    const res = await request(app).post("/api/auth/register").send({
+      role: "RESTAURANT",
+      name: "Restaurant Staff",
+      email: "staff@example.com",
+      password: "password123",
+      restaurantId: "restaurant-1",
+    });
+
+    expect(res.status).toBe(201);
+    expect(res.body.user).toMatchObject({ email: "staff@example.com", role: "RESTAURANT" });
+  });
+
+  it("rejects restaurant registration when the ID does not exist", async () => {
+    const res = await request(app).post("/api/auth/register").send({
+      role: "RESTAURANT",
+      name: "Restaurant Staff",
+      email: "staff@example.com",
+      password: "password123",
+      restaurantId: "missing-restaurant",
+    });
+
+    expect(res.status).toBe(404);
+    expect(res.body.error).toBe("We couldn't find a restaurant with that ID.");
+    expect(users.users).toHaveLength(0);
   });
 });
 
