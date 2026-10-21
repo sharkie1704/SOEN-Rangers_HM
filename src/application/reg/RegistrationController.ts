@@ -7,6 +7,7 @@ import type { CourierRegistrar } from "../../domain/reg/CourierRegistrar";
 import type { StaffRegistrar } from "../../domain/reg/StaffRegistrar";
 import { toUserDto } from "../../technical-services/http/userDto";
 import { sendRegistrationError } from "../../technical-services/http/sendRegistrationError";
+import type { RestaurantReadRepository } from "../ord/RestaurantReadRepository";
 
 export interface PublicRegistrars {
   customer: CustomerRegistrar;
@@ -25,11 +26,14 @@ const common = { name: z.string(), email: z.string(), password: z.string().max(7
 const registrationSchema = z.discriminatedUnion("role", [
   z.object({ ...common, role: z.literal(Role.CUSTOMER), address: latLng }),
   z.object({ ...common, role: z.literal(Role.COURIER) }),
-  z.object({ ...common, role: z.literal(Role.RESTAURANT), restaurantId: z.string() }),
+  z.object({ ...common, role: z.literal(Role.RESTAURANT), restaurantId: z.string().trim().min(1) }),
 ]);
 
 export class RegistrationController {
-  constructor(private readonly registrars: PublicRegistrars) {}
+  constructor(
+    private readonly registrars: PublicRegistrars,
+    private readonly restaurants: RestaurantReadRepository,
+  ) {}
 
   handle = async (req: Request, res: Response): Promise<void> => {
     // Public signup can never create an operator (refers to use case UC-REG-04)
@@ -59,6 +63,10 @@ export class RegistrationController {
           user = await this.registrars.courier.register(data);
           break;
         case Role.RESTAURANT:
+          if (!(await this.restaurants.findRestaurantById(data.restaurantId))) {
+            res.status(404).json({ error: "We couldn't find a restaurant with that ID." });
+            return;
+          }
           user = await this.registrars.staff.register(data);
           break;
       }
