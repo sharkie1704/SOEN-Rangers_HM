@@ -25,6 +25,32 @@ Use Node.js 22.18 or newer.
 ```
    Re-run `npx prisma generate` after pulling any change to `prisma/schema.prisma`.
 
+4. Seed the initial demo data:
+
+```sh
+npm run db:seed
+```
+
+This loads the initial demo users, restaurants, and menu items into the database configured in your `.env`.
+
+The seed is repeatable, so running it again will not duplicate the configured records.
+
+The initial demo data is defined in:
+
+```text
+prisma/seed-data.ts
+```
+
+If you need to add or change a demo restaurant, menu item, or demo account, update `prisma/seed-data.ts`.
+
+The seed logic is in:
+
+```text
+prisma/seed.ts
+```
+
+Before running migrations or seeding, make sure `DATABASE_URL` and `DIRECT_URL` in your `.env` point to the Neon branch you intend to use.
+
 ## Development
 
 The frontend (Vite) and the API (Express) run as two processes. Start both, each in its own terminal.
