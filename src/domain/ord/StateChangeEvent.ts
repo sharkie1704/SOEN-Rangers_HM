@@ -7,6 +7,7 @@ export type OrderStatus =
   | "Cancelled";
 
 export type OrderAction =
+  | "place"
   | "accept"
   | "reject"
   | "cancel"

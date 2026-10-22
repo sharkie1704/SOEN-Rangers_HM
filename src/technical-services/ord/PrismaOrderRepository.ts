@@ -16,6 +16,7 @@ const toDbStatus: Record<OrderStatus, DbOrderStatus> = {
 };
 
 const toDbAction: Record<OrderAction, DbOrderAction> = {
+  place: "PLACE",
   accept: "ACCEPT",
   reject: "REJECT",
   cancel: "CANCEL",

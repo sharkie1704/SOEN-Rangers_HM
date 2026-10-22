@@ -39,13 +39,15 @@ export class OrderService {
       throw new OrderError("CONFLICT", "Restaurant is not accepting orders.");
     }
     const lines = await this.priceLines(restaurantId, input.lines);
+    const placedEventId = await this.repository.nextEventId();
     const order = new Order({
       id: await this.repository.nextOrderId(),
       restaurantId,
       customerId: customer.userId,
       lines,
-    });
+    }, new Date(), { actorId: customer.userId, eventId: placedEventId });
     await this.repository.add(order);
+    this.logEvent(order.events[0]);
     return toOrderDTO(order);
   }
 
@@ -187,6 +189,11 @@ export class OrderService {
 
   private async save(order: Order, event: StateChangeEvent): Promise<OrderTransitionDTO> {
     await this.repository.save(order);
+    this.logEvent(event);
     return Object.freeze({ order: toOrderDTO(order), eventId: event.eventId, event });
+  }
+
+  private logEvent(event: StateChangeEvent): void {
+    console.info(`[ORD] eventId=${event.eventId} action=${event.action} orderId=${event.orderId} ${event.from}->${event.to} actorId=${event.actorId}`);
   }
 }
