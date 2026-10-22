@@ -7,6 +7,8 @@ export default defineConfig({
   schema: "prisma/schema.prisma",
   migrations: {
     path: "prisma/migrations",
+    //the seed script run everytime you run `prisma db push` or `prisma migrate dev`
+    seed: "tsx prisma/seed.ts",
   },
   datasource: {
     url: env("DIRECT_URL"),
