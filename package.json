@@ -16,7 +16,8 @@
     "postinstall": "prisma generate",
     "test": "vitest run --exclude \"**/*.int.test.ts\"",
     "test:int": "vitest run int",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "db:seed": "prisma db seed"
   },
   "dependencies": {
     "@neon/config": "^1.9.2",
