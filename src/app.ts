@@ -55,11 +55,6 @@ export function createApp({ users, hasher, tokens, restaurants, menu, restaurant
   const restaurantController = new RestaurantQueryController(restaurants);
   const menuController = new MenuController(new MenuService(menu));
   const statusController = new RestaurantStatusController(new RestaurantStatusService(restaurantStatus));
-  if (orders && orderMenu) {
-    const orderRoutes = new OrderRoutes(new OrderController(new OrderService(orders, orderMenu)));
-    app.get("/api/orders", orderRoutes.listMine);
-    app.get("/api/orders/:orderId", orderRoutes.getOne);
-  }
 
   // Public: the only routes reachable without a session
   app.post("/api/auth/register", register.handle);
@@ -72,6 +67,13 @@ export function createApp({ users, hasher, tokens, restaurants, menu, restaurant
   // Please put your own routes after this line !
   
   app.use("/api", authenticate(tokens));
+  if (orders && orderMenu) {
+    const orderRoutes = new OrderRoutes(new OrderController(new OrderService(orders, orderMenu)));
+    app.post("/api/orders", orderRoutes.place);
+    app.get("/api/orders", orderRoutes.listMine);
+    app.get("/api/orders/:orderId", orderRoutes.getOne);
+    app.post("/api/orders/:orderId/cancel", orderRoutes.cancel);
+  }
   app.get("/api/restaurants", restaurantController.listRestaurants);
   app.get("/api/restaurants/:restaurantId", restaurantController.getRestaurant);
   app.get("/api/restaurants/:restaurantId/menu", restaurantController.getMenu);
