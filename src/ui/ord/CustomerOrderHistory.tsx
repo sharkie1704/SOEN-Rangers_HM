@@ -8,12 +8,40 @@ type Order = {
   placedAt: string;
   totalCents: number;
   lines: { name: string; quantity: number }[];
+  events: { eventId: number; action: string; from: string; to: string; occurredAt: string }[];
 };
 
 export default function CustomerOrderHistory() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [busyOrderId, setBusyOrderId] = useState<number | null>(null);
+
+  async function refreshOrder(orderId: number) {
+    setBusyOrderId(orderId);
+    setError("");
+    try {
+      const { order } = await api<{ order: Order }>(`/api/orders/${orderId}`);
+      setOrders((current) => current.map((item) => item.id === order.id ? order : item));
+    } catch (cause) {
+      setError(cause instanceof ApiError ? cause.message : "Could not refresh this order.");
+    } finally {
+      setBusyOrderId(null);
+    }
+  }
+
+  async function cancelOrder(orderId: number) {
+    setBusyOrderId(orderId);
+    setError("");
+    try {
+      const { transition } = await api<{ transition: { order: Order } }>(`/api/orders/${orderId}/cancel`, { method: "POST" });
+      setOrders((current) => current.map((item) => item.id === orderId ? transition.order : item));
+    } catch (cause) {
+      setError(cause instanceof ApiError ? cause.message : "Could not cancel this order.");
+    } finally {
+      setBusyOrderId(null);
+    }
+  }
 
   useEffect(() => {
     api<{ orders: Order[] }>("/api/orders")
@@ -38,6 +66,15 @@ export default function CustomerOrderHistory() {
             <p>Placed {new Date(order.placedAt).toLocaleString()}</p>
             <ul>{order.lines.map((line, index) => <li key={`${line.name}-${index}`}>{line.quantity} × {line.name}</li>)}</ul>
             <p>Total: ${(order.totalCents / 100).toFixed(2)}</p>
+            <p>Events: {order.events.map((event) => `${event.action} #${event.eventId}`).join(" · ")}</p>
+            <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+              <button type="button" disabled={busyOrderId === order.id} onClick={() => refreshOrder(order.id)}>
+                {busyOrderId === order.id ? "Updating…" : "Refresh status"}
+              </button>
+              {order.status === "Placed" && <button type="button" disabled={busyOrderId === order.id} onClick={() => cancelOrder(order.id)}>
+                Cancel order
+              </button>}
+            </div>
           </article>
         ))}
       </div>
