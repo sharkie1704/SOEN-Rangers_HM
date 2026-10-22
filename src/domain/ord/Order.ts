@@ -16,7 +16,7 @@ export class Order {
   #state: OrderState = new PlacedState();
   #events: StateChangeEvent[] = [];
 
-  constructor(input: CreateOrderDTO, placedAt: Date = new Date()) {
+  constructor(input: CreateOrderDTO, placedAt: Date = new Date(), placedEvent?: { actorId: string; eventId: number }) {
     this.id = requireId(input.id, "Order ID");
     this.restaurantId = requireStringId(input.restaurantId, "Restaurant ID");
     this.customerId = requireStringId(input.customerId, "Customer ID");
@@ -28,6 +28,17 @@ export class Order {
       throw new OrderError("INVALID_INPUT", "Order total exceeds the supported amount.");
     }
     this.#placedAt = new Date(placedAt);
+    if (placedEvent) {
+      this.#events.push(Object.freeze({
+        eventId: requireId(placedEvent.eventId, "Event ID"),
+        orderId: this.id,
+        actorId: requireStringId(placedEvent.actorId, "Actor ID"),
+        action: "place",
+        from: "Placed",
+        to: "Placed",
+        occurredAt: new Date(this.#placedAt),
+      }));
+    }
     Object.freeze(this);
   }
 
