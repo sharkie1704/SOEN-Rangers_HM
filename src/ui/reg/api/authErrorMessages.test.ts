@@ -9,6 +9,13 @@ test("shows a helpful message when the registration email is already in use", ()
   expect(message).toBe("An account with this email already exists. Try logging in instead.");
 });
 
+test("explains when the restaurant ID cannot be found", () => {
+  const error = new ApiError(404, "We couldn't find a restaurant with that ID.");
+  const message = registrationErrorMessage(error);
+
+  expect(message).toBe("We couldn't find a restaurant with that ID. Check it and try again.");
+});
+
 test("explains invalid delivery coordinates during registration", () => {
   const error = new ApiError(400, "Invalid registration data", [
     { path: "address.lat", message: "Invalid input" },
