@@ -2,11 +2,13 @@ import { useState } from "react";
 import RestaurantListPage from "./RestaurantListPage";
 import RestaurantMenuPage from "./RestaurantMenuPage";
 import PlaceOrderPage, { type CartItem } from "./PlaceOrderPage";
+import CustomerOrderHistory from "./CustomerOrderHistory";
 
 export default function CustomerFlow() {
   const [selectedRestaurantId, setSelectedRestaurantId] = useState<string | null>(null);
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [showCart, setShowCart] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
 
   // navigate to the cart page (opened from the menu page)
   if (showCart) {
@@ -44,5 +46,13 @@ export default function CustomerFlow() {
     );
   }
 
-  return <RestaurantListPage onSelectRestaurant={setSelectedRestaurantId} />;
+  return (
+    <>
+      <nav aria-label="Customer pages" style={{ display: "flex", justifyContent: "center", gap: 12, padding: 16 }}>
+        <button type="button" onClick={() => setShowHistory(false)} aria-current={!showHistory ? "page" : undefined}>Browse restaurants</button>
+        <button type="button" onClick={() => setShowHistory(true)} aria-current={showHistory ? "page" : undefined}>Order history</button>
+      </nav>
+      {showHistory ? <CustomerOrderHistory /> : <RestaurantListPage onSelectRestaurant={setSelectedRestaurantId} />}
+    </>
+  );
 }
