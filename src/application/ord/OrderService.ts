@@ -60,6 +60,14 @@ export class OrderService {
     return toOrderDTO(order);
   }
 
+  async customerOrders(actor: OrderActor | null): Promise<readonly OrderDTO[]> {
+    const customer = this.requireActor(actor);
+    if (customer.role !== Role.CUSTOMER) {
+      throw new OrderError("FORBIDDEN", "Only customers can view customer order history.");
+    }
+    return (await this.repository.findByCustomer(customer.userId)).map(toOrderDTO);
+  }
+
   async incoming(actor: OrderActor | null, restaurantId: string): Promise<readonly OrderDTO[]> {
     this.requireRestaurantActor(actor, restaurantId);
     return (await this.repository.findByRestaurant(restaurantId))
