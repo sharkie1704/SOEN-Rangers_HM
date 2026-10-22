@@ -39,13 +39,15 @@ export class OrderService {
       throw new OrderError("CONFLICT", "Restaurant is not accepting orders.");
     }
     const lines = await this.priceLines(restaurantId, input.lines);
+    const placedEventId = await this.repository.nextEventId();
     const order = new Order({
       id: await this.repository.nextOrderId(),
       restaurantId,
       customerId: customer.userId,
       lines,
-    });
+    }, new Date(), { actorId: customer.userId, eventId: placedEventId });
     await this.repository.add(order);
+    this.logEvent(order.events[0]);
     return toOrderDTO(order);
   }
 
@@ -58,6 +60,14 @@ export class OrderService {
       throw new OrderError("FORBIDDEN", "Customers can only view their own orders.");
     }
     return toOrderDTO(order);
+  }
+
+  async customerOrders(actor: OrderActor | null): Promise<readonly OrderDTO[]> {
+    const customer = this.requireActor(actor);
+    if (customer.role !== Role.CUSTOMER) {
+      throw new OrderError("FORBIDDEN", "Only customers can view customer order history.");
+    }
+    return (await this.repository.findByCustomer(customer.userId)).map(toOrderDTO);
   }
 
   async incoming(actor: OrderActor | null, restaurantId: string): Promise<readonly OrderDTO[]> {
@@ -179,6 +189,11 @@ export class OrderService {
 
   private async save(order: Order, event: StateChangeEvent): Promise<OrderTransitionDTO> {
     await this.repository.save(order);
+    this.logEvent(event);
     return Object.freeze({ order: toOrderDTO(order), eventId: event.eventId, event });
+  }
+
+  private logEvent(event: StateChangeEvent): void {
+    console.info(`[ORD] eventId=${event.eventId} action=${event.action} orderId=${event.orderId} ${event.from}->${event.to} actorId=${event.actorId}`);
   }
 }
