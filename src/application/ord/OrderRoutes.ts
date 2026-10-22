@@ -11,8 +11,12 @@ const statusByCode: Record<OrderErrorCode, number> = {
 };
 
 function toActor(user: AuthenticatedUser | undefined): OrderActor | null {
-  if (user?.role === Role.CUSTOMER) return { userId: user.id, role: Role.CUSTOMER };
-  if (user?.role === Role.RESTAURANT && user.restaurantId) {
+  // Normalize the serialized session role before mapping it to the order domain.
+  // This keeps the route boundary resilient to enum/string representations.
+  if (!user || typeof user.id !== "string" || user.id.trim() === "") return null;
+  const role = String(user.role).toUpperCase();
+  if (role === "CUSTOMER") return { userId: user.id, role: Role.CUSTOMER };
+  if (role === "RESTAURANT" && user.restaurantId) {
     return { userId: user.id, role: Role.RESTAURANT, restaurantId: user.restaurantId };
   }
   return null;
@@ -21,12 +25,21 @@ function toActor(user: AuthenticatedUser | undefined): OrderActor | null {
 export class OrderRoutes {
   constructor(private readonly orders: OrderController) {}
 
+  place = (req: Request, res: Response) => this.respond(res, async () => {
+    const order = await this.orders.place(toActor(req.user), req.body ?? {});
+    res.status(201).json({ order });
+  });
+
   listMine = (req: Request, res: Response) => this.respond(res, async () => {
     res.json({ orders: await this.orders.customerOrders(toActor(req.user)) });
   });
 
   getOne = (req: Request, res: Response) => this.respond(res, async () => {
     res.json({ order: await this.orders.get(toActor(req.user), Number(req.params.orderId)) });
+  });
+
+  cancel = (req: Request, res: Response) => this.respond(res, async () => {
+    res.json({ transition: await this.orders.cancel(toActor(req.user), Number(req.params.orderId)) });
   });
 
   private async respond(res: Response, action: () => Promise<void>) {
