@@ -21,6 +21,11 @@ import { MenuController } from "./application/ord/MenuController";
 import type { RestaurantStatusRepository } from "./application/ord/RestaurantStatusRepository";
 import { RestaurantStatusService } from "./application/ord/RestaurantStatusService";
 import { RestaurantStatusController } from "./application/ord/RestaurantStatusController";
+import { OrderController } from "./application/ord/OrderController";
+import { OrderRoutes } from "./application/ord/OrderRoutes";
+import type { OrderRepository } from "./application/ord/OrderRepository";
+import type { MenuCatalog } from "./application/ord/MenuCatalog";
+import { OrderService } from "./application/ord/OrderService";
 
 export interface AppDeps {
   users: UserRepository;
@@ -29,9 +34,11 @@ export interface AppDeps {
   restaurants: RestaurantReadRepository;
   menu: MenuRepository;
   restaurantStatus: RestaurantStatusRepository;
+  orders?: OrderRepository;
+  orderMenu?: MenuCatalog;
 }
 
-export function createApp({ users, hasher, tokens, restaurants, menu, restaurantStatus }: AppDeps) {
+export function createApp({ users, hasher, tokens, restaurants, menu, restaurantStatus, orders, orderMenu }: AppDeps) {
   
   const app = express();
   app.use(express.json());
@@ -48,6 +55,11 @@ export function createApp({ users, hasher, tokens, restaurants, menu, restaurant
   const restaurantController = new RestaurantQueryController(restaurants);
   const menuController = new MenuController(new MenuService(menu));
   const statusController = new RestaurantStatusController(new RestaurantStatusService(restaurantStatus));
+  if (orders && orderMenu) {
+    const orderRoutes = new OrderRoutes(new OrderController(new OrderService(orders, orderMenu)));
+    app.get("/api/orders", orderRoutes.listMine);
+    app.get("/api/orders/:orderId", orderRoutes.getOne);
+  }
 
   // Public: the only routes reachable without a session
   app.post("/api/auth/register", register.handle);

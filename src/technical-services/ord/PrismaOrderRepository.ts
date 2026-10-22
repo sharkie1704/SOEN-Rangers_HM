@@ -98,6 +98,11 @@ export class PrismaOrderRepository implements OrderRepository {
     return rows.map((row) => this.toDomain(row));
   }
 
+  async findByCustomer(customerId: string): Promise<readonly Order[]> {
+    const rows = await prisma.order.findMany({ where: { customerId }, include: withHistory, orderBy: { placedAt: "desc" } });
+    return rows.map((row) => this.toDomain(row));
+  }
+
   // The queue is not stored; it is every Accepted/Preparing order in the order they were accepted
   async getPreparationQueue(restaurantId: string): Promise<PreparationQueue> {
     const rows = await prisma.order.findMany({
