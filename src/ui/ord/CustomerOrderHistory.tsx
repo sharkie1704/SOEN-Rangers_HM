@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { api, ApiError } from "../reg/api/client";
+import "./customer-orders.css";
 
 type Order = {
   id: number;
@@ -16,6 +17,20 @@ export default function CustomerOrderHistory() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [busyOrderId, setBusyOrderId] = useState<number | null>(null);
+  const [refreshingList, setRefreshingList] = useState(false);
+
+  async function refreshOrders() {
+    setRefreshingList(true);
+    setError("");
+    try {
+      const { orders: result } = await api<{ orders: Order[] }>("/api/orders");
+      setOrders(result);
+    } catch (cause) {
+      setError(cause instanceof ApiError ? cause.message : "Could not load your orders.");
+    } finally {
+      setRefreshingList(false);
+    }
+  }
 
   async function refreshOrder(orderId: number) {
     setBusyOrderId(orderId);
@@ -44,40 +59,60 @@ export default function CustomerOrderHistory() {
   }
 
   useEffect(() => {
-    api<{ orders: Order[] }>("/api/orders")
-      .then(({ orders: result }) => setOrders(result))
-      .catch((cause: unknown) => setError(cause instanceof ApiError ? cause.message : "Could not load your orders."))
-      .finally(() => setLoading(false));
+    refreshOrders().finally(() => setLoading(false));
   }, []);
 
   return (
-    <section aria-label="Order history" style={{ maxWidth: 900, margin: "24px auto", padding: 20 }}>
-      <h2>Your orders</h2>
-      {loading && <p>Loading your orders…</p>}
-      {error && <p role="alert">{error}</p>}
-      {!loading && !error && orders.length === 0 && <p>You have not placed any orders yet.</p>}
-      <div style={{ display: "grid", gap: 16 }}>
+    <main className="my-orders-page" aria-label="My orders">
+      <header className="my-orders-heading">
+        <div>
+          <p className="my-orders-eyebrow">YOUR DESSERTDASH</p>
+          <h1>My Orders</h1>
+          <p className="my-orders-subtitle">Track current orders and revisit every order you’ve placed.</p>
+        </div>
+        <button className="orders-refresh-all" type="button" onClick={refreshOrders} disabled={loading || refreshingList}>
+          {refreshingList ? "Refreshing…" : "Refresh orders"}
+        </button>
+      </header>
+      <div className="orders-count">{orders.length} {orders.length === 1 ? "order" : "orders"}</div>
+      {loading && <div className="orders-message" role="status"><span className="orders-spinner" />Loading your orders…</div>}
+      {error && <div className="orders-error" role="alert"><span>{error}</span><button type="button" onClick={refreshOrders}>Try again</button></div>}
+      {!loading && !error && orders.length === 0 && (
+        <section className="orders-empty">
+          <span className="orders-empty-icon" aria-hidden="true">♡</span>
+          <h2>No orders yet</h2>
+          <p>Your placed, in progress, and cancelled orders will show up here.</p>
+        </section>
+      )}
+      <div className="orders-list">
         {orders.map((order) => (
-          <article key={order.id} style={{ border: "1px solid #C89F7A", borderRadius: 12, padding: 18, background: "#FFF9F2" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
-              <strong>Order #{order.id}</strong>
-              <strong>Status: {order.status}</strong>
+          <article className="order-card" key={order.id}>
+            <div className="order-card-heading">
+              <div>
+                <p className="order-number-label">ORDER</p>
+                <h2>#{order.id}</h2>
+              </div>
+              <span className={`order-status order-status-${order.status.toLowerCase()}`}>{order.status}</span>
             </div>
-            <p>Placed {new Date(order.placedAt).toLocaleString()}</p>
-            <ul>{order.lines.map((line, index) => <li key={`${line.name}-${index}`}>{line.quantity} × {line.name}</li>)}</ul>
-            <p>Total: ${(order.totalCents / 100).toFixed(2)}</p>
-            <p>Events: {order.events.map((event) => `${event.action} #${event.eventId}`).join(" · ")}</p>
-            <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-              <button type="button" disabled={busyOrderId === order.id} onClick={() => refreshOrder(order.id)}>
+            <p className="order-placed-date">Placed {new Date(order.placedAt).toLocaleString()}</p>
+            <ul className="order-lines">
+              {order.lines.map((line, index) => <li key={`${line.name}-${index}`}><span>{line.quantity} × {line.name}</span></li>)}
+            </ul>
+            <div className="order-card-total"><span>Order total</span><strong>${(order.totalCents / 100).toFixed(2)}</strong></div>
+            <div className="order-events" aria-label="Order event IDs">
+              {order.events.map((event) => <span key={event.eventId}>{event.action} <strong>#{event.eventId}</strong></span>)}
+            </div>
+            <div className="order-card-actions">
+              <button className="order-action order-action-secondary" type="button" disabled={busyOrderId === order.id} onClick={() => refreshOrder(order.id)}>
                 {busyOrderId === order.id ? "Updating…" : "Refresh status"}
               </button>
-              {order.status === "Placed" && <button type="button" disabled={busyOrderId === order.id} onClick={() => cancelOrder(order.id)}>
+              {order.status === "Placed" && <button className="order-action order-action-cancel" type="button" disabled={busyOrderId === order.id} onClick={() => cancelOrder(order.id)}>
                 Cancel order
               </button>}
             </div>
           </article>
         ))}
       </div>
-    </section>
+    </main>
   );
 }

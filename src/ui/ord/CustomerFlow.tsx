@@ -3,6 +3,7 @@ import RestaurantListPage from "./RestaurantListPage";
 import RestaurantMenuPage from "./RestaurantMenuPage";
 import PlaceOrderPage, { type CartItem } from "./PlaceOrderPage";
 import CustomerOrderHistory from "./CustomerOrderHistory";
+import "./customer-flow.css";
 
 export default function CustomerFlow() {
   const [selectedRestaurantId, setSelectedRestaurantId] = useState<string | null>(null);
@@ -56,9 +57,9 @@ export default function CustomerFlow() {
 
   return (
     <>
-      <nav aria-label="Customer pages" style={{ display: "flex", justifyContent: "center", gap: 12, padding: 16 }}>
-        <button type="button" onClick={() => setShowHistory(false)} aria-current={!showHistory ? "page" : undefined}>Browse restaurants</button>
-        <button type="button" onClick={() => setShowHistory(true)} aria-current={showHistory ? "page" : undefined}>Order history</button>
+      <nav className="customer-tabs" aria-label="Customer pages">
+        <button className="customer-tab" type="button" onClick={() => setShowHistory(false)} aria-current={!showHistory ? "page" : undefined}>Browse restaurants</button>
+        <button className="customer-tab" type="button" onClick={() => setShowHistory(true)} aria-current={showHistory ? "page" : undefined}>My Orders</button>
       </nav>
       {showHistory ? <CustomerOrderHistory /> : <>
         {cartNotice && <p role="status" style={{ textAlign: "center", color: "#923C32" }}>{cartNotice}</p>}
