@@ -51,10 +51,6 @@ export default function PlaceOrderPage({
     const [placingOrder, setPlacingOrder] = useState(false);
     const [placeError, setPlaceError] = useState("");
     const [restaurantOpen, setRestaurantOpen] = useState(false);
-    const [paymentName, setPaymentName] = useState("");
-    const [paymentCard, setPaymentCard] = useState("");
-    const [paymentExpiry, setPaymentExpiry] = useState("");
-    const [paymentCvc, setPaymentCvc] = useState("");
 
     useEffect(() => {
         let cancelled = false;
@@ -83,19 +79,7 @@ export default function PlaceOrderPage({
     }
 
     async function placeOrder() {
-        const cardDigits = paymentCard.replace(/\D/g, "");
-        const [monthText, yearText] = paymentExpiry.split("/");
-        const month = Number(monthText);
-        const year = Number(`20${yearText}`);
-        const expiryIsValid = /^\d{2}\/\d{2}$/.test(paymentExpiry)
-            && month >= 1 && month <= 12
-            && new Date(year, month, 0, 23, 59, 59).getTime() > Date.now();
         if (placingOrder || cartItems.length === 0 || restaurantOpen !== true) return;
-        if (!paymentName.trim() || cardDigits.length < 12 || cardDigits.length > 19
-            || !expiryIsValid || !/^\d{3,4}$/.test(paymentCvc)) {
-            setPlaceError("Enter valid demo payment details to continue.");
-            return;
-        }
         setPlacingOrder(true);
         setPlaceError("");
         try {
@@ -143,6 +127,19 @@ export default function PlaceOrderPage({
         fontWeight: 600,
         cursor: "pointer",
     } as const;
+
+    if (placingOrder) {
+        return (
+            <main style={{ ...pageStyle, display: "grid", placeItems: "center" }}>
+                <section role="status" aria-live="polite" style={{ textAlign: "center", color: "#4B3028" }}>
+                    <div className="order-loading-spinner" aria-hidden="true" />
+                    <h1 style={{ marginBottom: 8 }}>Placing your order</h1>
+                    <p style={{ marginTop: 0 }}>Sending it to {restaurantName}…</p>
+                    <style>{`@keyframes order-spin { to { transform: rotate(360deg); } } .order-loading-spinner { width: 42px; height: 42px; margin: 0 auto 20px; border: 4px solid #EADBC8; border-top-color: #C66B32; border-radius: 50%; animation: order-spin 800ms linear infinite; } @media (prefers-reduced-motion: reduce) { .order-loading-spinner { animation-duration: 2s; } }`}</style>
+                </section>
+            </main>
+        );
+    }
 
     // ---------- Order confirmation view ----------
     if (placedOrder !== null) {
@@ -288,30 +285,6 @@ export default function PlaceOrderPage({
 
                 {/* Order summary */}
                 <section aria-label="Order summary" style={{ ...cardStyle, marginTop: "32px" }}>
-                    <fieldset style={{ border: "1px solid #C89F7A", borderRadius: 8, margin: "0 0 20px", padding: 16 }}>
-                        <legend style={{ color: "#4B3028", fontWeight: 600 }}>Demo payment information</legend>
-                        <p style={{ color: "#765F53", fontSize: 13, marginTop: 0 }}>
-                            Demo only. Use test details; no payment is processed and these values are not sent to or saved by the server.
-                        </p>
-                        <label style={{ display: "grid", gap: 6, marginBottom: 12, color: "#4B3028" }}>
-                            Name on card
-                            <input autoComplete="off" value={paymentName} onChange={(event) => setPaymentName(event.target.value)} />
-                        </label>
-                        <label style={{ display: "grid", gap: 6, marginBottom: 12, color: "#4B3028" }}>
-                            Card number
-                            <input inputMode="numeric" autoComplete="off" value={paymentCard} onChange={(event) => setPaymentCard(event.target.value)} />
-                        </label>
-                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-                            <label style={{ display: "grid", gap: 6, color: "#4B3028" }}>
-                                Expiry (MM/YY)
-                                <input placeholder="MM/YY" autoComplete="off" value={paymentExpiry} onChange={(event) => setPaymentExpiry(event.target.value)} />
-                            </label>
-                            <label style={{ display: "grid", gap: 6, color: "#4B3028" }}>
-                                CVC
-                                <input inputMode="numeric" autoComplete="off" value={paymentCvc} onChange={(event) => setPaymentCvc(event.target.value)} />
-                            </label>
-                        </div>
-                    </fieldset>
                     {placeError && <p role="alert" style={{ color: "#9B1C1C" }}>{placeError}</p>}
                     {restaurantOpen === false && <p role="status" style={{ color: "#923C32" }}>This restaurant is paused or closed. Ordering is unavailable.</p>}
                     <p
