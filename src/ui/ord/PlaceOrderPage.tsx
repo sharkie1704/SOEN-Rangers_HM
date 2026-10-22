@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import CartItemRow from "./CartItemRow";
+import { api, ApiError } from "../reg/api/client";
 import "./button-interactions.css";
 
 export type CartItem = {
@@ -27,7 +28,9 @@ type PlaceOrderPageInputs = {
 
 // What we remember about an order once it has been placed
 type PlacedOrder = {
-    id: string;
+    id: number;
+    status: string;
+    totalCents: number;
     items: CartItem[];
 };
 
@@ -45,6 +48,21 @@ export default function PlaceOrderPage({
     const restaurantName = restaurantNames[restaurantId] ?? "Restaurant";
     // null = order not placed yet; otherwise the order that was just placed
     const [placedOrder, setPlacedOrder] = useState<PlacedOrder | null>(null);
+    const [placingOrder, setPlacingOrder] = useState(false);
+    const [placeError, setPlaceError] = useState("");
+    const [restaurantOpen, setRestaurantOpen] = useState(false);
+    const [paymentName, setPaymentName] = useState("");
+    const [paymentCard, setPaymentCard] = useState("");
+    const [paymentExpiry, setPaymentExpiry] = useState("");
+    const [paymentCvc, setPaymentCvc] = useState("");
+
+    useEffect(() => {
+        let cancelled = false;
+        api<{ restaurant: { status: "OPEN" | "PAUSED" | "CLOSED" } }>(`/api/restaurants/${encodeURIComponent(restaurantId)}`)
+            .then(({ restaurant }) => { if (!cancelled) setRestaurantOpen(restaurant.status === "OPEN"); })
+            .catch(() => { if (!cancelled) setRestaurantOpen(false); });
+        return () => { cancelled = true; };
+    }, [restaurantId]);
 
     // Totals are calculated from the cart every time it changes
     const total = sumTotal(cartItems);
@@ -64,15 +82,37 @@ export default function PlaceOrderPage({
         onCartChange(cartItems.filter((item) => item.id !== id));
     }
 
-    function placeOrder() {
-        // TODO: replace with a call to the place-order endpoint.
-        // The real order ID and status will come back from the server.
-        setPlacedOrder({
-            id: `ORD-${Math.floor(1000 + Math.random() * 9000)}`,
-            items: cartItems,
-        });
-        // The cart is emptied once the order is placed
-        onCartChange([]);
+    async function placeOrder() {
+        const cardDigits = paymentCard.replace(/\D/g, "");
+        const [monthText, yearText] = paymentExpiry.split("/");
+        const month = Number(monthText);
+        const year = Number(`20${yearText}`);
+        const expiryIsValid = /^\d{2}\/\d{2}$/.test(paymentExpiry)
+            && month >= 1 && month <= 12
+            && new Date(year, month, 0, 23, 59, 59).getTime() > Date.now();
+        if (placingOrder || cartItems.length === 0 || restaurantOpen !== true) return;
+        if (!paymentName.trim() || cardDigits.length < 12 || cardDigits.length > 19
+            || !expiryIsValid || !/^\d{3,4}$/.test(paymentCvc)) {
+            setPlaceError("Enter valid demo payment details to continue.");
+            return;
+        }
+        setPlacingOrder(true);
+        setPlaceError("");
+        try {
+            const result = await api<{ order: { id: number; status: string; totalCents: number } }>("/api/orders", {
+                method: "POST",
+                body: {
+                    restaurantId,
+                    lines: cartItems.map((item) => ({ menuItemId: item.id, quantity: item.quantity })),
+                },
+            });
+            setPlacedOrder({ ...result.order, items: cartItems });
+            onCartChange([]);
+        } catch (error) {
+            setPlaceError(error instanceof ApiError ? error.message : "Could not place your order. Please try again.");
+        } finally {
+            setPlacingOrder(false);
+        }
     }
 
     const pageStyle = {
@@ -136,7 +176,7 @@ export default function PlaceOrderPage({
                                     color: "#835900",
                                 }}
                             >
-                                Placed
+                                {placedOrder.status}
                             </span>
                         </p>
 
@@ -173,7 +213,7 @@ export default function PlaceOrderPage({
                             }}
                         >
                             <span>Total</span>
-                            <span>${sumTotal(placedOrder.items).toFixed(2)}</span>
+                            <span>${(placedOrder.totalCents / 100).toFixed(2)}</span>
                         </p>
                     </section>
 
@@ -248,6 +288,32 @@ export default function PlaceOrderPage({
 
                 {/* Order summary */}
                 <section aria-label="Order summary" style={{ ...cardStyle, marginTop: "32px" }}>
+                    <fieldset style={{ border: "1px solid #C89F7A", borderRadius: 8, margin: "0 0 20px", padding: 16 }}>
+                        <legend style={{ color: "#4B3028", fontWeight: 600 }}>Demo payment information</legend>
+                        <p style={{ color: "#765F53", fontSize: 13, marginTop: 0 }}>
+                            Demo only. Use test details; no payment is processed and these values are not sent to or saved by the server.
+                        </p>
+                        <label style={{ display: "grid", gap: 6, marginBottom: 12, color: "#4B3028" }}>
+                            Name on card
+                            <input autoComplete="off" value={paymentName} onChange={(event) => setPaymentName(event.target.value)} />
+                        </label>
+                        <label style={{ display: "grid", gap: 6, marginBottom: 12, color: "#4B3028" }}>
+                            Card number
+                            <input inputMode="numeric" autoComplete="off" value={paymentCard} onChange={(event) => setPaymentCard(event.target.value)} />
+                        </label>
+                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                            <label style={{ display: "grid", gap: 6, color: "#4B3028" }}>
+                                Expiry (MM/YY)
+                                <input placeholder="MM/YY" autoComplete="off" value={paymentExpiry} onChange={(event) => setPaymentExpiry(event.target.value)} />
+                            </label>
+                            <label style={{ display: "grid", gap: 6, color: "#4B3028" }}>
+                                CVC
+                                <input inputMode="numeric" autoComplete="off" value={paymentCvc} onChange={(event) => setPaymentCvc(event.target.value)} />
+                            </label>
+                        </div>
+                    </fieldset>
+                    {placeError && <p role="alert" style={{ color: "#9B1C1C" }}>{placeError}</p>}
+                    {restaurantOpen === false && <p role="status" style={{ color: "#923C32" }}>This restaurant is paused or closed. Ordering is unavailable.</p>}
                     <p
                         style={{
                             display: "flex",
@@ -280,14 +346,14 @@ export default function PlaceOrderPage({
                         type="button"
                         className="interactive-button"
                         onClick={placeOrder}
-                        disabled={cartItems.length === 0}
+                        disabled={cartItems.length === 0 || placingOrder || !restaurantOpen}
                         style={{
                             ...primaryButtonStyle,
-                            backgroundColor: cartItems.length === 0 ? "#BCA99B" : "#C66B32",
-                            cursor: cartItems.length === 0 ? "not-allowed" : "pointer",
+                            backgroundColor: cartItems.length === 0 || placingOrder || !restaurantOpen ? "#BCA99B" : "#C66B32",
+                            cursor: cartItems.length === 0 || placingOrder || !restaurantOpen ? "not-allowed" : "pointer",
                         }}
                     >
-                        Place Order
+                        {placingOrder ? "Placing order…" : "Place Order"}
                     </button>
                 </section>
             </div>
