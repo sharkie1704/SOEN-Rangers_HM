@@ -4,6 +4,7 @@ import RestaurantCard from "./RestaurantCard";
 
 type RestaurantListPageInputs = {
   onSelectRestaurant: (restaurantId: string) => void;
+  onViewOrders: () => void;
 };
 
 type Restaurant = {
@@ -18,7 +19,7 @@ type Restaurant = {
 
 
 export default function RestaurantListPage({
-  onSelectRestaurant,}: RestaurantListPageInputs) {
+  onSelectRestaurant, onViewOrders }: RestaurantListPageInputs) {
     const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
 const [loading, setLoading] = useState(true);
 const [error, setError] = useState("");
@@ -68,6 +69,17 @@ useEffect(() => {
         fontFamily: "'Poppins', sans-serif",
       }}
     >
+      <div style={{ display: "flex", justifyContent: "flex-end", maxWidth: "1200px", margin: "0 auto" }}>
+        <button
+          type="button"
+          className="interactive-button"
+          onClick={onViewOrders}
+          style={{ padding: "10px 18px", backgroundColor: "#C66B32", color: "#FFFFFF", border: "none", borderRadius: "8px", fontFamily: "inherit", fontWeight: 600, cursor: "pointer" }}
+        >
+          My orders
+        </button>
+      </div>
+
       <h1 style={{ color: "#4B3028", textAlign: "center", fontSize: "32px", lineHeight: 1.2, margin: "52px 0 16px" }}>
          Discover the best sweet treats in Montréal
       </h1>

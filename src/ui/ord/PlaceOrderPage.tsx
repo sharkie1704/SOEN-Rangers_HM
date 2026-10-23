@@ -1,5 +1,7 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import CartItemRow from "./CartItemRow";
+import { api, ApiError } from "../reg/api/client";
+import type { Order } from "./RestaurantConsolePage";
 import "./button-interactions.css";
 
 export type CartItem = {
@@ -10,24 +12,20 @@ export type CartItem = {
     image: string;
 };
 
-const restaurantNames: Record<string, string> = {
-    1: "Sweet Dreams",
-    2: "Chocolate Heaven",
-    3: "La Petite Pâtisserie",
-    4: "Sugar Rush",
-};
-
 type PlaceOrderPageInputs = {
     cartItems: CartItem[]; // the cart is owned by App.tsx so the menu page can see it too
     restaurantId: string;
     onCartChange: (items: CartItem[]) => void;
     onBack: () => void; // back to the restaurant's menu
     onBackToRestaurants: () => void; // after the order is placed
+    onViewOrders: () => void; // track the order that was just placed
 };
 
 // What we remember about an order once it has been placed
 type PlacedOrder = {
-    id: string;
+    id: number;
+    status: Order["status"];
+    totalCents: number;
     items: CartItem[];
 };
 
@@ -41,10 +39,19 @@ export default function PlaceOrderPage({
     onCartChange,
     onBack,
     onBackToRestaurants,
+    onViewOrders,
 }: PlaceOrderPageInputs) {
-    const restaurantName = restaurantNames[restaurantId] ?? "Restaurant";
+    const [restaurantName, setRestaurantName] = useState("Restaurant");
     // null = order not placed yet; otherwise the order that was just placed
     const [placedOrder, setPlacedOrder] = useState<PlacedOrder | null>(null);
+    const [placing, setPlacing] = useState(false);
+    const [error, setError] = useState("");
+
+    useEffect(() => {
+        api<{ restaurant: { name: string } }>(`/api/restaurants/${encodeURIComponent(restaurantId)}`)
+            .then((res) => setRestaurantName(res.restaurant.name))
+            .catch(() => {}); // Keep the generic name if the lookup fails
+    }, [restaurantId]);
 
     // Totals are calculated from the cart every time it changes
     const total = sumTotal(cartItems);
@@ -64,15 +71,31 @@ export default function PlaceOrderPage({
         onCartChange(cartItems.filter((item) => item.id !== id));
     }
 
-    function placeOrder() {
-        // TODO: replace with a call to the place-order endpoint.
-        // The real order ID and status will come back from the server.
-        setPlacedOrder({
-            id: `ORD-${Math.floor(1000 + Math.random() * 9000)}`,
-            items: cartItems,
-        });
-        // The cart is emptied once the order is placed
-        onCartChange([]);
+    async function placeOrder() {
+        setPlacing(true);
+        setError("");
+        try {
+            // Only item IDs and quantities are sent; the server prices the order from the menu
+            const res = await api<{ order: Order }>("/api/orders", {
+                method: "POST",
+                body: {
+                    restaurantId,
+                    lines: cartItems.map((item) => ({ menuItemId: item.id, quantity: item.quantity })),
+                },
+            });
+            setPlacedOrder({
+                id: res.order.id,
+                status: res.order.status,
+                totalCents: res.order.totalCents,
+                items: cartItems,
+            });
+            // The cart is emptied once the order is placed
+            onCartChange([]);
+        } catch (e) {
+            setError(e instanceof ApiError ? e.message : "Could not place your order. Please try again.");
+        } finally {
+            setPlacing(false);
+        }
     }
 
     const pageStyle = {
@@ -136,7 +159,7 @@ export default function PlaceOrderPage({
                                     color: "#835900",
                                 }}
                             >
-                                Placed
+                                {placedOrder.status}
                             </span>
                         </p>
 
@@ -173,15 +196,23 @@ export default function PlaceOrderPage({
                             }}
                         >
                             <span>Total</span>
-                            <span>${sumTotal(placedOrder.items).toFixed(2)}</span>
+                            <span>${(placedOrder.totalCents / 100).toFixed(2)}</span>
                         </p>
                     </section>
 
                     <button
                         type="button"
                         className="interactive-button"
-                        onClick={onBackToRestaurants}
+                        onClick={onViewOrders}
                         style={{ ...primaryButtonStyle, marginTop: "24px" }}
+                    >
+                        Track my order
+                    </button>
+                    <button
+                        type="button"
+                        className="interactive-button"
+                        onClick={onBackToRestaurants}
+                        style={{ ...primaryButtonStyle, marginTop: "12px", backgroundColor: "transparent", color: "#C66B32", border: "1px solid #C66B32" }}
                     >
                         Back to restaurants
                     </button>
@@ -276,18 +307,24 @@ export default function PlaceOrderPage({
                         <span>${total.toFixed(2)}</span>
                     </p>
 
+                    {error && (
+                        <p role="alert" style={{ color: "#923C32", margin: "0 0 12px" }}>
+                            {error}
+                        </p>
+                    )}
+
                     <button
                         type="button"
                         className="interactive-button"
                         onClick={placeOrder}
-                        disabled={cartItems.length === 0}
+                        disabled={cartItems.length === 0 || placing}
                         style={{
                             ...primaryButtonStyle,
-                            backgroundColor: cartItems.length === 0 ? "#BCA99B" : "#C66B32",
-                            cursor: cartItems.length === 0 ? "not-allowed" : "pointer",
+                            backgroundColor: cartItems.length === 0 || placing ? "#BCA99B" : "#C66B32",
+                            cursor: cartItems.length === 0 || placing ? "not-allowed" : "pointer",
                         }}
                     >
-                        Place Order
+                        {placing ? "Placing order..." : "Place Order"}
                     </button>
                 </section>
             </div>
