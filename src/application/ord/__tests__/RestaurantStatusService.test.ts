@@ -22,7 +22,7 @@ async function expectCode(promise: Promise<unknown>, code: string) {
   await expect(promise).rejects.toMatchObject({ code });
 }
 
-describe("Staff pause (UC-ORD-09)", () => {
+describe("Staff pause and reopen (UC-ORD-09)", () => {
   it("pauses their own open restaurant and records the event", async () => {
     const { restaurant, eventId } = await service.pause(staffA, "rest-a");
     expect(restaurant.status).toBe("PAUSED");
@@ -36,9 +36,13 @@ describe("Staff pause (UC-ORD-09)", () => {
     expect(repository.restaurants.get("rest-a")?.status).toBe("OPEN");
   });
 
-  it("cannot reopen, even their own restaurant", async () => {
+  it("reopens their own paused restaurant and records the event", async () => {
     await service.pause(staffA, "rest-a");
-    await expectCode(service.reopen(staffA, "rest-a"), "FORBIDDEN");
+    const { restaurant, eventId } = await service.reopen(staffA, "rest-a");
+    expect(restaurant.status).toBe("OPEN");
+    expect(repository.events.at(-1)).toEqual(
+      expect.objectContaining({ eventId, actorId: "staff-a", fromStatus: "PAUSED", toStatus: "OPEN" }),
+    );
   });
 
   it("gets a conflict when the restaurant is already paused or closed", async () => {

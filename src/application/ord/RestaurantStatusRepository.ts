@@ -12,6 +12,6 @@ export interface RestaurantStatusEvent {
 export interface RestaurantStatusRepository {
   nextEventId(): Promise<number>;
   findById(restaurantId: string): Promise<Restaurant | undefined>;
-  save(restaurant: Restaurant): Promise<void>;
-  recordEvent(event: RestaurantStatusEvent): Promise<void>;
+  // Saves the new status with its event; fails if the status changed since the restaurant was loaded
+  save(restaurant: Restaurant, event: RestaurantStatusEvent): Promise<void>;
 }
