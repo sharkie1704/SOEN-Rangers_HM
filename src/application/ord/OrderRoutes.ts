@@ -42,6 +42,29 @@ export class OrderRoutes {
     res.json({ transition: await this.orders.cancel(toActor(req.user), Number(req.params.orderId)) });
   });
 
+  // Restaurant staff: incoming orders, the preparation queue, and moving orders through it
+  incoming = (req: Request, res: Response) => this.respond(res, async () => {
+    res.json({ orders: await this.orders.incoming(toActor(req.user), String(req.params.restaurantId)) });
+  });
+
+  queue = (req: Request, res: Response) => this.respond(res, async () => {
+    res.json({ orders: await this.orders.queue(toActor(req.user), String(req.params.restaurantId)) });
+  });
+
+  accept = (req: Request, res: Response) => this.respond(res, async () => {
+    res.json({ transition: await this.orders.accept(toActor(req.user), Number(req.params.orderId)) });
+  });
+
+  reject = (req: Request, res: Response) => this.respond(res, async () => {
+    const { reason } = req.body ?? {};
+    const transition = await this.orders.reject(toActor(req.user), Number(req.params.orderId), typeof reason === "string" ? reason : "");
+    res.json({ transition });
+  });
+
+  markReady = (req: Request, res: Response) => this.respond(res, async () => {
+    res.json({ transition: await this.orders.markReady(toActor(req.user), Number(req.params.orderId)) });
+  });
+
   private async respond(res: Response, action: () => Promise<void>) {
     try {
       await action();

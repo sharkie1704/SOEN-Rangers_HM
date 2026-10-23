@@ -74,6 +74,11 @@ export function createApp({ users, hasher, tokens, restaurants, menu, restaurant
     app.get("/api/orders", orderRoutes.listMine);
     app.get("/api/orders/:orderId", orderRoutes.getOne);
     app.post("/api/orders/:orderId/cancel", orderRoutes.cancel);
+    app.post("/api/orders/:orderId/accept", orderRoutes.accept);
+    app.post("/api/orders/:orderId/reject", orderRoutes.reject);
+    app.post("/api/orders/:orderId/ready", orderRoutes.markReady);
+    app.get("/api/restaurants/:restaurantId/orders/incoming", orderRoutes.incoming);
+    app.get("/api/restaurants/:restaurantId/orders/queue", orderRoutes.queue);
   }
   app.get("/api/restaurants", restaurantController.listRestaurants);
   app.get("/api/restaurants/:restaurantId", restaurantController.getRestaurant);
