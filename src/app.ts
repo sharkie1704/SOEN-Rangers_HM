@@ -1,5 +1,6 @@
 import express from "express";
 import cookieParser from "cookie-parser";
+import { apiCommandLogger } from "./application/http/ApiCommandLogger";
 import type { UserRepository } from "./domain/reg/ports/UserRepository";
 import type { PasswordHasher } from "./domain/reg/ports/PasswordHasher";
 import type { SessionTokenService } from "./domain/reg/ports/SessionTokenService";
@@ -43,6 +44,7 @@ export function createApp({ users, hasher, tokens, restaurants, menu, restaurant
   const app = express();
   app.use(express.json());
   app.use(cookieParser());
+  app.use("/api", apiCommandLogger);
 
   const register = new RegistrationController({
     customer: new CustomerRegistrar(users, hasher),
