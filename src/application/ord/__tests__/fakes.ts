@@ -89,6 +89,5 @@ export class InMemoryRestaurantStatusRepository implements RestaurantStatusRepos
 
   async nextEventId(): Promise<number> { return ++this.eventSeq; }
   async findById(restaurantId: string): Promise<Restaurant | undefined> { return this.restaurants.get(restaurantId); }
-  async save(): Promise<void> {}
-  async recordEvent(event: RestaurantStatusEvent): Promise<void> { this.events.push(event); }
+  async save(_restaurant: Restaurant, event: RestaurantStatusEvent): Promise<void> { this.events.push(event); }
 }
