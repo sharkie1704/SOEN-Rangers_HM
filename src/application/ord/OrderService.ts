@@ -149,6 +149,9 @@ export class OrderService {
     const seen = new Set<number>();
     const priced: OrderLineDTO[] = [];
     for (const line of lines) {
+      if (!line || typeof line !== "object" || Array.isArray(line)) {
+        throw new OrderError("INVALID_INPUT", "Each order line must be an item with a quantity.");
+      }
       const menuItemId = requireId(line.menuItemId, "Menu item ID");
       if (seen.has(menuItemId)) {
         throw new OrderError("INVALID_INPUT", `Menu item ${menuItemId} is listed more than once.`);
