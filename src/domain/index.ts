@@ -4,7 +4,7 @@ export type { RestoredOrderDTO } from "./ord/RestoredOrderDTO.ts";
 export { OrderLine } from "./ord/OrderLine.ts";
 export type { OrderLineDTO } from "./ord/OrderLineDTO.ts";
 export { OrderError, type OrderErrorCode } from "./ord/OrderError.ts";
-export { PreparationQueue } from "./ord/PreparationQueue.ts";
+export { PreparationQueue, SYSTEM_ACTOR_ID } from "./ord/PreparationQueue.ts";
 export type { OrderAction, OrderStatus, StateChangeEvent } from "./ord/StateChangeEvent.ts";
 export { OrderState } from "./ord/states/OrderState.ts";
 export { PlacedState } from "./ord/states/PlacedState.ts";

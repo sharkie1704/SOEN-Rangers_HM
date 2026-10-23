@@ -23,6 +23,14 @@ export class OrderController {
     return this.service.customerOrders(actor);
   }
 
+  incoming(actor: OrderActor | null, restaurantId: string): Promise<readonly OrderDTO[]> {
+    return this.service.incoming(actor, restaurantId);
+  }
+
+  queue(actor: OrderActor | null, restaurantId: string): Promise<readonly OrderDTO[]> {
+    return this.service.queue(actor, restaurantId);
+  }
+
   accept(actor: OrderActor | null, orderId: number): Promise<OrderTransitionDTO> {
     return this.service.accept(actor, orderId);
   }
@@ -33,10 +41,6 @@ export class OrderController {
 
   cancel(actor: OrderActor | null, orderId: number): Promise<OrderTransitionDTO> {
     return this.service.cancel(actor, orderId);
-  }
-
-  startPreparing(actor: OrderActor | null, orderId: number): Promise<OrderTransitionDTO> {
-    return this.service.startPreparing(actor, orderId);
   }
 
   markReady(actor: OrderActor | null, orderId: number): Promise<OrderTransitionDTO> {

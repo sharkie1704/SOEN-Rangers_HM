@@ -11,4 +11,6 @@ export interface OrderRepository {
   findByCustomer(customerId: string): Promise<readonly Order[]>;
   findByRestaurant(restaurantId: string): Promise<readonly Order[]>;
   getPreparationQueue(restaurantId: string): Promise<PreparationQueue>;
+  // Runs work in one transaction holding the restaurant's queue lock, so two queue changes never interleave
+  withQueueLock<T>(restaurantId: string, work: (orders: OrderRepository) => Promise<T>): Promise<T>;
 }
