@@ -19,6 +19,10 @@ export class OrderController {
     return this.service.get(actor, orderId);
   }
 
+  customerOrders(actor: OrderActor | null): Promise<readonly OrderDTO[]> {
+    return this.service.customerOrders(actor);
+  }
+
   accept(actor: OrderActor | null, orderId: number): Promise<OrderTransitionDTO> {
     return this.service.accept(actor, orderId);
   }

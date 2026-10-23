@@ -57,6 +57,7 @@ enum OrderStatus {
 }
 
 enum OrderAction {
+  PLACE
   ACCEPT
   REJECT
   CANCEL
@@ -133,4 +134,25 @@ model OrderEvent {
   occurredAt DateTime
 
   @@index([orderId])
+}
+
+model MenuItemEvent {
+  id         Int      @id @default(autoincrement())
+  menuItemId Int
+  actorId    String
+  available  Boolean
+  occurredAt DateTime
+
+  @@index([menuItemId])
+}
+
+model RestaurantStatusEvent {
+  id           Int              @id @default(autoincrement())
+  restaurantId String
+  actorId      String
+  fromStatus   RestaurantStatus
+  toStatus     RestaurantStatus
+  occurredAt   DateTime
+
+  @@index([restaurantId])
 }

@@ -5,6 +5,8 @@ import { JwtSessionTokenService } from "../../../technical-services/reg/JwtSessi
 import { OperatorRegistrar } from "../../../domain/reg/OperatorRegistrar";
 import { InMemoryUserRepository, FakePasswordHasher } from "../../../domain/reg/__tests__/fakes";
 import type { RestaurantReadRepository,} from "../../ord/RestaurantReadRepository";
+import type { MenuRepository } from "../../ord/MenuRepository";
+import { InMemoryRestaurantStatusRepository } from "../../ord/__tests__/fakes";
 
 const customer = {
   role: "CUSTOMER",
@@ -23,6 +25,8 @@ beforeEach(() => {
   hasher = new FakePasswordHasher();
   app = createApp({ users, hasher, tokens: new JwtSessionTokenService("test-secret-at-least-16-chars"),
      restaurants: fakeRestaurants,
+     menu: fakeMenu,
+     restaurantStatus: new InMemoryRestaurantStatusRepository(),
    });
 });
 const fakeRestaurants: RestaurantReadRepository = {
@@ -36,6 +40,15 @@ const fakeRestaurants: RestaurantReadRepository = {
     status: "OPEN",
   } : undefined,
   findMenuByRestaurantId: async () => [],
+};
+const fakeMenu: MenuRepository = {
+  nextEventId: async () => 1,
+  add: async () => { throw new Error("not used in auth tests"); },
+  save: async () => {},
+  remove: async () => {},
+  findById: async () => undefined,
+  findByRestaurant: async () => [],
+  recordEvent: async () => {},
 };
 
 describe("POST /api/auth/register", () => {

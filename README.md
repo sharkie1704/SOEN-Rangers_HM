@@ -1,41 +1,61 @@
 # SOEN-Rangers_HM
 
-DessertDash uses React, TypeScript, and Vite.
+DessertDash is a restaurant and dessert ordering application built with React, TypeScript, Vite, Express, Prisma, and PostgreSQL.
+
+## Requirements
+
+- Node.js 22.12+ or 24.x (Vitest does not support Node 25)
+- npm
+- A PostgreSQL database; the project is configured for Neon
 
 ## Setup
 
-Use Node.js 22.18 or newer.
-
 1. Install dependencies:
-```sh
-   npm ci
-```
-2. Create a `.env` file in the project root following the `.env.example` file (never commit it)
-   Ask the team for the connection strings, or use your own Neon branch.
-   Generate your own `JWT_SECRET` (at least 16 characters; the server refuses to start without it):
-```sh
-   node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
-```
-   Copy and paste the result  to `JWT_SECRET`
 
-3. Generate the Prisma client and apply migrations:
-```sh
-   npx prisma generate
-   npx prisma migrate deploy
-```
-   Re-run `npx prisma generate` after pulling any change to `prisma/schema.prisma`.
+   ```sh
+   npm ci
+   ```
+
+2. Create a `.env` file in the project root using `.env.example` as a template. Set `DATABASE_URL` to your pooled database connection and `DIRECT_URL` to the direct connection for the same database/Neon branch. Keep `.env` private and never commit it.
+
+3. Generate a JWT secret of at least 16 characters. For example:
+
+   ```sh
+   node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+   ```
+
+   Put the generated value in `.env` as `JWT_SECRET`.
+
+4. Generate the Prisma client and apply database migrations:
+
+   ```sh
+   npm run db:generate
+   npm run db:migrate
+   ```
+
+   `db:migrate` uses Prisma's development migration command. Point both database URLs at your development database branch before running it.
+
+5. (Optional) Load the demo users, restaurants, and menu items:
+
+   ```sh
+   npm run db:seed
+   ```
+
+   Seed data is defined in `prisma/seed-data.ts`; the seeding logic is in `prisma/seed.ts`.
 
 ## Development
 
-The frontend (Vite) and the API (Express) run as two processes. Start both, each in its own terminal.
+Start the Vite frontend and Express API together:
+
 ```sh
-   npm run dev        # start the app (front-end)
-   npm run dev:server # Express API on http://localhost:3000 
+npm run dev
 ```
 
-Vite proxies `/api` to Express (see `vite.config.ts`), so the browser only talks to one origin
-and the session cookie works. Always use relative URLs like `/api/auth/login` in frontend code.
-If you change `PORT` in `.env`, update the proxy target too.
+The frontend is at `http://localhost:5173` and the API is at `http://localhost:3000`. Vite proxies `/api` requests to Express, so frontend requests should use relative paths such as `/api/auth/login`. If you change `PORT` in `.env`, update the proxy target in `vite.config.ts` as well.
+
+You can also start either process separately with `npm run dev:client` or `npm run dev:server`.
+
+## Checks and tests
 
 When the API starts outside production, it loads `config.json` and
 demo accounts, restaurants, and menu items before starting the server. 
@@ -43,27 +63,36 @@ demo accounts, restaurants, and menu items before starting the server.
 Demo accounts: use the password `demo`; change `config.json` to customize the local seed data. Production startup skips seeding.
 
 ```sh
-   npm run check      # type-check
-   npm run build      # production build
-```
-
-## Testing
-
-```sh
-   npm test           # unit tests (no database needed)
-   npm run test:int   # integration tests (need DATABASE_URL; they clean up after themselves but still use a separate branch from prod to test)
+npm run check      # TypeScript check
+npm run build      # TypeScript check and production frontend build
+npm test           # Unit tests; no database required
+npm run test:int   # Integration tests; use a separate test database
 ```
 
 ## Project structure
 
-Layered architecture, following our package diagram:
-
-- `src/domain/`: entities, domain rules, and ports (interfaces), grouped by module
-- `src/application/`: controllers and use-case logic
-- `src/technical-services/`: Prisma repositories, password hashing, JWT tokens and other adapters
+- `src/domain/`: domain entities, rules, and ports
+- `src/application/`: use cases, controllers, and routes
+- `src/technical-services/`: infrastructure adapters such as Prisma repositories and JWT services
 - `src/ui/`: React pages and components
-- `src/container.ts`: composition root, where adapters are created and injected (import shared instances from here, not from `server.ts`)
-- `src/server.ts`: Express app setup and route mounting
-- `prisma/`: schema and migrations
+- `src/app.ts`: builds the Express app and wires application services to their dependencies
+- `src/server.ts`: creates infrastructure adapters and starts the API server
+- `prisma/`: database schema, migrations, and seed data
 
-Dependencies point inward: `ui` → `application` → `domain`, and `technical-services` implements the domain's ports. The domain never imports Prisma, bcrypt or Express.
+Dependencies point inward: UI and infrastructure code depend on application/domain contracts; the domain does not depend on Prisma, bcrypt, or Express.
+
+## Create the local Phase II tag
+
+Create the tag after the final Phase II changes have been committed, while checked out on the commit you want to submit:
+
+```sh
+git status
+git tag -a phase2 -m "Phase II submission"
+git show --no-patch phase2
+```
+
+The tag is local until pushed. To publish it to the repository:
+
+```sh
+git push origin phase2
+```
