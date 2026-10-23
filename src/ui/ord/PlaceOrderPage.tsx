@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import CartItemRow from "./CartItemRow";
 import { api, ApiError } from "../reg/api/client";
-import { recordOutput } from "../console/outputLog";
 import "./button-interactions.css";
 
 export type CartItem = {
@@ -66,8 +65,6 @@ export default function PlaceOrderPage({
     const itemCount = cartItems.reduce((sum, item) => sum + item.quantity, 0);
 
     function changeQuantity(id: number, change: number) {
-        const item = cartItems.find((cartItem) => cartItem.id === id);
-        if (item) recordOutput(`${change > 0 ? "Increased" : "Decreased"} ${item.name} quantity`);
         onCartChange(
             cartItems.map((item) =>
                 item.id === id
@@ -78,8 +75,6 @@ export default function PlaceOrderPage({
     }
 
     function removeItem(id: number) {
-        const item = cartItems.find((cartItem) => cartItem.id === id);
-        if (item) recordOutput(`Removed ${item.name} from the cart`);
         onCartChange(cartItems.filter((item) => item.id !== id));
     }
 
