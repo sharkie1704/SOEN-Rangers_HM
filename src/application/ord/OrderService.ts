@@ -2,7 +2,7 @@ import { Order } from "../../domain/ord/Order.ts";
 import { OrderError, requireId, requireStringId } from "../../domain/ord/OrderError.ts";
 import { Role } from "../../domain/reg/Role.ts";
 import type { OrderLineDTO } from "../../domain/ord/OrderLineDTO.ts";
-import type { PreparationQueue } from "../../domain/ord/PreparationQueue.ts";
+import { SYSTEM_ACTOR_ID, type PreparationQueue } from "../../domain/ord/PreparationQueue.ts";
 import type { StateChangeEvent } from "../../domain/ord/StateChangeEvent.ts";
 import type { MenuCatalog } from "./MenuCatalog.ts";
 import type { OrderActor } from "./OrderActor.ts";
@@ -60,6 +60,16 @@ export class OrderService {
     return toOrderDTO(order);
   }
 
+  // Newest first
+  async mine(actor: OrderActor | null): Promise<readonly OrderDTO[]> {
+    const customer = this.requireActor(actor);
+    if (customer.role !== Role.CUSTOMER) {
+      throw new OrderError("FORBIDDEN", "Only customers have their own orders.");
+    }
+    const orders = await this.repository.findByCustomer(customer.userId);
+    return [...orders].sort((a, b) => b.id - a.id).map(toOrderDTO);
+  }
+
   async incoming(actor: OrderActor | null, restaurantId: string): Promise<readonly OrderDTO[]> {
     this.requireRestaurantActor(actor, restaurantId);
     return (await this.repository.findByRestaurant(restaurantId))
@@ -72,11 +82,16 @@ export class OrderService {
     return (await this.repository.getPreparationQueue(restaurantId)).orders.map(toOrderDTO);
   }
 
+  // Works while the restaurant is paused, so orders placed before the pause can still be handled
   async accept(actor: OrderActor | null, orderId: number): Promise<OrderTransitionDTO> {
     const { order, restaurantActor } = await this.restaurantOrder(actor, orderId);
-    const queue = await this.repository.getPreparationQueue(order.restaurantId);
-    const event = queue.accept(order, restaurantActor.userId, await this.repository.nextEventId());
-    return this.save(order, event);
+    return this.repository.withQueueLock(order.restaurantId, async (orders) => {
+      const queue = await orders.getPreparationQueue(order.restaurantId);
+      const event = queue.accept(order, restaurantActor.userId, await orders.nextEventId());
+      const started = await this.startFront(queue, orders);
+      await this.saveAll(orders, [order, started]);
+      return toTransition(order, event);
+    });
   }
 
   async reject(actor: OrderActor | null, orderId: number, reason: string): Promise<OrderTransitionDTO> {
@@ -96,18 +111,31 @@ export class OrderService {
     return this.save(order, order.cancel(customer.userId, await this.repository.nextEventId()));
   }
 
-  async startPreparing(actor: OrderActor | null, orderId: number): Promise<OrderTransitionDTO> {
-    const { order, restaurantActor } = await this.restaurantOrder(actor, orderId);
-    const queue = await this.repository.getPreparationQueue(order.restaurantId);
-    const queued = this.queuedOrder(queue, order);
-    return this.save(queued, queue.startPreparing(queued, restaurantActor.userId, await this.repository.nextEventId()));
-  }
-
   async markReady(actor: OrderActor | null, orderId: number): Promise<OrderTransitionDTO> {
     const { order, restaurantActor } = await this.restaurantOrder(actor, orderId);
-    const queue = await this.repository.getPreparationQueue(order.restaurantId);
-    const queued = this.queuedOrder(queue, order);
-    return this.save(queued, queue.markReady(queued, restaurantActor.userId, await this.repository.nextEventId()));
+    return this.repository.withQueueLock(order.restaurantId, async (orders) => {
+      const queue = await orders.getPreparationQueue(order.restaurantId);
+      const queued = this.queuedOrder(queue, order);
+      const event = queue.markReady(queued, restaurantActor.userId, await orders.nextEventId());
+      const started = await this.startFront(queue, orders);
+      await this.saveAll(orders, [queued, started]);
+      return toTransition(queued, event);
+    });
+  }
+
+  // The front of the queue is always being prepared, so the system starts it as soon as it gets there
+  private async startFront(queue: PreparationQueue, orders: OrderRepository): Promise<Order | undefined> {
+    const front = queue.waitingToStart;
+    if (front) {
+      queue.startPreparing(front, SYSTEM_ACTOR_ID, await orders.nextEventId());
+    }
+    return front;
+  }
+
+  private async saveAll(orders: OrderRepository, changed: readonly (Order | undefined)[]): Promise<void> {
+    for (const order of new Set(changed)) {
+      if (order) await orders.save(order);
+    }
   }
 
   // Name and price always come from the menu, never from the client
@@ -179,6 +207,10 @@ export class OrderService {
 
   private async save(order: Order, event: StateChangeEvent): Promise<OrderTransitionDTO> {
     await this.repository.save(order);
-    return Object.freeze({ order: toOrderDTO(order), eventId: event.eventId, event });
+    return toTransition(order, event);
   }
+}
+
+function toTransition(order: Order, event: StateChangeEvent): OrderTransitionDTO {
+  return Object.freeze({ order: toOrderDTO(order), eventId: event.eventId, event });
 }
