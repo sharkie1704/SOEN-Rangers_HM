@@ -1,3 +1,4 @@
+import { hasPermission } from "../../domain/reg/permissions";
 import type { Restaurant } from "../../domain/ord/Restaurant.ts";
 import { OrderError, requireStringId } from "../../domain/ord/OrderError.ts";
 import { Role } from "../../domain/reg/Role.ts";
@@ -40,8 +41,7 @@ export class RestaurantStatusService {
   }
 
   private requireStaffOfOrOperator(actor: StatusActor | null, restaurantId: string): StatusActor {
-    if (actor?.role === Role.OPERATOR) return actor;
-    if (actor?.role === Role.RESTAURANT && actor.restaurantId === restaurantId) return actor;
+    if (actor && hasPermission({ name: "changeRestaurantStatus", restaurantId }, { ...actor, id: actor.userId })) return actor;
     throw new OrderError("FORBIDDEN", "Only this restaurant's staff or an operator can pause or reopen it.");
   }
 
