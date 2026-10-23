@@ -1,5 +1,6 @@
 import express from "express";
 import cookieParser from "cookie-parser";
+import { apiCommandLogger } from "./application/http/ApiCommandLogger";
 import type { UserRepository } from "./domain/reg/ports/UserRepository";
 import type { PasswordHasher } from "./domain/reg/ports/PasswordHasher";
 import type { SessionTokenService } from "./domain/reg/ports/SessionTokenService";
@@ -42,6 +43,7 @@ export interface AppDeps {
 export function createApp({ users, hasher, tokens, restaurants, menu, restaurantStatus, orders, orderMenu }: AppDeps) {
   
   const app = express();
+  app.use("/api", apiCommandLogger);
   app.use(express.json());
   app.use(cookieParser());
 
