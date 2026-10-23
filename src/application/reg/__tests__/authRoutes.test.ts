@@ -6,7 +6,7 @@ import { OperatorRegistrar } from "../../../domain/reg/OperatorRegistrar";
 import { InMemoryUserRepository, FakePasswordHasher } from "../../../domain/reg/__tests__/fakes";
 import type { RestaurantReadRepository,} from "../../ord/RestaurantReadRepository";
 import type { MenuRepository } from "../../ord/MenuRepository";
-import { InMemoryRestaurantStatusRepository } from "../../ord/__tests__/fakes";
+import { FakeMenuCatalog, InMemoryOrderRepository, InMemoryRestaurantStatusRepository } from "../../ord/__tests__/fakes";
 
 const customer = {
   role: "CUSTOMER",
@@ -27,6 +27,8 @@ beforeEach(() => {
      restaurants: fakeRestaurants,
      menu: fakeMenu,
      restaurantStatus: new InMemoryRestaurantStatusRepository(),
+     orders: new InMemoryOrderRepository(),
+     menuCatalog: new FakeMenuCatalog(),
    });
 });
 const fakeRestaurants: RestaurantReadRepository = {

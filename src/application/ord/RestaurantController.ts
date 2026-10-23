@@ -1,19 +1,20 @@
-import type { OrderActor } from "./OrderActor.ts";
-import { OrderService } from "./OrderService.ts";
-import type { OrderDTO } from "./OrderDTO.ts";
+import type { Request, Response } from "express";
+import type { OrderService } from "./OrderService.ts";
+import { runOrderCommand, toActor } from "./MenuController.ts";
 
+// Staff views of their restaurant's orders
 export class RestaurantController {
-  private readonly service: OrderService;
+  constructor(private readonly service: OrderService) {}
 
-  constructor(service: OrderService) {
-    this.service = service;
-  }
+  incomingOrders = async (req: Request, res: Response): Promise<void> => {
+    await runOrderCommand(res, async () => {
+      res.status(200).json({ orders: await this.service.incoming(toActor(req.user), String(req.params.restaurantId)) });
+    });
+  };
 
-  incomingOrders(actor: OrderActor | null, restaurantId: string): Promise<readonly OrderDTO[]> {
-    return this.service.incoming(actor, restaurantId);
-  }
-
-  preparationQueue(actor: OrderActor | null, restaurantId: string): Promise<readonly OrderDTO[]> {
-    return this.service.queue(actor, restaurantId);
-  }
+  preparationQueue = async (req: Request, res: Response): Promise<void> => {
+    await runOrderCommand(res, async () => {
+      res.status(200).json({ orders: await this.service.queue(toActor(req.user), String(req.params.restaurantId)) });
+    });
+  };
 }
