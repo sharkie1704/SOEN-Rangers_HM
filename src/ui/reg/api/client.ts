@@ -1,7 +1,10 @@
+import { recordOutput } from "../../console/outputLog";
+
 export interface ApiErrorDetail {
   path: string;
   message: string;
 }
+
 
 export class ApiError extends Error {
   constructor(
@@ -13,7 +16,6 @@ export class ApiError extends Error {
     this.name = "ApiError";
   }
 }
-
 function parseErrorDetails(data: unknown): ApiErrorDetail[] {
   if (typeof data !== "object" || data === null || !("details" in data) || !Array.isArray(data.details)) {
     return [];
@@ -34,19 +36,35 @@ export async function api<T>(
   path: string,
   options: { method?: string; body?: unknown } = {},
 ): Promise<T> {
-  const res = await fetch(path, {
-    method: options.method ?? "GET",
-    headers: options.body ? { "Content-Type": "application/json" } : undefined,
-    body: options.body ? JSON.stringify(options.body) : undefined,
-    credentials: "include",
-  });
-  if (res.status === 204) return undefined as T;
+  const method = options.method ?? "GET";
+  try {
+    const res = await fetch(path, {
+      method,
+      headers: options.body ? { "Content-Type": "application/json" } : undefined,
+      body: options.body ? JSON.stringify(options.body) : undefined,
+      credentials: "include",
+    });
+    if (res.status === 204) {
+      recordOutput(`${method} ${path} completed (${res.status})`);
+      return undefined as T;
+    }
 
-  const data: unknown = await res.json().catch(() => null);
-  if (!res.ok) {
-    const body = typeof data === "object" && data !== null ? data : {};
-    const message = "error" in body && typeof body.error === "string" ? body.error : "Request failed";
-    throw new ApiError(res.status, message, parseErrorDetails(data));
+    const data: unknown = await res.json().catch(() => null);
+    if (!res.ok) {
+      const body = typeof data === "object" && data !== null ? data : {};
+      const message = "error" in body && typeof body.error === "string" ? body.error : "Request failed";
+      recordOutput(`${method} ${path} failed (${res.status}): ${message}`, "error");
+      throw new ApiError(res.status, message, parseErrorDetails(data));
+    }
+
+    recordOutput(`${method} ${path} completed (${res.status})`);
+    return data as T;
+  } catch (error) {
+    if (!(error instanceof ApiError)) {
+      const message = error instanceof Error ? error.message : "Network request failed";
+      recordOutput(`${method} ${path} failed: ${message}`, "error");
+    }
+    throw error;
   }
-  return data as T;
 }
+

@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import RestaurantCard from "./RestaurantCard";
 import { getRestaurantDemoDetails } from "./restaurantDemoDetails";
+import { api } from "../reg/api/client";
 
 type RestaurantListPageInputs = {
   onSelectRestaurant: (restaurantId: string) => void;
@@ -27,15 +28,7 @@ useEffect(() => {
 
   async function loadRestaurants() {
     try {
-      const response = await fetch("/api/restaurants", {
-        credentials: "include",
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to load restaurants");
-      }
-
-      const data: { restaurants: Restaurant[] } = await response.json();
+      const data = await api<{ restaurants: Restaurant[] }>("/api/restaurants");
 
       if (!cancelled) {
         setRestaurants(data.restaurants);
