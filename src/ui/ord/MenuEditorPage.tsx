@@ -72,14 +72,14 @@ export default function MenuEditorPage({ restaurantId }: MenuEditorPageInputs) {
     setMessage(e instanceof ApiError ? `Error: ${e.message}` : "Error: request failed");
   }
 
-  async function pauseRestaurant() {
+  async function changeStatus(status: "PAUSED" | "OPEN") {
     try {
       const res = await api<{ restaurant: { status: RestaurantStatus }; eventId: number }>(
         `/api/restaurants/${encodeURIComponent(restaurantId)}/status`,
-        { method: "PATCH", body: { status: "PAUSED" } },
+        { method: "PATCH", body: { status } },
       );
       setRestaurantStatus(res.restaurant.status);
-      setMessage(`Restaurant paused (event #${res.eventId})`);
+      setMessage(`Restaurant ${status === "PAUSED" ? "paused" : "reopened"} (event #${res.eventId})`);
     } catch (e) {
       showError(e);
     }
@@ -160,12 +160,14 @@ export default function MenuEditorPage({ restaurantId }: MenuEditorPageInputs) {
           <div style={{ ...row, marginBottom: "16px" }}>
             <span>Restaurant status: <strong>{statusLabel(restaurantStatus)}</strong></span>
             {restaurantStatus === "OPEN" && (
-              <button className="interactive-button" style={{ ...primary, marginLeft: "auto" }} onClick={pauseRestaurant}>
+              <button className="interactive-button" style={{ ...primary, marginLeft: "auto" }} onClick={() => changeStatus("PAUSED")}>
                 Pause restaurant
               </button>
             )}
             {restaurantStatus === "PAUSED" && (
-              <span style={{ marginLeft: "auto" }}>Only an operator can reopen it.</span>
+              <button className="interactive-button" style={{ ...secondary, marginLeft: "auto" }} onClick={() => changeStatus("OPEN")}>
+                Reopen restaurant
+              </button>
             )}
           </div>
         )}

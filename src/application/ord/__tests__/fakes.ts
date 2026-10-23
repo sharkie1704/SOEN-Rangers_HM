@@ -27,6 +27,10 @@ export class InMemoryOrderRepository implements OrderRepository {
     return [...this.orders.values()].filter((o) => o.restaurantId === restaurantId);
   }
 
+  async withQueueLock<T>(_restaurantId: string, work: (orders: OrderRepository) => Promise<T>): Promise<T> {
+    return work(this);
+  }
+
   async getPreparationQueue(restaurantId: string): Promise<PreparationQueue> {
     let queue = this.queues.get(restaurantId);
     if (!queue) {
@@ -92,6 +96,5 @@ export class InMemoryRestaurantStatusRepository implements RestaurantStatusRepos
 
   async nextEventId(): Promise<number> { return ++this.eventSeq; }
   async findById(restaurantId: string): Promise<Restaurant | undefined> { return this.restaurants.get(restaurantId); }
-  async save(): Promise<void> {}
-  async recordEvent(event: RestaurantStatusEvent): Promise<void> { this.events.push(event); }
+  async save(_restaurant: Restaurant, event: RestaurantStatusEvent): Promise<void> { this.events.push(event); }
 }

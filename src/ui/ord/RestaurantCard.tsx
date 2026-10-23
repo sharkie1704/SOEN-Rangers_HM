@@ -92,25 +92,26 @@ export default function RestaurantCard({ name, category, address, specialty, rat
         {status.charAt(0).toUpperCase() + status.slice(1)}
         </span>
 
-        {/* Open the restaurant's menu */}
+        {/* Open the restaurant's menu; only open restaurants can be browsed (R-ORD-02) */}
         <button
         type="button"
         className="interactive-button"
         onClick={onViewMenu}
+        disabled={status !== "open"}
         style={{
             display: "block",
             marginTop: "16px",
             padding: "10px 18px",
-            backgroundColor: "#C66B32",
+            backgroundColor: status === "open" ? "#C66B32" : "#BCA99B",
             color: "#FFFFFF",
             border: "none",
             borderRadius: "8px",
             fontFamily: "inherit",
             fontWeight: 600,
-            cursor: "pointer",
+            cursor: status === "open" ? "pointer" : "not-allowed",
         }}
         >
-        View Menu →
+        {status === "open" ? "View Menu →" : "Menu unavailable"}
         </button>
       </div>
     </article>
