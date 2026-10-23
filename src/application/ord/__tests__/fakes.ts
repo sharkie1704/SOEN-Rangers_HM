@@ -24,6 +24,14 @@ export class InMemoryOrderRepository implements OrderRepository {
     return [...this.orders.values()].filter((o) => o.restaurantId === restaurantId);
   }
 
+  async findByCustomer(customerId: string): Promise<readonly Order[]> {
+    return [...this.orders.values()].filter((o) => o.customerId === customerId);
+  }
+
+  async withQueueLock<T>(_restaurantId: string, work: (orders: OrderRepository) => Promise<T>): Promise<T> {
+    return work(this);
+  }
+
   async getPreparationQueue(restaurantId: string): Promise<PreparationQueue> {
     let queue = this.queues.get(restaurantId);
     if (!queue) {
