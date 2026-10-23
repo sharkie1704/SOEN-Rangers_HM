@@ -54,12 +54,14 @@ export default function RestaurantMenuPage({
     async function loadMenu() {
       try {
         const path = `/api/restaurants/${encodeURIComponent(restaurantId)}`;
-        const [details, menu] = await Promise.all([
-          api<{ restaurant: Restaurant }>(path),
-          api<{ menuItems: ApiMenuItem[] }>(`${path}/menu`),
-        ]);
+        const details = await api<{ restaurant: Restaurant }>(path);
+        if (cancelled) return;
+        setRestaurant(details.restaurant);
+        // Paused and closed restaurants can't be browsed (R-ORD-02)
+        if (details.restaurant.status !== "OPEN") return;
+
+        const menu = await api<{ menuItems: ApiMenuItem[] }>(`${path}/menu`);
         if (!cancelled) {
-          setRestaurant(details.restaurant);
           setMenuItems(menu.menuItems.map((item) => ({
             ...item,
             price: item.priceCents / 100,
@@ -207,7 +209,7 @@ export default function RestaurantMenuPage({
                 }}
               >
                 This restaurant is currently {restaurant.status.toLowerCase()}.
-                You can browse the menu, but ordering is unavailable.
+                Its menu and ordering will be back once it reopens.
               </p>
             )}
         </header>
@@ -252,7 +254,7 @@ export default function RestaurantMenuPage({
 
           {error && <p role="alert">{error}</p>}
 
-          {!loading && !error && menuItems.length === 0 && (
+          {!loading && !error && restaurant?.status === "OPEN" && menuItems.length === 0 && (
             <p>No desserts available yet.</p>
           )}
 
