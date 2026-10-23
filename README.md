@@ -37,6 +37,11 @@ Vite proxies `/api` to Express (see `vite.config.ts`), so the browser only talks
 and the session cookie works. Always use relative URLs like `/api/auth/login` in frontend code.
 If you change `PORT` in `.env`, update the proxy target too.
 
+When the API starts outside production, it loads `config.json` and
+demo accounts, restaurants, and menu items before starting the server. 
+
+Demo accounts: use the password `demo`; change `config.json` to customize the local seed data. Production startup skips seeding.
+
 ```sh
    npm run check      # type-check
    npm run build      # production build
