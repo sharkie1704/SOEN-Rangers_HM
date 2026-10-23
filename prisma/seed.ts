@@ -1,4 +1,4 @@
-import { prisma } from "../src/technical-services/db/prismaClient";
+import { prisma } from "../src/technical-services/db/PrismaClient";
 import { BcryptPasswordHasher } from "../src/technical-services/reg/BcryptPasswordHasher";
 import { restaurants, menuItems, users } from "./seed-data";
 

@@ -28,7 +28,7 @@ import { OrderRoutes } from "./application/ord/OrderRoutes";
 import type { OrderRepository } from "./application/ord/OrderRepository";
 import type { MenuCatalog } from "./application/ord/MenuCatalog";
 import { OrderService } from "./application/ord/OrderService";
-import { toUserDto } from "./technical-services/http/userDto";
+import { toUserDto } from "./technical-services/http/UserDTO";
 
 export interface AppDeps {
   users: UserRepository;

@@ -5,7 +5,7 @@ import type { PasswordHasher } from "../../domain/reg/ports/PasswordHasher";
 import type { SessionTokenService } from "../../domain/reg/ports/SessionTokenService";
 import { Session } from "../../domain/reg/Session";
 import { SESSION_COOKIE, SESSION_TTL_MS, sessionCookieOptions } from "./AuthenticateController";
-import { toUserDto } from "../../technical-services/http/userDto";
+import { toUserDto } from "../../technical-services/http/UserDTO";
 
 const loginSchema = z.object({ email: z.string(), password: z.string() });
 
