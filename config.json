@@ -1,0 +1,112 @@
+{
+  "accounts": [
+    {
+      "id": "seed-customer",
+      "name": "Demo Customer",
+      "email": "customer@example.com",
+      "password": "demo",
+      "role": "CUSTOMER",
+      "deliveryLat": 45.0000,
+      "deliveryLng": -73.0000
+    },
+    {
+      "id": "seed-courier",
+      "name": "Demo Courier",
+      "email": "courier@example.com",
+      "password": "demo",
+      "role": "COURIER"
+    },
+    {
+      "id": "seed-restaurant-staff",
+      "name": "Sweet Dreams Staff",
+      "email": "staff@example.com",
+      "password": "demo",
+      "role": "RESTAURANT",
+      "restaurantId": "1"
+    },
+    {
+      "id": "seed-operator",
+      "name": "Demo Operator",
+      "email": "operator@example.com",
+      "password": "demo",
+      "role": "OPERATOR"
+    }
+  ],
+  "restaurants": [
+    {
+      "id": "1",
+      "name": "Sweet Dreams",
+      "category": "Bakery",
+      "description": "Fresh cakes and desserts made daily.",
+      "imageUrl": "",
+      "status": "OPEN",
+      "menuItems": [
+        {
+          "name": "Chocolate Brownie",
+          "description": "Rich chocolate brownie.",
+          "imageUrl": "",
+          "priceCents": 675,
+          "available": true
+        },
+        {
+          "name": "Vanilla Cupcake",
+          "description": "Vanilla cupcake with buttercream frosting.",
+          "imageUrl": "",
+          "priceCents": 425,
+          "available": true
+        }
+      ]
+    },
+    {
+      "id": "2",
+      "name": "Chocolate Heaven",
+      "category": "Chocolate",
+      "description": "A little something for every chocolate lover.",
+      "imageUrl": "",
+      "status": "OPEN",
+      "menuItems": [
+        {
+          "name": "Chocolate Lava Cake",
+          "description": "Warm chocolate cake with a molten center.",
+          "imageUrl": "",
+          "priceCents": 850,
+          "available": true
+        }
+      ]
+    },
+    {
+      "id": "3",
+      "name": "La Petite Pâtisserie",
+      "category": "Pâtisserie",
+      "description": "French-inspired pastries and desserts.",
+      "imageUrl": "",
+      "status": "OPEN",
+      "menuItems": [
+        {
+          "name": "Strawberry Tart",
+          "description": "A fresh strawberry tart with pastry cream.",
+          "imageUrl": "",
+          "priceCents": 725,
+          "available": true
+        }
+      ]
+    },
+    {
+      "id": "4",
+      "name": "Sugar Rush",
+      "category": "Dessert",
+      "description": "Classic treats with a modern twist.",
+      "imageUrl": "",
+      "status": "OPEN",
+      "menuItems": [
+        {
+          "name": "Caramel Cheesecake",
+          "description": "Creamy cheesecake topped with caramel.",
+          "imageUrl": "",
+          "priceCents": 795,
+          "available": true
+        }
+      ]
+    }
+  ]
+}
