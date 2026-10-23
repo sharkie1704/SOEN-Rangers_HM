@@ -39,13 +39,15 @@ export class OrderService {
       throw new OrderError("CONFLICT", "Restaurant is not accepting orders.");
     }
     const lines = await this.priceLines(restaurantId, input.lines);
+    const placedEventId = await this.repository.nextEventId();
     const order = new Order({
       id: await this.repository.nextOrderId(),
       restaurantId,
       customerId: customer.userId,
       lines,
-    });
+    }, new Date(), { actorId: customer.userId, eventId: placedEventId });
     await this.repository.add(order);
+    this.logEvent(order.events[0]);
     return toOrderDTO(order);
   }
 
@@ -60,14 +62,12 @@ export class OrderService {
     return toOrderDTO(order);
   }
 
-  // Newest first
-  async mine(actor: OrderActor | null): Promise<readonly OrderDTO[]> {
+  async customerOrders(actor: OrderActor | null): Promise<readonly OrderDTO[]> {
     const customer = this.requireActor(actor);
     if (customer.role !== Role.CUSTOMER) {
-      throw new OrderError("FORBIDDEN", "Only customers have their own orders.");
+      throw new OrderError("FORBIDDEN", "Only customers can view customer order history.");
     }
-    const orders = await this.repository.findByCustomer(customer.userId);
-    return [...orders].sort((a, b) => b.id - a.id).map(toOrderDTO);
+    return (await this.repository.findByCustomer(customer.userId)).map(toOrderDTO);
   }
 
   async incoming(actor: OrderActor | null, restaurantId: string): Promise<readonly OrderDTO[]> {
@@ -90,6 +90,9 @@ export class OrderService {
       const event = queue.accept(order, restaurantActor.userId, await orders.nextEventId());
       const started = await this.startFront(queue, orders);
       await this.saveAll(orders, [order, started]);
+      this.logEvent(event);
+      const startEvent = started?.events.at(-1);
+      if (startEvent) this.logEvent(startEvent);
       return toTransition(order, event);
     });
   }
@@ -119,6 +122,9 @@ export class OrderService {
       const event = queue.markReady(queued, restaurantActor.userId, await orders.nextEventId());
       const started = await this.startFront(queue, orders);
       await this.saveAll(orders, [queued, started]);
+      this.logEvent(event);
+      const startEvent = started?.events.at(-1);
+      if (startEvent) this.logEvent(startEvent);
       return toTransition(queued, event);
     });
   }
@@ -207,7 +213,12 @@ export class OrderService {
 
   private async save(order: Order, event: StateChangeEvent): Promise<OrderTransitionDTO> {
     await this.repository.save(order);
+    this.logEvent(event);
     return toTransition(order, event);
+  }
+
+  private logEvent(event: StateChangeEvent): void {
+    console.info(`[ORD] eventId=${event.eventId} action=${event.action} orderId=${event.orderId} ${event.from}->${event.to} actorId=${event.actorId}`);
   }
 }
 

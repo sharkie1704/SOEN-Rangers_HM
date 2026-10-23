@@ -18,7 +18,7 @@ const app = createApp({
   menu: new PrismaMenuRepository(),
   restaurantStatus: new PrismaRestaurantStatusRepository(),
   orders: new PrismaOrderRepository(),
-  menuCatalog: new PrismaMenuCatalog(),
+  orderMenu: new PrismaMenuCatalog(),
 });
 
 const PORT = Number(process.env.PORT ?? 3000);

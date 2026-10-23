@@ -1,10 +1,10 @@
 
 import { useEffect, useState } from "react";
 import RestaurantCard from "./RestaurantCard";
+import { getRestaurantDemoDetails } from "./restaurantDemoDetails";
 
 type RestaurantListPageInputs = {
   onSelectRestaurant: (restaurantId: string) => void;
-  onViewOrders: () => void;
 };
 
 type Restaurant = {
@@ -16,10 +16,8 @@ type Restaurant = {
   status: "OPEN" | "PAUSED" | "CLOSED";
 };
 
-
-
 export default function RestaurantListPage({
-  onSelectRestaurant, onViewOrders }: RestaurantListPageInputs) {
+  onSelectRestaurant,}: RestaurantListPageInputs) {
     const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
 const [loading, setLoading] = useState(true);
 const [error, setError] = useState("");
@@ -69,17 +67,6 @@ useEffect(() => {
         fontFamily: "'Poppins', sans-serif",
       }}
     >
-      <div style={{ display: "flex", justifyContent: "flex-end", maxWidth: "1200px", margin: "0 auto" }}>
-        <button
-          type="button"
-          className="interactive-button"
-          onClick={onViewOrders}
-          style={{ padding: "10px 18px", backgroundColor: "#C66B32", color: "#FFFFFF", border: "none", borderRadius: "8px", fontFamily: "inherit", fontWeight: 600, cursor: "pointer" }}
-        >
-          My orders
-        </button>
-      </div>
-
       <h1 style={{ color: "#4B3028", textAlign: "center", fontSize: "32px", lineHeight: 1.2, margin: "52px 0 16px" }}>
          Discover the best sweet treats in Montréal
       </h1>
@@ -108,16 +95,22 @@ useEffect(() => {
       {!loading && !error && restaurants.length === 0 && (
       <p>No restaurants available yet.</p>
 )}
-        {restaurants.map((restaurant) => (
-          <RestaurantCard
-            key={restaurant.id}
-            name={restaurant.name}
-            category={restaurant.category}
-            status={restaurant.status.toLowerCase() as "open" | "paused" | "closed"}
-            image={restaurant.imageUrl}
-            onViewMenu={() => onSelectRestaurant(restaurant.id)}
-          />
-        ))}
+        {restaurants.map((restaurant) => {
+          const details = getRestaurantDemoDetails(restaurant.id);
+          return (
+            <RestaurantCard
+              key={restaurant.id}
+              name={restaurant.name}
+              category={restaurant.category}
+              address={details?.address ?? "Montreal address coming soon"}
+              specialty={details?.specialty ?? restaurant.description}
+              rating={details?.rating}
+              status={restaurant.status.toLowerCase() as "open" | "paused" | "closed"}
+              image={restaurant.imageUrl}
+              onViewMenu={() => onSelectRestaurant(restaurant.id)}
+            />
+          );
+        })}
       </section>
     </main>
   );

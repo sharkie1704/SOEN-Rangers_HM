@@ -18,7 +18,7 @@ function toMenuItemDTO(item: MenuItem) {
   };
 }
 
-export function toActor(user: AuthenticatedUser | undefined): OrderActor | null {
+function toActor(user: AuthenticatedUser | undefined): OrderActor | null {
   if (!user) return null;
   if (user.role === Role.CUSTOMER) {
     return { userId: user.id, role: Role.CUSTOMER };

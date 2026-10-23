@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import MenuItemCard from "./MenuItemCard";
 import { api } from "../reg/api/client";
+import { getRestaurantDemoDetails } from "./restaurantDemoDetails";
 import "./button-interactions.css";
 
 
@@ -41,6 +42,7 @@ export default function RestaurantMenuPage({
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const demoDetails = getRestaurantDemoDetails(restaurantId);
 
   useEffect(() => {
     let cancelled = false;
@@ -211,6 +213,28 @@ export default function RestaurantMenuPage({
               </p>
             )}
         </header>
+
+        {demoDetails && (
+          <section
+            aria-label={`${restaurant?.name ?? "Restaurant"} details`}
+            style={{
+              maxWidth: "900px",
+              margin: "-20px auto 40px",
+              padding: "18px 22px",
+              border: "1px solid #C89F7A",
+              borderRadius: "12px",
+              backgroundColor: "#EADBC8",
+              color: "#4B3028",
+              lineHeight: 1.6,
+            }}
+          >
+            <p style={{ margin: "0 0 6px", fontWeight: 600 }}>{demoDetails.specialty}</p>
+            <p style={{ margin: "0 0 6px" }}>{demoDetails.address}</p>
+            <p aria-label={`Rated ${demoDetails.rating} out of 5`} style={{ margin: 0, color: "#835900", fontWeight: 600 }}>
+              <span aria-hidden="true">★</span> {demoDetails.rating.toFixed(1)}
+            </p>
+          </section>
+        )}
 
         {/* Menu section */}
         <section aria-labelledby="menu-heading">

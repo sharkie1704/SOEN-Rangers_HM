@@ -4,6 +4,7 @@ import CustomerFlow from "../../ord/CustomerFlow";
 import MenuEditorPage from "../../ord/MenuEditorPage";
 import RestaurantConsolePage from "../../ord/RestaurantConsolePage";
 import OperatorRestaurantsPage from "../../ord/OperatorRestaurantsPage";
+import Header from "../../components/Header";
 
 export default function DashboardPage() {
   const { user, logout } = useAuth();
@@ -17,11 +18,7 @@ export default function DashboardPage() {
 
   return (
     <main>
-      <header>
-        <strong>DessertDash</strong>
-        <span>{user.name ?? user.id} ({user.role})</span>
-        <button onClick={onLogout}>Log out</button>
-      </header>
+      <Header user={user} onLogout={onLogout} />
 
       {user.role === "CUSTOMER" && < CustomerFlow />}
       {user.role === "RESTAURANT" && user.restaurantId && (

@@ -16,6 +16,7 @@ const toDbStatus: Record<OrderStatus, DbOrderStatus> = {
 };
 
 const toDbAction: Record<OrderAction, DbOrderAction> = {
+  place: "PLACE",
   accept: "ACCEPT",
   reject: "REJECT",
   cancel: "CANCEL",
@@ -103,7 +104,7 @@ export class PrismaOrderRepository implements OrderRepository {
   }
 
   async findByCustomer(customerId: string): Promise<readonly Order[]> {
-    const rows = await this.db.order.findMany({ where: { customerId }, include: withHistory, orderBy: { id: "asc" } });
+    const rows = await this.db.order.findMany({ where: { customerId }, include: withHistory, orderBy: { placedAt: "desc" } });
     return rows.map((row) => this.toDomain(row));
   }
 
