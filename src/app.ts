@@ -21,6 +21,11 @@ import { MenuController } from "./application/ord/MenuController";
 import type { RestaurantStatusRepository } from "./application/ord/RestaurantStatusRepository";
 import { RestaurantStatusService } from "./application/ord/RestaurantStatusService";
 import { RestaurantStatusController } from "./application/ord/RestaurantStatusController";
+import type { OrderRepository } from "./application/ord/OrderRepository";
+import type { MenuCatalog } from "./application/ord/MenuCatalog";
+import { OrderService } from "./application/ord/OrderService";
+import { OrderController } from "./application/ord/OrderController";
+import { RestaurantController } from "./application/ord/RestaurantController";
 
 export interface AppDeps {
   users: UserRepository;
@@ -29,9 +34,11 @@ export interface AppDeps {
   restaurants: RestaurantReadRepository;
   menu: MenuRepository;
   restaurantStatus: RestaurantStatusRepository;
+  orders: OrderRepository;
+  menuCatalog: MenuCatalog;
 }
 
-export function createApp({ users, hasher, tokens, restaurants, menu, restaurantStatus }: AppDeps) {
+export function createApp({ users, hasher, tokens, restaurants, menu, restaurantStatus, orders, menuCatalog }: AppDeps) {
   
   const app = express();
   app.use(express.json());
@@ -48,6 +55,9 @@ export function createApp({ users, hasher, tokens, restaurants, menu, restaurant
   const restaurantController = new RestaurantQueryController(restaurants);
   const menuController = new MenuController(new MenuService(menu));
   const statusController = new RestaurantStatusController(new RestaurantStatusService(restaurantStatus));
+  const orderService = new OrderService(orders, menuCatalog);
+  const orderController = new OrderController(orderService);
+  const restaurantOrders = new RestaurantController(orderService);
 
   // Public: the only routes reachable without a session
   app.post("/api/auth/register", register.handle);
@@ -68,6 +78,16 @@ export function createApp({ users, hasher, tokens, restaurants, menu, restaurant
   app.patch("/api/restaurants/:restaurantId/menu/:itemId", menuController.update);
   app.delete("/api/restaurants/:restaurantId/menu/:itemId", menuController.remove);
   app.patch("/api/restaurants/:restaurantId/status", statusController.update);
+  app.get("/api/restaurants/:restaurantId/orders/incoming", restaurantOrders.incomingOrders);
+  app.get("/api/restaurants/:restaurantId/orders/queue", restaurantOrders.preparationQueue);
+
+  app.get("/api/orders", orderController.mine);
+  app.post("/api/orders", orderController.place);
+  app.get("/api/orders/:orderId", orderController.get);
+  app.post("/api/orders/:orderId/cancel", orderController.cancel);
+  app.post("/api/orders/:orderId/accept", orderController.accept);
+  app.post("/api/orders/:orderId/reject", orderController.reject);
+  app.post("/api/orders/:orderId/ready", orderController.markReady);
 
   app.get("/api/auth/me", (req, res) => {
     res.json({ user: req.user });
