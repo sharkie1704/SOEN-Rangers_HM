@@ -1,6 +1,6 @@
 import type { Request, Response } from "express";
 import { z } from "zod";
-import { Role } from "../../domain/reg/Role";
+import { hasPermission } from "../../domain/reg/permissions";
 import type { OperatorRegistrar } from "../../domain/reg/OperatorRegistrar";
 import { toUserDto } from "../../technical-services/http/userDto";
 import { sendRegistrationError } from "../../technical-services/http/sendRegistrationError";
@@ -12,8 +12,7 @@ export class CreateOperatorAccountController {
   constructor(private readonly operators: OperatorRegistrar) {}
 
   handle = async (req: Request, res: Response): Promise<void> => {
-    // Replace with Strategy permission once we implement it
-    if (req.user?.role !== Role.OPERATOR) {
+    if (!hasPermission({ name: "createOperator" }, req.user)) {
       res.status(403).json({ error: "Operator access required" });
       return;
     }

@@ -17,3 +17,4 @@ export * from "./ports/SessionTokenService";
 
 export * from "./Session";
 export * from "./Errors";
+export * from "./permissions";
