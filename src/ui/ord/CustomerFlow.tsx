@@ -2,11 +2,17 @@ import { useState } from "react";
 import RestaurantListPage from "./RestaurantListPage";
 import RestaurantMenuPage from "./RestaurantMenuPage";
 import PlaceOrderPage, { type CartItem } from "./PlaceOrderPage";
+import OrderTrackingPage from "./OrderTrackingPage";
 
 export default function CustomerFlow() {
   const [selectedRestaurantId, setSelectedRestaurantId] = useState<string | null>(null);
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [showCart, setShowCart] = useState(false);
+  const [showOrders, setShowOrders] = useState(false);
+
+  if (showOrders) {
+    return <OrderTrackingPage onBack={() => setShowOrders(false)} />;
+  }
 
   // navigate to the cart page (opened from the menu page)
   if (showCart) {
@@ -19,6 +25,11 @@ export default function CustomerFlow() {
         onBackToRestaurants={() => {
           setShowCart(false);
           setSelectedRestaurantId(null);
+        }}
+        onViewOrders={() => {
+          setShowCart(false);
+          setSelectedRestaurantId(null);
+          setShowOrders(true);
         }}
       />
     );
@@ -44,5 +55,5 @@ export default function CustomerFlow() {
     );
   }
 
-  return <RestaurantListPage onSelectRestaurant={setSelectedRestaurantId} />;
+  return <RestaurantListPage onSelectRestaurant={setSelectedRestaurantId} onViewOrders={() => setShowOrders(true)} />;
 }
