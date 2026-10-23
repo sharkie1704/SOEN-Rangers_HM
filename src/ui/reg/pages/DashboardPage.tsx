@@ -3,6 +3,7 @@ import { useAuth } from "../auth/AuthContext";
 import CustomerFlow from "../../ord/CustomerFlow";
 import MenuEditorPage from "../../ord/MenuEditorPage";
 import OperatorRestaurantsPage from "../../ord/OperatorRestaurantsPage";
+import OutputConsole from "../../console/OutputConsole";
 
 export default function DashboardPage() {
   const { user, logout } = useAuth();
@@ -26,6 +27,7 @@ export default function DashboardPage() {
       {user.role === "RESTAURANT" && user.restaurantId && <MenuEditorPage restaurantId={user.restaurantId} />}
       {user.role === "OPERATOR" && <OperatorRestaurantsPage />}
       {user.role === "COURIER" && <p>Couriers have no screen in Phase II.</p>}
+      <OutputConsole />
     </main>
   );
 }
