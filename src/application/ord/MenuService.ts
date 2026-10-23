@@ -1,3 +1,4 @@
+import { hasPermission } from "../../domain/reg/permissions";
 import { MenuItem, type MenuItemProps } from "../../domain/ord/MenuItem.ts";
 import { OrderError, requireId } from "../../domain/ord/OrderError.ts";
 import { Role } from "../../domain/reg/Role.ts";
@@ -59,10 +60,10 @@ export class MenuService {
   }
 
   private requireOwner(actor: OrderActor | null, restaurantId: string): RestaurantActor {
-    if (!actor || actor.role !== Role.RESTAURANT || actor.restaurantId !== restaurantId) {
+    if (!actor || !hasPermission({ name: "manageMenu", restaurantId }, { ...actor, id: actor.userId })) {
       throw new OrderError("FORBIDDEN", "Restaurant accounts can only manage their own restaurant's menu.");
     }
-    return actor;
+    return actor as RestaurantActor;
   }
 
   private async ownedItem(actor: OrderActor | null, menuItemId: number): Promise<MenuItem> {
