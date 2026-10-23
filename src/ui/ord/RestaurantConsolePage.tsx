@@ -66,8 +66,8 @@ export default function RestaurantConsolePage({ restaurantId }: RestaurantConsol
 
   async function act(order: Order, action: keyof typeof doneMessage, body?: unknown) {
     try {
-      const res = await api<{ order: Order; eventId: number }>(`/api/orders/${order.id}/${action}`, { method: "POST", body });
-      setMessage(`Order #${order.id} ${doneMessage[action]} (event #${res.eventId})`);
+      const { transition } = await api<{ transition: { order: Order; eventId: number } }>(`/api/orders/${order.id}/${action}`, { method: "POST", body });
+      setMessage(`Order #${order.id} ${doneMessage[action]} (event #${transition.eventId})`);
       setRejectingId(null);
       setReason("");
     } catch (e) {

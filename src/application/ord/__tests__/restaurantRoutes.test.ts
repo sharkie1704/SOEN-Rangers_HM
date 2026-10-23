@@ -7,7 +7,7 @@ import {
   FakePasswordHasher,
 } from "../../../domain/reg/__tests__/fakes";
 import type { RestaurantReadRepository } from "../RestaurantReadRepository";
-import { FakeMenuCatalog, InMemoryMenuRepository, InMemoryOrderRepository, InMemoryRestaurantStatusRepository } from "./fakes";
+import { InMemoryMenuRepository, InMemoryRestaurantStatusRepository } from "./fakes";
 
 // Sample data used by our tests 
 const restaurant = {
@@ -50,8 +50,6 @@ beforeEach(() => {
     restaurants,
     menu: new InMemoryMenuRepository(),
     restaurantStatus: new InMemoryRestaurantStatusRepository(),
-    orders: new InMemoryOrderRepository(),
-    menuCatalog: new FakeMenuCatalog(),
   });
 });
 

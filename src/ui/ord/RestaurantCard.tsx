@@ -4,12 +4,15 @@ import "./button-interactions.css";
 type RestaurantCardData = {
   name: string;
   category: string;
+  address: string;
+  specialty: string;
+  rating?: number;
   image: string;
   status: "open" | "paused" | "closed";
   onViewMenu: () => void;
 };
 
-export default function RestaurantCard({ name, category,status,image,onViewMenu
+export default function RestaurantCard({ name, category, address, specialty, rating, status, image, onViewMenu
 }: RestaurantCardData) {
   return (
 
@@ -52,6 +55,16 @@ export default function RestaurantCard({ name, category,status,image,onViewMenu
         >
           {category}
         </p>
+
+        <div style={{ marginTop: "14px", color: "#4B3028", fontSize: "14px", lineHeight: 1.5 }}>
+          <p style={{ margin: "0 0 6px" }}>{specialty}</p>
+          <p style={{ margin: "0 0 6px" }}>{address}</p>
+          {rating !== undefined && (
+            <p aria-label={`Rated ${rating} out of 5`} style={{ margin: 0, color: "#835900", fontWeight: 600 }}>
+              <span aria-hidden="true">★</span> {rating.toFixed(1)}
+            </p>
+          )}
+        </div>
 
         {/* Status  */}
          <span

@@ -1,62 +1,49 @@
-import type { Request, Response } from "express";
-import { z } from "zod";
-import { OrderError } from "../../domain/ord/OrderError.ts";
-import type { OrderService } from "./OrderService.ts";
-import { runOrderCommand, toActor } from "./MenuController.ts";
-
-const placeOrderSchema = z.object({
-  restaurantId: z.string(),
-  lines: z.array(z.object({ menuItemId: z.number(), quantity: z.number() })),
-});
+import type { OrderActor } from "./OrderActor.ts";
+import { OrderService } from "./OrderService.ts";
+import type { PlaceOrderDTO } from "./PlaceOrderDTO.ts";
+import type { OrderDTO } from "./OrderDTO.ts";
+import type { OrderTransitionDTO } from "./OrderTransitionDTO.ts";
 
 export class OrderController {
-  constructor(private readonly service: OrderService) {}
+  private readonly service: OrderService;
 
-  place = async (req: Request, res: Response): Promise<void> => {
-    await runOrderCommand(res, async () => {
-      const parsed = placeOrderSchema.safeParse(req.body);
-      if (!parsed.success) {
-        throw new OrderError("INVALID_INPUT", "An order needs a restaurant ID and a list of items.");
-      }
-      const order = await this.service.place(toActor(req.user), parsed.data);
-      res.status(201).json({ order });
-    });
-  };
+  constructor(service: OrderService) {
+    this.service = service;
+  }
 
-  mine = async (req: Request, res: Response): Promise<void> => {
-    await runOrderCommand(res, async () => {
-      res.status(200).json({ orders: await this.service.mine(toActor(req.user)) });
-    });
-  };
+  place(actor: OrderActor | null, input: PlaceOrderDTO): Promise<OrderDTO> {
+    return this.service.place(actor, input);
+  }
 
-  get = async (req: Request, res: Response): Promise<void> => {
-    await runOrderCommand(res, async () => {
-      res.status(200).json({ order: await this.service.get(toActor(req.user), Number(req.params.orderId)) });
-    });
-  };
+  get(actor: OrderActor | null, orderId: number): Promise<OrderDTO> {
+    return this.service.get(actor, orderId);
+  }
 
-  accept = async (req: Request, res: Response): Promise<void> => {
-    await runOrderCommand(res, async () => {
-      res.status(200).json(await this.service.accept(toActor(req.user), Number(req.params.orderId)));
-    });
-  };
+  customerOrders(actor: OrderActor | null): Promise<readonly OrderDTO[]> {
+    return this.service.customerOrders(actor);
+  }
 
-  reject = async (req: Request, res: Response): Promise<void> => {
-    await runOrderCommand(res, async () => {
-      const { reason } = req.body ?? {};
-      res.status(200).json(await this.service.reject(toActor(req.user), Number(req.params.orderId), typeof reason === "string" ? reason : ""));
-    });
-  };
+  incoming(actor: OrderActor | null, restaurantId: string): Promise<readonly OrderDTO[]> {
+    return this.service.incoming(actor, restaurantId);
+  }
 
-  cancel = async (req: Request, res: Response): Promise<void> => {
-    await runOrderCommand(res, async () => {
-      res.status(200).json(await this.service.cancel(toActor(req.user), Number(req.params.orderId)));
-    });
-  };
+  queue(actor: OrderActor | null, restaurantId: string): Promise<readonly OrderDTO[]> {
+    return this.service.queue(actor, restaurantId);
+  }
 
-  markReady = async (req: Request, res: Response): Promise<void> => {
-    await runOrderCommand(res, async () => {
-      res.status(200).json(await this.service.markReady(toActor(req.user), Number(req.params.orderId)));
-    });
-  };
+  accept(actor: OrderActor | null, orderId: number): Promise<OrderTransitionDTO> {
+    return this.service.accept(actor, orderId);
+  }
+
+  reject(actor: OrderActor | null, orderId: number, reason: string): Promise<OrderTransitionDTO> {
+    return this.service.reject(actor, orderId, reason);
+  }
+
+  cancel(actor: OrderActor | null, orderId: number): Promise<OrderTransitionDTO> {
+    return this.service.cancel(actor, orderId);
+  }
+
+  markReady(actor: OrderActor | null, orderId: number): Promise<OrderTransitionDTO> {
+    return this.service.markReady(actor, orderId);
+  }
 }

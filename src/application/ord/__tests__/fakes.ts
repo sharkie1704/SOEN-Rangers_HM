@@ -19,13 +19,12 @@ export class InMemoryOrderRepository implements OrderRepository {
   async add(order: Order): Promise<void> { this.orders.set(order.id, order); }
   async save(): Promise<void> {}
   async findById(orderId: number): Promise<Order | undefined> { return this.orders.get(orderId); }
+  async findByCustomer(customerId: string): Promise<readonly Order[]> {
+    return [...this.orders.values()].filter((order) => order.customerId === customerId);
+  }
 
   async findByRestaurant(restaurantId: string): Promise<readonly Order[]> {
     return [...this.orders.values()].filter((o) => o.restaurantId === restaurantId);
-  }
-
-  async findByCustomer(customerId: string): Promise<readonly Order[]> {
-    return [...this.orders.values()].filter((o) => o.customerId === customerId);
   }
 
   async withQueueLock<T>(_restaurantId: string, work: (orders: OrderRepository) => Promise<T>): Promise<T> {
