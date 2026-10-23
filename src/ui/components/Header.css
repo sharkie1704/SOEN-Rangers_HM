@@ -1,0 +1,71 @@
+.app-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+  padding: 18px 32px;
+  background-color: #E6CDB7;
+  background-image: linear-gradient(90deg, #E6CDB7, #DFC0A7);
+  border-bottom: 2px solid #B98F70;
+  box-shadow: 0 2px 8px rgba(86, 53, 33, 0.07);
+}
+
+.app-header__brand {
+  font-size: 26px;
+  font-weight: 700;
+  color: #563521;
+}
+
+.app-header__right {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+
+.app-header__user {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.app-header__name {
+  font-size: 14px;
+  font-weight: 600;
+  color: #563521;
+}
+
+.app-header__role {
+  font-size: 12px;
+  color: #916f55;
+}
+
+.app-header__logout {
+  padding: 10px 18px;
+  background-color: #e99045;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.app-header__logout:hover {
+  background-color: #cf772c;
+}
+
+.app-header__logout:focus-visible {
+  outline: 3px solid #563521;
+  outline-offset: 3px;
+}
+
+@media (max-width: 600px) {
+  .app-header {
+    padding: 16px;
+  }
+
+  .app-header__right {
+    gap: 12px;
+  }
+}
