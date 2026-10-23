@@ -3,6 +3,7 @@ export interface ApiErrorDetail {
   message: string;
 }
 
+
 export class ApiError extends Error {
   constructor(
     public status: number,
@@ -13,7 +14,6 @@ export class ApiError extends Error {
     this.name = "ApiError";
   }
 }
-
 function parseErrorDetails(data: unknown): ApiErrorDetail[] {
   if (typeof data !== "object" || data === null || !("details" in data) || !Array.isArray(data.details)) {
     return [];
@@ -34,13 +34,16 @@ export async function api<T>(
   path: string,
   options: { method?: string; body?: unknown } = {},
 ): Promise<T> {
+  const method = options.method ?? "GET";
   const res = await fetch(path, {
-    method: options.method ?? "GET",
+    method,
     headers: options.body ? { "Content-Type": "application/json" } : undefined,
     body: options.body ? JSON.stringify(options.body) : undefined,
     credentials: "include",
   });
-  if (res.status === 204) return undefined as T;
+  if (res.status === 204) {
+    return undefined as T;
+  }
 
   const data: unknown = await res.json().catch(() => null);
   if (!res.ok) {
@@ -48,5 +51,7 @@ export async function api<T>(
     const message = "error" in body && typeof body.error === "string" ? body.error : "Request failed";
     throw new ApiError(res.status, message, parseErrorDetails(data));
   }
+
   return data as T;
 }
+
