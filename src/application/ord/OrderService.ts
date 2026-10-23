@@ -1,3 +1,4 @@
+import { hasPermission } from "../../domain/reg/permissions";
 import { Order } from "../../domain/ord/Order.ts";
 import { OrderError, requireId, requireStringId } from "../../domain/ord/OrderError.ts";
 import { Role } from "../../domain/reg/Role.ts";
@@ -24,7 +25,7 @@ export class OrderService {
 
   async place(actor: OrderActor | null, input: PlaceOrderDTO): Promise<OrderDTO> {
     const customer = this.requireActor(actor);
-    if (customer.role !== Role.CUSTOMER) {
+    if (!hasPermission({ name: "placeOrder" }, { ...customer, id: customer.userId })) {
       throw new OrderError("FORBIDDEN", "Only customers can place orders.");
     }
     if (!Array.isArray(input.lines) || input.lines.length === 0) {
@@ -54,17 +55,16 @@ export class OrderService {
   async get(actor: OrderActor | null, orderId: number): Promise<OrderDTO> {
     const authenticated = this.requireActor(actor);
     const order = await this.findOrder(orderId);
-    if (authenticated.role === Role.RESTAURANT) {
-      this.requireRestaurantActor(authenticated, order.restaurantId);
-    } else if (authenticated.userId !== order.customerId) {
-      throw new OrderError("FORBIDDEN", "Customers can only view their own orders.");
+    if (!hasPermission({ name: "viewOrder", customerId: order.customerId, restaurantId: order.restaurantId },
+      { ...authenticated, id: authenticated.userId })) {
+      throw new OrderError("FORBIDDEN", "You can only view your own orders or orders for your restaurant.");
     }
     return toOrderDTO(order);
   }
 
   async customerOrders(actor: OrderActor | null): Promise<readonly OrderDTO[]> {
     const customer = this.requireActor(actor);
-    if (customer.role !== Role.CUSTOMER) {
+    if (!hasPermission({ name: "customerOrders" }, { ...customer, id: customer.userId })) {
       throw new OrderError("FORBIDDEN", "Only customers can view customer order history.");
     }
     return (await this.repository.findByCustomer(customer.userId)).map(toOrderDTO);
@@ -104,11 +104,11 @@ export class OrderService {
 
   async cancel(actor: OrderActor | null, orderId: number): Promise<OrderTransitionDTO> {
     const customer = this.requireActor(actor);
-    if (customer.role !== Role.CUSTOMER) {
+    if (!hasPermission({ name: "cancelOrder", customerId: customer.userId }, { ...customer, id: customer.userId })) {
       throw new OrderError("FORBIDDEN", "Only customers can cancel their orders.");
     }
     const order = await this.findOrder(orderId);
-    if (order.customerId !== customer.userId) {
+    if (!hasPermission({ name: "cancelOrder", customerId: order.customerId }, { ...customer, id: customer.userId })) {
       throw new OrderError("FORBIDDEN", "Customers can only cancel their own orders.");
     }
     return this.save(order, order.cancel(customer.userId, await this.repository.nextEventId()));
@@ -194,10 +194,10 @@ export class OrderService {
   private requireRestaurantActor(actor: OrderActor | null, restaurantId: string): Extract<OrderActor, { role: Role.RESTAURANT }> {
     const authenticated = this.requireActor(actor);
     requireStringId(restaurantId, "Restaurant ID");
-    if (authenticated.role !== Role.RESTAURANT || authenticated.restaurantId !== restaurantId) {
+    if (!hasPermission({ name: "manageOrders", restaurantId }, { ...authenticated, id: authenticated.userId })) {
       throw new OrderError("FORBIDDEN", "Restaurant accounts can only manage orders for their own restaurant.");
     }
-    return authenticated;
+    return authenticated as Extract<OrderActor, { role: Role.RESTAURANT }>;
   }
 
   private async restaurantOrder(actor: OrderActor | null, orderId: number) {
