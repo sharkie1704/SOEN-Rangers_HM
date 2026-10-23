@@ -4,7 +4,6 @@ import CustomerFlow from "../../ord/CustomerFlow";
 import MenuEditorPage from "../../ord/MenuEditorPage";
 import RestaurantConsolePage from "../../ord/RestaurantConsolePage";
 import OperatorRestaurantsPage from "../../ord/OperatorRestaurantsPage";
-import OutputConsole from "../../console/OutputConsole";
 import Header from "../../components/Header";
 
 export default function DashboardPage() {
@@ -30,7 +29,6 @@ export default function DashboardPage() {
       )}
       {user.role === "OPERATOR" && <OperatorRestaurantsPage />}
       {user.role === "COURIER" && <p>Couriers have no screen in Phase II.</p>}
-      <OutputConsole />
     </main>
   );
 }
