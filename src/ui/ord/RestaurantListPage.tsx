@@ -1,6 +1,7 @@
 
 import { useEffect, useState } from "react";
 import RestaurantCard from "./RestaurantCard";
+import { getRestaurantDemoDetails } from "./restaurantDemoDetails";
 
 type RestaurantListPageInputs = {
   onSelectRestaurant: (restaurantId: string) => void;
@@ -14,8 +15,6 @@ type Restaurant = {
   imageUrl: string;
   status: "OPEN" | "PAUSED" | "CLOSED";
 };
-
-
 
 export default function RestaurantListPage({
   onSelectRestaurant,}: RestaurantListPageInputs) {
@@ -96,16 +95,22 @@ useEffect(() => {
       {!loading && !error && restaurants.length === 0 && (
       <p>No restaurants available yet.</p>
 )}
-        {restaurants.map((restaurant) => (
-          <RestaurantCard
-            key={restaurant.id}
-            name={restaurant.name}
-            category={restaurant.category}
-            status={restaurant.status.toLowerCase() as "open" | "paused" | "closed"}
-            image={restaurant.imageUrl}
-            onViewMenu={() => onSelectRestaurant(restaurant.id)}
-          />
-        ))}
+        {restaurants.map((restaurant) => {
+          const details = getRestaurantDemoDetails(restaurant.id);
+          return (
+            <RestaurantCard
+              key={restaurant.id}
+              name={restaurant.name}
+              category={restaurant.category}
+              address={details?.address ?? "Montreal address coming soon"}
+              specialty={details?.specialty ?? restaurant.description}
+              rating={details?.rating}
+              status={restaurant.status.toLowerCase() as "open" | "paused" | "closed"}
+              image={restaurant.imageUrl}
+              onViewMenu={() => onSelectRestaurant(restaurant.id)}
+            />
+          );
+        })}
       </section>
     </main>
   );
