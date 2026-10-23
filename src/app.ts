@@ -26,6 +26,7 @@ import { OrderRoutes } from "./application/ord/OrderRoutes";
 import type { OrderRepository } from "./application/ord/OrderRepository";
 import type { MenuCatalog } from "./application/ord/MenuCatalog";
 import { OrderService } from "./application/ord/OrderService";
+import { toUserDto } from "./technical-services/http/userDto";
 
 export interface AppDeps {
   users: UserRepository;
@@ -83,9 +84,26 @@ export function createApp({ users, hasher, tokens, restaurants, menu, restaurant
   app.delete("/api/restaurants/:restaurantId/menu/:itemId", menuController.remove);
   app.patch("/api/restaurants/:restaurantId/status", statusController.update);
 
-  app.get("/api/auth/me", (req, res) => {
-    res.json({ user: req.user });
-  });
+  app.get("/api/auth/me", async (req, res) => {
+  if (!req.user) {
+    res.status(401).json({ error: "Authentication required" });
+    return;
+  }
+
+  try {
+    const user = await users.findById(req.user.id);
+
+    if (!user) {
+      res.status(401).json({ error: "Authentication required" });
+      return;
+    }
+
+    res.json({ user: toUserDto(user) });
+  } catch (error) {
+    console.error("Failed to retrieve user profile:", error);
+    res.status(500).json({ error: "Failed to retrieve user profile" });
+  }
+});
   app.post("/api/operator/accounts", createOperator.handle);
 
   return app;
