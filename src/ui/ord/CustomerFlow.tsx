@@ -3,6 +3,7 @@ import RestaurantListPage from "./RestaurantListPage";
 import RestaurantMenuPage from "./RestaurantMenuPage";
 import PlaceOrderPage, { type CartItem } from "./PlaceOrderPage";
 import CustomerOrderHistory from "./CustomerOrderHistory";
+import { recordOutput } from "../console/outputLog";
 import "./customer-flow.css";
 
 export default function CustomerFlow() {
@@ -44,6 +45,7 @@ export default function CustomerFlow() {
         cartCount={cartItems.reduce((sum, item) => sum + item.quantity, 0)}
         onAddToCart={(item) => {
           setCartRestaurantId(selectedRestaurantId);
+          recordOutput(`Added ${item.name} to the cart`);
           setCartItems((current) => {
             const existing = current.find((c) => c.id === item.id);
             return existing
@@ -65,7 +67,9 @@ export default function CustomerFlow() {
         {cartNotice && <p role="status" style={{ textAlign: "center", color: "#923C32" }}>{cartNotice}</p>}
         <RestaurantListPage onSelectRestaurant={(restaurantId) => {
           if (cartItems.length > 0 && cartRestaurantId && cartRestaurantId !== restaurantId) {
-            setCartNotice("Your cart contains items from another restaurant. Finish or clear that cart first.");
+            const message = "Your cart contains items from another restaurant. Finish or clear that cart first.";
+            setCartNotice(message);
+            recordOutput(message, "error");
             return;
           }
           setCartNotice("");

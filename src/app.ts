@@ -42,9 +42,9 @@ export interface AppDeps {
 export function createApp({ users, hasher, tokens, restaurants, menu, restaurantStatus, orders, orderMenu }: AppDeps) {
   
   const app = express();
+  app.use("/api", apiCommandLogger);
   app.use(express.json());
   app.use(cookieParser());
-  app.use("/api", apiCommandLogger);
 
   const register = new RegistrationController({
     customer: new CustomerRegistrar(users, hasher),

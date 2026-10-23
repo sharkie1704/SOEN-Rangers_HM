@@ -32,6 +32,38 @@ function parseErrorDetails(data: unknown): ApiErrorDetail[] {
   );
 }
 
+function responseLogDetails(data: unknown): string {
+  if (typeof data !== "object" || data === null) return "";
+  const body = data as Record<string, unknown>;
+  const transition = typeof body.transition === "object" && body.transition !== null
+    ? body.transition as Record<string, unknown>
+    : undefined;
+  const order = typeof body.order === "object" && body.order !== null
+    ? body.order as Record<string, unknown>
+    : transition?.order && typeof transition.order === "object"
+      ? transition.order as Record<string, unknown>
+      : undefined;
+
+  const details: string[] = [];
+  if (typeof order?.id === "number") details.push(`orderId=${order.id}`);
+
+  let eventId = typeof transition?.eventId === "number"
+    ? transition.eventId
+    : typeof body.eventId === "number"
+      ? body.eventId
+      : undefined;
+  if (eventId === undefined && Array.isArray(order?.events)) {
+    const latestEvent = order.events.at(-1);
+    if (typeof latestEvent === "object" && latestEvent !== null && "eventId" in latestEvent
+      && typeof latestEvent.eventId === "number") {
+      eventId = latestEvent.eventId;
+    }
+  }
+  if (eventId !== undefined) details.push(`eventId=${eventId}`);
+
+  return details.length > 0 ? ` ${details.join(" ")}` : "";
+}
+
 export async function api<T>(
   path: string,
   options: { method?: string; body?: unknown } = {},
@@ -57,7 +89,7 @@ export async function api<T>(
       throw new ApiError(res.status, message, parseErrorDetails(data));
     }
 
-    recordOutput(`${method} ${path} completed (${res.status})`);
+    recordOutput(`${method} ${path} completed (${res.status})${responseLogDetails(data)}`);
     return data as T;
   } catch (error) {
     if (!(error instanceof ApiError)) {
