@@ -1,4 +1,4 @@
-import { prisma } from "../db/prismaClient.ts";
+import { prisma } from "../db/PrismaClient.ts";
 import { Restaurant } from "../../domain/ord/Restaurant.ts";
 import { OrderError } from "../../domain/ord/OrderError.ts";
 import type { RestaurantStatusEvent, RestaurantStatusRepository } from "../../application/ord/RestaurantStatusRepository.ts";

@@ -1,5 +1,5 @@
 
-import { prisma } from "../db/prismaClient.ts";
+import { prisma } from "../db/PrismaClient.ts";
 import type {
   RestaurantReadRepository,
   RestaurantDTO,

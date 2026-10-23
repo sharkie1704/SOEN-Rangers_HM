@@ -1,4 +1,4 @@
-import { prisma } from "../db/prismaClient.ts";
+import { prisma } from "../db/PrismaClient.ts";
 import { MenuItem, type MenuItemProps } from "../../domain/ord/MenuItem.ts";
 import type { MenuItemEvent, MenuRepository } from "../../application/ord/MenuRepository.ts";
 
