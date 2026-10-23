@@ -5,8 +5,8 @@ import type { User } from "../../domain/reg/User";
 import type { CustomerRegistrar } from "../../domain/reg/CustomerRegistrar";
 import type { CourierRegistrar } from "../../domain/reg/CourierRegistrar";
 import type { StaffRegistrar } from "../../domain/reg/StaffRegistrar";
-import { toUserDto } from "../../technical-services/http/userDto";
-import { sendRegistrationError } from "../../technical-services/http/sendRegistrationError";
+import { toUserDto } from "../../technical-services/http/UserDTO";
+import { sendRegistrationError } from "../../technical-services/http/SendRegistrationError";
 import type { RestaurantReadRepository } from "../ord/RestaurantReadRepository";
 
 export interface PublicRegistrars {

@@ -2,8 +2,8 @@ import type { Request, Response } from "express";
 import { z } from "zod";
 import { hasPermission } from "../../domain/reg/permissions";
 import type { OperatorRegistrar } from "../../domain/reg/OperatorRegistrar";
-import { toUserDto } from "../../technical-services/http/userDto";
-import { sendRegistrationError } from "../../technical-services/http/sendRegistrationError";
+import { toUserDto } from "../../technical-services/http/UserDTO";
+import { sendRegistrationError } from "../../technical-services/http/SendRegistrationError";
 
 const schema = z.object({ name: z.string(), email: z.string(), password: z.string().max(72) });
 

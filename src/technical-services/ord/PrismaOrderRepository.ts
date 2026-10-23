@@ -1,4 +1,4 @@
-import { prisma } from "../db/prismaClient.ts";
+import { prisma } from "../db/PrismaClient.ts";
 import { Prisma, type OrderAction as DbOrderAction, type OrderStatus as DbOrderStatus } from "../../generated/prisma/client.ts";
 import { Order } from "../../domain/ord/Order.ts";
 import { OrderError } from "../../domain/ord/OrderError.ts";

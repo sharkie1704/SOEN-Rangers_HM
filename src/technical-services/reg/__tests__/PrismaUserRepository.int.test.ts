@@ -2,7 +2,7 @@
 
 import "dotenv/config";
 import { describe, it, expect, afterAll } from "vitest";
-import { prisma } from "../../db/prismaClient";
+import { prisma } from "../../db/PrismaClient";
 import { PrismaUserRepository } from "../PrismaUserRepository";
 import { BcryptPasswordHasher } from "../BcryptPasswordHasher";
 import { CustomerRegistrar } from "../../../domain/reg/CustomerRegistrar";

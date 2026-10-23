@@ -1,4 +1,4 @@
-import { prisma } from "../db/prismaClient.ts";
+import { prisma } from "../db/PrismaClient.ts";
 import type { CatalogMenuItem, CatalogRestaurant, MenuCatalog } from "../../application/ord/MenuCatalog.ts";
 
 export class PrismaMenuCatalog implements MenuCatalog {
