@@ -19,6 +19,13 @@ enum Role {
   OPERATOR
 }
 
+enum CourierStatus {
+  OFFLINE
+  IDLE
+  ASSIGNED
+  CARRYING
+}
+
 model User {
   id           String   @id @default(uuid())
   name         String
@@ -32,6 +39,11 @@ model User {
   // Customer only
   deliveryLat  Float?
   deliveryLng  Float?
+
+  // Initial courier configuration only
+  courierLat    Float?
+  courierLng    Float?
+  courierStatus CourierStatus?
 
   // Restaurant staff only (plain string for now; ORD team can turn it into a FK later)
   restaurantId String?
@@ -72,6 +84,8 @@ model Restaurant {
   description String
   imageUrl    String
   status      RestaurantStatus @default(OPEN)
+  lat         Float?
+  lng         Float?
 
   menuItems MenuItem[]
   orders    Order[]
