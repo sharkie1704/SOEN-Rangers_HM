@@ -100,3 +100,25 @@ src/generated/prisma/
 
 src/types/
   Shared TypeScript declarations, including Express request extensions.
+
+
+DATABASE AND SEEDING
+--------------------
+
+prisma/schema.prisma
+  Database models and enums used to generate the Prisma client.
+
+prisma/migrations/
+  Versioned SQL migration files that evolve the database schema.
+
+prisma/seed-data.ts and prisma/seed.ts
+  The primary npm-command seed implementation. Run it with `npm run db:seed`.
+  This method is separate from the optional config.json startup seeder.
+
+config.json
+  Data for the alternate config-file seeding method. That method is disabled
+  unless SEED_FROM_CONFIG=true is explicitly set for the API process.
+
+src/application/seed/ and src/technical-services/seed/
+  Logic and infrastructure for reading config.json, hashing seeded account
+  passwords, and writing the configured data to the database.
