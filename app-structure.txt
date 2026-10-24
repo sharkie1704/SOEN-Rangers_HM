@@ -1,0 +1,44 @@
+DESSERTDASH APP STRUCTURE
+===================================
+
+TOP-LEVEL FILES AND FOLDERS
+---------------------------
+
+README.md
+  Setup instructions, development commands, tests, and a high-level project
+  overview.
+
+package.json / package-lock.json
+  Project scripts and dependency versions. Common scripts include `dev`,
+  `check`, `build`, `test`, `db:migrate`, `db:generate`, and `db:seed`.
+
+.env.example
+  Template for local environment variables such as database URLs and JWT
+  secret. Copy it to `.env` for local development. Do not commit `.env`.
+
+index.html
+  HTML document Vite uses to host the frontend.
+
+vite.config.ts
+  Vite frontend configuration, including development proxy settings.
+
+tsconfig.json
+  TypeScript compiler settings.
+
+prisma.config.ts
+  Prisma schema, migration, and Prisma seed-script configuration.
+
+.github/
+  GitHub repository configuration and automation.
+
+src/
+  Frontend and backend application source code.
+
+prisma/
+  Database schema, migrations, and the npm-command seed data/script.
+
+dist/
+  Generated frontend build output. Not normally edited by hand.
+
+node_modules/
+  Installed npm dependencies. Not source code and not normally edited by hand.
