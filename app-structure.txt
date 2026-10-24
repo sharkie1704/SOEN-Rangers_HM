@@ -122,3 +122,13 @@ config.json
 src/application/seed/ and src/technical-services/seed/
   Logic and infrastructure for reading config.json, hashing seeded account
   passwords, and writing the configured data to the database.
+
+
+TYPICAL REQUEST FLOW
+--------------------
+1. The browser loads src/main.tsx and renders the React components in src/ui/.
+2. Frontend API requests go through the Vite proxy during development.
+3. src/server.ts starts the Express API configured in src/app.ts.
+4. API controllers call application/domain behavior.
+5. Technical-service adapters perform persistence through Prisma or handle
+   other infrastructure responsibilities.
