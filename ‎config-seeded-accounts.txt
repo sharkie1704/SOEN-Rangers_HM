@@ -1,0 +1,527 @@
+CONFIG-FILE SEEDED ACCOUNTS ON STARTUP (alternate method for seeded accounts)
+===========================
+
+This is a separate config.json seeding method.
+It was chosen not to be used.
+There are eight implementation files below. Files dedicated to this method
+are shown in full and they describe the entirety of this method's implementation.
+
+
+1. config.json
+--------------
+{
+  "accounts": [
+    {
+      "id": "seed-customer",
+      "name": "Demo Customer",
+      "email": "customer@example.com",
+      "password": "demo",
+      "role": "CUSTOMER",
+      "deliveryLat": 45.0000,
+      "deliveryLng": -73.0000
+    },
+    {
+      "id": "seed-courier",
+      "name": "Demo Courier",
+      "email": "courier@example.com",
+      "password": "demo",
+      "role": "COURIER"
+    },
+    {
+      "id": "seed-restaurant-staff",
+      "name": "Sweet Dreams Staff",
+      "email": "staff@example.com",
+      "password": "demo",
+      "role": "RESTAURANT",
+      "restaurantId": "1"
+    },
+    {
+      "id": "seed-operator",
+      "name": "Demo Operator",
+      "email": "operator@example.com",
+      "password": "demo",
+      "role": "OPERATOR"
+    }
+  ],
+  "restaurants": [
+    {
+      "id": "1",
+      "name": "Sweet Dreams",
+      "category": "Bakery",
+      "description": "Fresh cakes and desserts made daily.",
+      "imageUrl": "",
+      "status": "OPEN",
+      "menuItems": [
+        {
+          "name": "Chocolate Brownie",
+          "description": "Rich chocolate brownie.",
+          "imageUrl": "",
+          "priceCents": 675,
+          "available": true
+        },
+        {
+          "name": "Vanilla Cupcake",
+          "description": "Vanilla cupcake with buttercream frosting.",
+          "imageUrl": "",
+          "priceCents": 425,
+          "available": true
+        }
+      ]
+    },
+    {
+      "id": "2",
+      "name": "Chocolate Heaven",
+      "category": "Chocolate",
+      "description": "A little something for every chocolate lover.",
+      "imageUrl": "",
+      "status": "OPEN",
+      "menuItems": [
+        {
+          "name": "Chocolate Lava Cake",
+          "description": "Warm chocolate cake with a molten center.",
+          "imageUrl": "",
+          "priceCents": 850,
+          "available": true
+        }
+      ]
+    },
+    {
+      "id": "3",
+      "name": "La Petite Pâtisserie",
+      "category": "Pâtisserie",
+      "description": "French-inspired pastries and desserts.",
+      "imageUrl": "",
+      "status": "OPEN",
+      "menuItems": [
+        {
+          "name": "Strawberry Tart",
+          "description": "A fresh strawberry tart with pastry cream.",
+          "imageUrl": "",
+          "priceCents": 725,
+          "available": true
+        }
+      ]
+    },
+    {
+      "id": "4",
+      "name": "Sugar Rush",
+      "category": "Dessert",
+      "description": "Classic treats with a modern twist.",
+      "imageUrl": "",
+      "status": "OPEN",
+      "menuItems": [
+        {
+          "name": "Caramel Cheesecake",
+          "description": "Creamy cheesecake topped with caramel.",
+          "imageUrl": "",
+          "priceCents": 795,
+          "available": true
+        }
+      ]
+    }
+  ]
+}
+
+2. src/application/seed/SeedData.ts
+------------------------------------
+import { Role } from "../../domain/reg/Role";
+
+export type SeedAccount =
+  | {
+      id: string;
+      name: string;
+      email: string;
+      password: string;
+      role: Role.CUSTOMER;
+      deliveryLat: number;
+      deliveryLng: number;
+    }
+  | {
+      id: string;
+      name: string;
+      email: string;
+      password: string;
+      role: Role.COURIER | Role.OPERATOR;
+    }
+  | {
+      id: string;
+      name: string;
+      email: string;
+      password: string;
+      role: Role.RESTAURANT;
+      restaurantId: string;
+    };
+
+export interface SeedMenuItem {
+  name: string;
+  description: string;
+  imageUrl: string;
+  priceCents: number;
+  available: boolean;
+}
+
+export interface SeedRestaurant {
+  id: string;
+  name: string;
+  category: string;
+  description: string;
+  imageUrl: string;
+  status: "OPEN" | "PAUSED" | "CLOSED";
+  menuItems: SeedMenuItem[];
+}
+
+export interface SeedData {
+  accounts: SeedAccount[];
+  restaurants: SeedRestaurant[];
+}
+
+export type SeedAccountRecord = {
+  id: string;
+  name: string;
+  email: string;
+  passwordHash: string;
+  role: Role;
+  deliveryLat: number | null;
+  deliveryLng: number | null;
+  restaurantId: string | null;
+};
+
+
+3. src/application/seed/SeedRepository.ts
+------------------------------------------
+import type { SeedAccountRecord, SeedRestaurant } from "./SeedData";
+
+export interface SeedRepository {
+  seed(data: {
+    accounts: SeedAccountRecord[];
+    restaurants: SeedRestaurant[];
+  }): Promise<void>;
+}
+
+
+4. src/application/seed/SeedController.ts
+------------------------------------------
+import type { PasswordHasher } from "../../domain/reg/ports/PasswordHasher";
+import type { SeedData, SeedAccountRecord } from "./SeedData";
+import type { SeedRepository } from "./SeedRepository";
+
+export class SeedController {
+  constructor(
+    private readonly repository: SeedRepository,
+    private readonly hasher: PasswordHasher,
+  ) {}
+
+  async seed(data: SeedData): Promise<void> {
+    const accounts: SeedAccountRecord[] = await Promise.all(
+      data.accounts.map(async (account) => {
+        const common = {
+          id: account.id,
+          name: account.name,
+          email: account.email,
+          passwordHash: await this.hasher.hash(account.password),
+          role: account.role,
+          deliveryLat: null,
+          deliveryLng: null,
+          restaurantId: null,
+        };
+
+        if (account.role === "CUSTOMER") {
+          return {
+            ...common,
+            deliveryLat: account.deliveryLat,
+            deliveryLng: account.deliveryLng,
+          };
+        }
+
+        if (account.role === "RESTAURANT") {
+          return { ...common, restaurantId: account.restaurantId };
+        }
+
+        return common;
+      }),
+    );
+
+    await this.repository.seed({ accounts, restaurants: data.restaurants });
+  }
+}
+
+
+5. src/application/seed/__tests__/SeedController.test.ts
+--------------------------------------------------------
+import { describe, expect, it } from "vitest";
+import { Role } from "../../../domain/reg/Role";
+import type { PasswordHasher } from "../../../domain/reg/ports/PasswordHasher";
+import type { SeedData } from "../SeedData";
+import type { SeedRepository } from "../SeedRepository";
+import { SeedController } from "../SeedController";
+
+const seedData: SeedData = {
+  accounts: [
+    {
+      id: "customer-id",
+      name: "Seed Customer",
+      email: "customer@example.com",
+      password: "customer-password",
+      role: Role.CUSTOMER,
+      deliveryLat: 45.5,
+      deliveryLng: -73.5,
+    },
+    {
+      id: "staff-id",
+      name: "Seed Staff",
+      email: "staff@example.com",
+      password: "staff-password",
+      role: Role.RESTAURANT,
+      restaurantId: "restaurant-id",
+    },
+  ],
+  restaurants: [
+    {
+      id: "restaurant-id",
+      name: "Seed Restaurant",
+      category: "Dessert",
+      description: "Seed restaurant",
+      imageUrl: "",
+      status: "OPEN",
+      menuItems: [
+        {
+          name: "Seed Menu Item",
+          description: "Seed dessert",
+          imageUrl: "",
+          priceCents: 500,
+          available: true,
+        },
+      ],
+    },
+  ],
+};
+
+describe("SeedController", () => {
+  it("hashes account passwords and sends accounts, restaurants, and menus to the repository", async () => {
+    const saved: Parameters<SeedRepository["seed"]>[0][] = [];
+    const repository: SeedRepository = {
+      seed: async (data) => {
+        saved.push(data);
+      },
+    };
+    const hasher: PasswordHasher = {
+      hash: async (password) => `hashed:${password}`,
+      verify: async () => false,
+    };
+
+    await new SeedController(repository, hasher).seed(seedData);
+
+    expect(saved).toHaveLength(1);
+    expect(saved[0]).toEqual({
+      accounts: [
+        {
+          id: "customer-id",
+          name: "Seed Customer",
+          email: "customer@example.com",
+          passwordHash: "hashed:customer-password",
+          role: Role.CUSTOMER,
+          deliveryLat: 45.5,
+          deliveryLng: -73.5,
+          restaurantId: null,
+        },
+        {
+          id: "staff-id",
+          name: "Seed Staff",
+          email: "staff@example.com",
+          passwordHash: "hashed:staff-password",
+          role: Role.RESTAURANT,
+          deliveryLat: null,
+          deliveryLng: null,
+          restaurantId: "restaurant-id",
+        },
+      ],
+      restaurants: seedData.restaurants,
+    });
+  });
+
+  it("propagates hashing failures without persisting partial data", async () => {
+    let repositoryCalled = false;
+    const repository: SeedRepository = {
+      seed: async () => {
+        repositoryCalled = true;
+      },
+    };
+    const hasher: PasswordHasher = {
+      hash: async () => {
+        throw new Error("Hashing failed");
+      },
+      verify: async () => false,
+    };
+
+    await expect(new SeedController(repository, hasher).seed(seedData)).rejects.toThrow(
+      "Hashing failed",
+    );
+    expect(repositoryCalled).toBe(false);
+  });
+});
+
+6. src/technical-services/seed/loadSeedConfig.ts
+-------------------------------------------------
+import { readFile } from "node:fs/promises";
+import { z } from "zod";
+import { Role } from "../../domain/reg/Role";
+import type { SeedData } from "../../application/seed/SeedData";
+
+const nonEmptyString = z.string().trim().min(1);
+const accountBase = {
+  id: nonEmptyString,
+  name: nonEmptyString,
+  email: z.email(),
+  password: z.string().min(1).max(72),
+};
+
+const accountSchema = z.discriminatedUnion("role", [
+  z.object({
+    ...accountBase,
+    role: z.literal(Role.CUSTOMER),
+    deliveryLat: z.number().min(-90).max(90),
+    deliveryLng: z.number().min(-180).max(180),
+  }),
+  z.object({ ...accountBase, role: z.literal(Role.COURIER) }),
+  z.object({
+    ...accountBase,
+    role: z.literal(Role.RESTAURANT),
+    restaurantId: nonEmptyString,
+  }),
+  z.object({ ...accountBase, role: z.literal(Role.OPERATOR) }),
+]);
+
+const seedConfigSchema = z.object({
+  accounts: z.array(accountSchema),
+  restaurants: z.array(
+    z.object({
+      id: nonEmptyString,
+      name: nonEmptyString,
+      category: nonEmptyString,
+      description: z.string(),
+      imageUrl: z.string(),
+      status: z.enum(["OPEN", "PAUSED", "CLOSED"]),
+      menuItems: z.array(
+        z.object({
+          name: nonEmptyString,
+          description: z.string(),
+          imageUrl: z.string(),
+          priceCents: z.number().int().nonnegative(),
+          available: z.boolean(),
+        }),
+      ),
+    }),
+  ),
+}).superRefine((config, context) => {
+  const restaurantIds = new Set(config.restaurants.map((restaurant) => restaurant.id));
+  const emails = new Set<string>();
+
+  for (const [index, account] of config.accounts.entries()) {
+    const email = account.email.trim().toLowerCase();
+    if (emails.has(email)) {
+      context.addIssue({
+        code: "custom",
+        path: ["accounts", index, "email"],
+        message: "Seeded account emails must be unique",
+      });
+    }
+    emails.add(email);
+
+    if (account.role === Role.RESTAURANT && !restaurantIds.has(account.restaurantId)) {
+      context.addIssue({
+        code: "custom",
+        path: ["accounts", index, "restaurantId"],
+        message: `Unknown seeded restaurant "${account.restaurantId}"`,
+      });
+    }
+  }
+});
+
+export async function loadSeedConfig(): Promise<SeedData> {
+  const contents = await readFile(new URL("../../../config.json", import.meta.url), "utf8");
+  const parsed = seedConfigSchema.safeParse(JSON.parse(contents));
+
+  if (!parsed.success) {
+    throw new Error(`Invalid seed configuration: ${parsed.error.message}`);
+  }
+
+  return parsed.data;
+}
+
+
+7. src/technical-services/seed/PrismaSeedRepository.ts
+-------------------------------------------------------
+import { prisma } from "../db/prismaClient";
+import type { SeedAccountRecord, SeedRestaurant } from "../../application/seed/SeedData";
+import type { SeedRepository } from "../../application/seed/SeedRepository";
+
+export class PrismaSeedRepository implements SeedRepository {
+  async seed(data: { accounts: SeedAccountRecord[]; restaurants: SeedRestaurant[] }): Promise<void> {
+    await prisma.$transaction(async (transaction) => {
+      for (const account of data.accounts) {
+        const accountData = {
+          name: account.name,
+          passwordHash: account.passwordHash,
+          role: account.role,
+          deliveryLat: account.deliveryLat,
+          deliveryLng: account.deliveryLng,
+          restaurantId: account.restaurantId,
+        };
+
+        await transaction.user.upsert({
+          where: { email: account.email },
+          create: {
+            id: account.id,
+            email: account.email,
+            ...accountData,
+          },
+          update: accountData,
+        });
+      }
+
+      for (const restaurant of data.restaurants) {
+        const { menuItems, ...restaurantData } = restaurant;
+        await transaction.restaurant.upsert({
+          where: { id: restaurant.id },
+          create: restaurantData,
+          update: restaurantData,
+        });
+
+        for (const menuItem of menuItems) {
+          const existing = await transaction.menuItem.findFirst({
+            where: { restaurantId: restaurant.id, name: menuItem.name },
+            select: { id: true },
+          });
+
+          if (existing) {
+            await transaction.menuItem.update({
+              where: { id: existing.id },
+              data: menuItem,
+            });
+          } else {
+            await transaction.menuItem.create({
+              data: { ...menuItem, restaurantId: restaurant.id },
+            });
+          }
+        }
+      }
+    });
+  }
+}
+
+
+8. src/server.ts (seeder-related lines only)
+--------------------------------------------
+import { SeedController } from "./application/seed/SeedController";
+import { loadSeedConfig } from "./technical-services/seed/loadSeedConfig";
+import { PrismaSeedRepository } from "./technical-services/seed/PrismaSeedRepository";
+
+async function startServer(): Promise<void> {
+  if (process.env.SEED_FROM_CONFIG === "true") {
+    const seeder = new SeedController(new PrismaSeedRepository(), new BcryptPasswordHasher());
+    await seeder.seed(await loadSeedConfig());
+  }
+}
+
+The actual startServer function also creates and starts the API application;
+that unrelated server code is intentionally omitted here.
