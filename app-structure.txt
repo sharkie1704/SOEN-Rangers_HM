@@ -1,0 +1,134 @@
+DESSERTDASH APP STRUCTURE
+===================================
+
+TOP-LEVEL FILES AND FOLDERS
+---------------------------
+
+README.md
+  Setup instructions, development commands, tests, and a high-level project
+  overview.
+
+package.json / package-lock.json
+  Project scripts and dependency versions. Common scripts include `dev`,
+  `check`, `build`, `test`, `db:migrate`, `db:generate`, and `db:seed`.
+
+.env.example
+  Template for local environment variables such as database URLs and JWT
+  secret. Copy it to `.env` for local development. Do not commit `.env`.
+
+index.html
+  HTML document Vite uses to host the frontend.
+
+vite.config.ts
+  Vite frontend configuration, including development proxy settings.
+
+tsconfig.json
+  TypeScript compiler settings.
+
+prisma.config.ts
+  Prisma schema, migration, and Prisma seed-script configuration.
+
+.github/
+  GitHub repository configuration and automation.
+
+src/
+  Frontend and backend application source code.
+
+prisma/
+  Database schema, migrations, and the npm-command seed data/script.
+
+dist/
+  Generated frontend build output. Not normally edited by hand.
+
+node_modules/
+  Installed npm dependencies. Not source code and not normally edited by hand.
+
+
+src/
+-----------------
+
+src/main.tsx
+  Browser entry point. Mounts the React app, router, and authentication
+  provider.
+
+src/ui/
+  React UI.
+  - App.tsx: top-level page and route composition.
+  - components/: shared UI components.
+  - reg/: login, registration, authentication state, and client API helpers.
+  - ord/: restaurant, menu, cart, order, and operator screens.
+
+src/app.ts
+  Express app factory. Wires application controllers and registers API
+  middleware and routes.
+
+src/server.ts
+  Node server entry point. Creates Prisma-backed services and starts Express.
+  The optional config.json seeder runs only when SEED_FROM_CONFIG is exactly
+  "true"; otherwise startup does not seed through that method.
+
+src/container.ts
+  Shared authentication-related dependency setup.
+
+src/domain/
+  Core business concepts and rules, independent from Express and Prisma.
+  - reg/: users, roles, sessions, registration, ports, and permissions.
+  - ord/: restaurants, menu items, orders, order state transitions, and related
+    business types.
+  - __tests__/: domain unit tests.
+
+src/application/
+  Coordinates domain behavior and exposes API use cases.
+  - reg/: authentication, registration, account, and session controllers.
+  - ord/: menu, restaurant, order, and status controllers/services/routes.
+  - seed/: config-seeder data types, controller, and repository interface.
+  - http/: shared HTTP middleware/utilities.
+  - feature __tests__/: application unit tests.
+
+src/technical-services/
+  Infrastructure adapters that implement application/domain interfaces.
+  - db/: shared Prisma client.
+  - reg/: database user repository, password hashing, and JWT sessions.
+  - ord/: Prisma repositories/catalog for restaurant and order features.
+  - seed/: config-file loader and Prisma repository for optional startup
+    seeding.
+  - http/: HTTP DTO/error conversion helpers.
+
+src/generated/prisma/
+  Generated Prisma client and model types. Regenerate from the schema rather
+  than editing these files manually.
+
+src/types/
+  Shared TypeScript declarations, including Express request extensions.
+
+
+DATABASE AND SEEDING
+--------------------
+
+prisma/schema.prisma
+  Database models and enums used to generate the Prisma client.
+
+prisma/migrations/
+  Versioned SQL migration files that evolve the database schema.
+
+prisma/seed-data.ts and prisma/seed.ts
+  The primary npm-command seed implementation. Run it with `npm run db:seed`.
+  This method is separate from the optional config.json startup seeder.
+
+config.json
+  Data for the alternate config-file seeding method. That method is disabled
+  unless SEED_FROM_CONFIG=true is explicitly set for the API process.
+
+src/application/seed/ and src/technical-services/seed/
+  Logic and infrastructure for reading config.json, hashing seeded account
+  passwords, and writing the configured data to the database.
+
+
+TYPICAL REQUEST FLOW
+--------------------
+1. The browser loads src/main.tsx and renders the React components in src/ui/.
+2. Frontend API requests go through the Vite proxy during development.
+3. src/server.ts starts the Express API configured in src/app.ts.
+4. API controllers call application/domain behavior.
+5. Technical-service adapters perform persistence through Prisma or handle
+   other infrastructure responsibilities.
