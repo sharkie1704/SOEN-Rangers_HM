@@ -121,3 +121,241 @@ are shown in full and they describe the entirety of this method's implementation
     }
   ]
 }
+
+2. src/application/seed/SeedData.ts
+------------------------------------
+import { Role } from "../../domain/reg/Role";
+
+export type SeedAccount =
+  | {
+      id: string;
+      name: string;
+      email: string;
+      password: string;
+      role: Role.CUSTOMER;
+      deliveryLat: number;
+      deliveryLng: number;
+    }
+  | {
+      id: string;
+      name: string;
+      email: string;
+      password: string;
+      role: Role.COURIER | Role.OPERATOR;
+    }
+  | {
+      id: string;
+      name: string;
+      email: string;
+      password: string;
+      role: Role.RESTAURANT;
+      restaurantId: string;
+    };
+
+export interface SeedMenuItem {
+  name: string;
+  description: string;
+  imageUrl: string;
+  priceCents: number;
+  available: boolean;
+}
+
+export interface SeedRestaurant {
+  id: string;
+  name: string;
+  category: string;
+  description: string;
+  imageUrl: string;
+  status: "OPEN" | "PAUSED" | "CLOSED";
+  menuItems: SeedMenuItem[];
+}
+
+export interface SeedData {
+  accounts: SeedAccount[];
+  restaurants: SeedRestaurant[];
+}
+
+export type SeedAccountRecord = {
+  id: string;
+  name: string;
+  email: string;
+  passwordHash: string;
+  role: Role;
+  deliveryLat: number | null;
+  deliveryLng: number | null;
+  restaurantId: string | null;
+};
+
+
+3. src/application/seed/SeedRepository.ts
+------------------------------------------
+import type { SeedAccountRecord, SeedRestaurant } from "./SeedData";
+
+export interface SeedRepository {
+  seed(data: {
+    accounts: SeedAccountRecord[];
+    restaurants: SeedRestaurant[];
+  }): Promise<void>;
+}
+
+
+4. src/application/seed/SeedController.ts
+------------------------------------------
+import type { PasswordHasher } from "../../domain/reg/ports/PasswordHasher";
+import type { SeedData, SeedAccountRecord } from "./SeedData";
+import type { SeedRepository } from "./SeedRepository";
+
+export class SeedController {
+  constructor(
+    private readonly repository: SeedRepository,
+    private readonly hasher: PasswordHasher,
+  ) {}
+
+  async seed(data: SeedData): Promise<void> {
+    const accounts: SeedAccountRecord[] = await Promise.all(
+      data.accounts.map(async (account) => {
+        const common = {
+          id: account.id,
+          name: account.name,
+          email: account.email,
+          passwordHash: await this.hasher.hash(account.password),
+          role: account.role,
+          deliveryLat: null,
+          deliveryLng: null,
+          restaurantId: null,
+        };
+
+        if (account.role === "CUSTOMER") {
+          return {
+            ...common,
+            deliveryLat: account.deliveryLat,
+            deliveryLng: account.deliveryLng,
+          };
+        }
+
+        if (account.role === "RESTAURANT") {
+          return { ...common, restaurantId: account.restaurantId };
+        }
+
+        return common;
+      }),
+    );
+
+    await this.repository.seed({ accounts, restaurants: data.restaurants });
+  }
+}
+
+
+5. src/application/seed/__tests__/SeedController.test.ts
+--------------------------------------------------------
+import { describe, expect, it } from "vitest";
+import { Role } from "../../../domain/reg/Role";
+import type { PasswordHasher } from "../../../domain/reg/ports/PasswordHasher";
+import type { SeedData } from "../SeedData";
+import type { SeedRepository } from "../SeedRepository";
+import { SeedController } from "../SeedController";
+
+const seedData: SeedData = {
+  accounts: [
+    {
+      id: "customer-id",
+      name: "Seed Customer",
+      email: "customer@example.com",
+      password: "customer-password",
+      role: Role.CUSTOMER,
+      deliveryLat: 45.5,
+      deliveryLng: -73.5,
+    },
+    {
+      id: "staff-id",
+      name: "Seed Staff",
+      email: "staff@example.com",
+      password: "staff-password",
+      role: Role.RESTAURANT,
+      restaurantId: "restaurant-id",
+    },
+  ],
+  restaurants: [
+    {
+      id: "restaurant-id",
+      name: "Seed Restaurant",
+      category: "Dessert",
+      description: "Seed restaurant",
+      imageUrl: "",
+      status: "OPEN",
+      menuItems: [
+        {
+          name: "Seed Menu Item",
+          description: "Seed dessert",
+          imageUrl: "",
+          priceCents: 500,
+          available: true,
+        },
+      ],
+    },
+  ],
+};
+
+describe("SeedController", () => {
+  it("hashes account passwords and sends accounts, restaurants, and menus to the repository", async () => {
+    const saved: Parameters<SeedRepository["seed"]>[0][] = [];
+    const repository: SeedRepository = {
+      seed: async (data) => {
+        saved.push(data);
+      },
+    };
+    const hasher: PasswordHasher = {
+      hash: async (password) => `hashed:${password}`,
+      verify: async () => false,
+    };
+
+    await new SeedController(repository, hasher).seed(seedData);
+
+    expect(saved).toHaveLength(1);
+    expect(saved[0]).toEqual({
+      accounts: [
+        {
+          id: "customer-id",
+          name: "Seed Customer",
+          email: "customer@example.com",
+          passwordHash: "hashed:customer-password",
+          role: Role.CUSTOMER,
+          deliveryLat: 45.5,
+          deliveryLng: -73.5,
+          restaurantId: null,
+        },
+        {
+          id: "staff-id",
+          name: "Seed Staff",
+          email: "staff@example.com",
+          passwordHash: "hashed:staff-password",
+          role: Role.RESTAURANT,
+          deliveryLat: null,
+          deliveryLng: null,
+          restaurantId: "restaurant-id",
+        },
+      ],
+      restaurants: seedData.restaurants,
+    });
+  });
+
+  it("propagates hashing failures without persisting partial data", async () => {
+    let repositoryCalled = false;
+    const repository: SeedRepository = {
+      seed: async () => {
+        repositoryCalled = true;
+      },
+    };
+    const hasher: PasswordHasher = {
+      hash: async () => {
+        throw new Error("Hashing failed");
+      },
+      verify: async () => false,
+    };
+
+    await expect(new SeedController(repository, hasher).seed(seedData)).rejects.toThrow(
+      "Hashing failed",
+    );
+    expect(repositoryCalled).toBe(false);
+  });
+});
