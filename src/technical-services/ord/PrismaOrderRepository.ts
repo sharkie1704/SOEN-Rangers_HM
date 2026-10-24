@@ -1,4 +1,4 @@
-import { prisma } from "../db/prismaClient.ts";
+import { prisma } from "../db/PrismaClient.ts";
 import { Prisma, type OrderAction as DbOrderAction, type OrderStatus as DbOrderStatus } from "../../generated/prisma/client.ts";
 import { Order } from "../../domain/ord/Order.ts";
 import { OrderError } from "../../domain/ord/OrderError.ts";
@@ -34,20 +34,24 @@ const withHistory = {
 
 type OrderRow = Prisma.OrderGetPayload<{ include: typeof withHistory }>;
 type EventRow = OrderRow["events"][number];
+type Db = typeof prisma | Prisma.TransactionClient;
 
 export class PrismaOrderRepository implements OrderRepository {
+  // Inside withQueueLock this is the transaction client, so every call joins that transaction
+  constructor(private readonly db: Db = prisma) {}
+
   async nextOrderId(): Promise<number> {
-    const [row] = await prisma.$queryRaw<{ id: bigint }[]>`SELECT nextval('"Order_id_seq"') AS id`;
+    const [row] = await this.db.$queryRaw<{ id: bigint }[]>`SELECT nextval('"Order_id_seq"') AS id`;
     return Number(row.id);
   }
 
   async nextEventId(): Promise<number> {
-    const [row] = await prisma.$queryRaw<{ id: bigint }[]>`SELECT nextval('"OrderEvent_id_seq"') AS id`;
+    const [row] = await this.db.$queryRaw<{ id: bigint }[]>`SELECT nextval('"OrderEvent_id_seq"') AS id`;
     return Number(row.id);
   }
 
   async add(order: Order): Promise<void> {
-    await prisma.order.create({
+    await this.db.order.create({
       data: {
         id: order.id,
         restaurantId: order.restaurantId,
@@ -69,7 +73,7 @@ export class PrismaOrderRepository implements OrderRepository {
   }
 
   async save(order: Order): Promise<void> {
-    await prisma.$transaction(async (tx) => {
+    await this.transaction(async (tx) => {
       const stored = await tx.orderEvent.findMany({ where: { orderId: order.id }, select: { id: true } });
       const storedIds = new Set(stored.map((event) => event.id));
       const pending = order.events.filter((event) => !storedIds.has(event.eventId));
@@ -90,29 +94,42 @@ export class PrismaOrderRepository implements OrderRepository {
   }
 
   async findById(orderId: number): Promise<Order | undefined> {
-    const row = await prisma.order.findUnique({ where: { id: orderId }, include: withHistory });
+    const row = await this.db.order.findUnique({ where: { id: orderId }, include: withHistory });
     return row ? this.toDomain(row) : undefined;
   }
 
   async findByRestaurant(restaurantId: string): Promise<readonly Order[]> {
-    const rows = await prisma.order.findMany({ where: { restaurantId }, include: withHistory, orderBy: { id: "asc" } });
+    const rows = await this.db.order.findMany({ where: { restaurantId }, include: withHistory, orderBy: { id: "asc" } });
     return rows.map((row) => this.toDomain(row));
   }
 
   async findByCustomer(customerId: string): Promise<readonly Order[]> {
-    const rows = await prisma.order.findMany({ where: { customerId }, include: withHistory, orderBy: { placedAt: "desc" } });
+    const rows = await this.db.order.findMany({ where: { customerId }, include: withHistory, orderBy: { placedAt: "desc" } });
     return rows.map((row) => this.toDomain(row));
+  }
+
+  async withQueueLock<T>(restaurantId: string, work: (orders: OrderRepository) => Promise<T>): Promise<T> {
+    return this.transaction(async (tx) => {
+      // Released when the transaction ends
+      await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${restaurantId}::text))`;
+      return work(new PrismaOrderRepository(tx));
+    });
   }
 
   // The queue is not stored; it is every Accepted/Preparing order in the order they were accepted
   async getPreparationQueue(restaurantId: string): Promise<PreparationQueue> {
-    const rows = await prisma.order.findMany({
+    const rows = await this.db.order.findMany({
       where: { restaurantId, status: { in: ["ACCEPTED", "PREPARING"] } },
       include: withHistory,
     });
     const acceptedEventId = (row: OrderRow) => row.events.find((event) => event.action === "ACCEPT")?.id ?? 0;
     rows.sort((a, b) => acceptedEventId(a) - acceptedEventId(b));
     return PreparationQueue.restore(restaurantId, rows.map((row) => this.toDomain(row)));
+  }
+
+  // Joins the surrounding transaction when there is one
+  private transaction<T>(work: (tx: Prisma.TransactionClient) => Promise<T>): Promise<T> {
+    return "$transaction" in this.db ? this.db.$transaction(work) : work(this.db);
   }
 
   private toDomain(row: OrderRow): Order {

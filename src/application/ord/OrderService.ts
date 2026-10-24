@@ -1,8 +1,9 @@
+import { hasPermission } from "../../domain/reg/permissions";
 import { Order } from "../../domain/ord/Order.ts";
 import { OrderError, requireId, requireStringId } from "../../domain/ord/OrderError.ts";
 import { Role } from "../../domain/reg/Role.ts";
 import type { OrderLineDTO } from "../../domain/ord/OrderLineDTO.ts";
-import type { PreparationQueue } from "../../domain/ord/PreparationQueue.ts";
+import { SYSTEM_ACTOR_ID, type PreparationQueue } from "../../domain/ord/PreparationQueue.ts";
 import type { StateChangeEvent } from "../../domain/ord/StateChangeEvent.ts";
 import type { MenuCatalog } from "./MenuCatalog.ts";
 import type { OrderActor } from "./OrderActor.ts";
@@ -24,7 +25,7 @@ export class OrderService {
 
   async place(actor: OrderActor | null, input: PlaceOrderDTO): Promise<OrderDTO> {
     const customer = this.requireActor(actor);
-    if (customer.role !== Role.CUSTOMER) {
+    if (!hasPermission({ name: "placeOrder" }, { ...customer, id: customer.userId })) {
       throw new OrderError("FORBIDDEN", "Only customers can place orders.");
     }
     if (!Array.isArray(input.lines) || input.lines.length === 0) {
@@ -54,17 +55,16 @@ export class OrderService {
   async get(actor: OrderActor | null, orderId: number): Promise<OrderDTO> {
     const authenticated = this.requireActor(actor);
     const order = await this.findOrder(orderId);
-    if (authenticated.role === Role.RESTAURANT) {
-      this.requireRestaurantActor(authenticated, order.restaurantId);
-    } else if (authenticated.userId !== order.customerId) {
-      throw new OrderError("FORBIDDEN", "Customers can only view their own orders.");
+    if (!hasPermission({ name: "viewOrder", customerId: order.customerId, restaurantId: order.restaurantId },
+      { ...authenticated, id: authenticated.userId })) {
+      throw new OrderError("FORBIDDEN", "You can only view your own orders or orders for your restaurant.");
     }
     return toOrderDTO(order);
   }
 
   async customerOrders(actor: OrderActor | null): Promise<readonly OrderDTO[]> {
     const customer = this.requireActor(actor);
-    if (customer.role !== Role.CUSTOMER) {
+    if (!hasPermission({ name: "customerOrders" }, { ...customer, id: customer.userId })) {
       throw new OrderError("FORBIDDEN", "Only customers can view customer order history.");
     }
     return (await this.repository.findByCustomer(customer.userId)).map(toOrderDTO);
@@ -82,11 +82,19 @@ export class OrderService {
     return (await this.repository.getPreparationQueue(restaurantId)).orders.map(toOrderDTO);
   }
 
+  // Works while the restaurant is paused, so orders placed before the pause can still be handled
   async accept(actor: OrderActor | null, orderId: number): Promise<OrderTransitionDTO> {
     const { order, restaurantActor } = await this.restaurantOrder(actor, orderId);
-    const queue = await this.repository.getPreparationQueue(order.restaurantId);
-    const event = queue.accept(order, restaurantActor.userId, await this.repository.nextEventId());
-    return this.save(order, event);
+    return this.repository.withQueueLock(order.restaurantId, async (orders) => {
+      const queue = await orders.getPreparationQueue(order.restaurantId);
+      const event = queue.accept(order, restaurantActor.userId, await orders.nextEventId());
+      const started = await this.startFront(queue, orders);
+      await this.saveAll(orders, [order, started]);
+      this.logEvent(event);
+      const startEvent = started?.events.at(-1);
+      if (startEvent) this.logEvent(startEvent);
+      return toTransition(order, event);
+    });
   }
 
   async reject(actor: OrderActor | null, orderId: number, reason: string): Promise<OrderTransitionDTO> {
@@ -96,28 +104,44 @@ export class OrderService {
 
   async cancel(actor: OrderActor | null, orderId: number): Promise<OrderTransitionDTO> {
     const customer = this.requireActor(actor);
-    if (customer.role !== Role.CUSTOMER) {
+    if (!hasPermission({ name: "cancelOrder", customerId: customer.userId }, { ...customer, id: customer.userId })) {
       throw new OrderError("FORBIDDEN", "Only customers can cancel their orders.");
     }
     const order = await this.findOrder(orderId);
-    if (order.customerId !== customer.userId) {
+    if (!hasPermission({ name: "cancelOrder", customerId: order.customerId }, { ...customer, id: customer.userId })) {
       throw new OrderError("FORBIDDEN", "Customers can only cancel their own orders.");
     }
     return this.save(order, order.cancel(customer.userId, await this.repository.nextEventId()));
   }
 
-  async startPreparing(actor: OrderActor | null, orderId: number): Promise<OrderTransitionDTO> {
-    const { order, restaurantActor } = await this.restaurantOrder(actor, orderId);
-    const queue = await this.repository.getPreparationQueue(order.restaurantId);
-    const queued = this.queuedOrder(queue, order);
-    return this.save(queued, queue.startPreparing(queued, restaurantActor.userId, await this.repository.nextEventId()));
-  }
-
   async markReady(actor: OrderActor | null, orderId: number): Promise<OrderTransitionDTO> {
     const { order, restaurantActor } = await this.restaurantOrder(actor, orderId);
-    const queue = await this.repository.getPreparationQueue(order.restaurantId);
-    const queued = this.queuedOrder(queue, order);
-    return this.save(queued, queue.markReady(queued, restaurantActor.userId, await this.repository.nextEventId()));
+    return this.repository.withQueueLock(order.restaurantId, async (orders) => {
+      const queue = await orders.getPreparationQueue(order.restaurantId);
+      const queued = this.queuedOrder(queue, order);
+      const event = queue.markReady(queued, restaurantActor.userId, await orders.nextEventId());
+      const started = await this.startFront(queue, orders);
+      await this.saveAll(orders, [queued, started]);
+      this.logEvent(event);
+      const startEvent = started?.events.at(-1);
+      if (startEvent) this.logEvent(startEvent);
+      return toTransition(queued, event);
+    });
+  }
+
+  // The front of the queue is always being prepared, so the system starts it as soon as it gets there
+  private async startFront(queue: PreparationQueue, orders: OrderRepository): Promise<Order | undefined> {
+    const front = queue.waitingToStart;
+    if (front) {
+      queue.startPreparing(front, SYSTEM_ACTOR_ID, await orders.nextEventId());
+    }
+    return front;
+  }
+
+  private async saveAll(orders: OrderRepository, changed: readonly (Order | undefined)[]): Promise<void> {
+    for (const order of new Set(changed)) {
+      if (order) await orders.save(order);
+    }
   }
 
   // Name and price always come from the menu, never from the client
@@ -125,6 +149,9 @@ export class OrderService {
     const seen = new Set<number>();
     const priced: OrderLineDTO[] = [];
     for (const line of lines) {
+      if (!line || typeof line !== "object" || Array.isArray(line)) {
+        throw new OrderError("INVALID_INPUT", "Each order line must be an item with a quantity.");
+      }
       const menuItemId = requireId(line.menuItemId, "Menu item ID");
       if (seen.has(menuItemId)) {
         throw new OrderError("INVALID_INPUT", `Menu item ${menuItemId} is listed more than once.`);
@@ -170,10 +197,10 @@ export class OrderService {
   private requireRestaurantActor(actor: OrderActor | null, restaurantId: string): Extract<OrderActor, { role: Role.RESTAURANT }> {
     const authenticated = this.requireActor(actor);
     requireStringId(restaurantId, "Restaurant ID");
-    if (authenticated.role !== Role.RESTAURANT || authenticated.restaurantId !== restaurantId) {
+    if (!hasPermission({ name: "manageOrders", restaurantId }, { ...authenticated, id: authenticated.userId })) {
       throw new OrderError("FORBIDDEN", "Restaurant accounts can only manage orders for their own restaurant.");
     }
-    return authenticated;
+    return authenticated as Extract<OrderActor, { role: Role.RESTAURANT }>;
   }
 
   private async restaurantOrder(actor: OrderActor | null, orderId: number) {
@@ -190,10 +217,14 @@ export class OrderService {
   private async save(order: Order, event: StateChangeEvent): Promise<OrderTransitionDTO> {
     await this.repository.save(order);
     this.logEvent(event);
-    return Object.freeze({ order: toOrderDTO(order), eventId: event.eventId, event });
+    return toTransition(order, event);
   }
 
   private logEvent(event: StateChangeEvent): void {
     console.info(`[ORD] eventId=${event.eventId} action=${event.action} orderId=${event.orderId} ${event.from}->${event.to} actorId=${event.actorId}`);
   }
+}
+
+function toTransition(order: Order, event: StateChangeEvent): OrderTransitionDTO {
+  return Object.freeze({ order: toOrderDTO(order), eventId: event.eventId, event });
 }

@@ -1,3 +1,4 @@
+import { hasPermission } from "../../domain/reg/permissions";
 import type { Restaurant } from "../../domain/ord/Restaurant.ts";
 import { OrderError, requireStringId } from "../../domain/ord/OrderError.ts";
 import { Role } from "../../domain/reg/Role.ts";
@@ -22,14 +23,13 @@ export class RestaurantStatusService {
 
   async reopen(actor: StatusActor | null, restaurantId: string): Promise<{ restaurant: Restaurant; eventId: number }> {
     const restaurant = await this.findRestaurant(restaurantId);
-    const operator = this.requireOperator(actor);
-    return this.record(restaurant, operator.userId, restaurant.reopen());
+    const who = this.requireStaffOfOrOperator(actor, restaurant.id);
+    return this.record(restaurant, who.userId, restaurant.reopen());
   }
 
   private async record(restaurant: Restaurant, actorId: string, fromStatus: Restaurant["status"]) {
     const eventId = await this.repository.nextEventId();
-    await this.repository.save(restaurant);
-    await this.repository.recordEvent({
+    await this.repository.save(restaurant, {
       eventId,
       restaurantId: restaurant.id,
       actorId,
@@ -41,14 +41,8 @@ export class RestaurantStatusService {
   }
 
   private requireStaffOfOrOperator(actor: StatusActor | null, restaurantId: string): StatusActor {
-    if (actor?.role === Role.OPERATOR) return actor;
-    if (actor?.role === Role.RESTAURANT && actor.restaurantId === restaurantId) return actor;
-    throw new OrderError("FORBIDDEN", "Only this restaurant's staff or an operator can pause it.");
-  }
-
-  private requireOperator(actor: StatusActor | null): StatusActor {
-    if (actor?.role === Role.OPERATOR) return actor;
-    throw new OrderError("FORBIDDEN", "Only an operator can reopen a restaurant.");
+    if (actor && hasPermission({ name: "changeRestaurantStatus", restaurantId }, { ...actor, id: actor.userId })) return actor;
+    throw new OrderError("FORBIDDEN", "Only this restaurant's staff or an operator can pause or reopen it.");
   }
 
   private async findRestaurant(restaurantId: string): Promise<Restaurant> {

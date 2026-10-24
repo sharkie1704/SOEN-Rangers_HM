@@ -82,7 +82,7 @@ describe("OrderService restaurant permissions", () => {
   it("staff drive the order through the queue", async () => {
     await service.accept(staffA, order.id);
     expect((await service.queue(staffA, "rest-a")).map((o) => o.id)).toEqual([order.id]);
-    await service.startPreparing(staffA, order.id);
+    await expectForbidden(service.markReady(staffB, order.id));
     expect((await service.markReady(staffA, order.id)).order.status).toBe("Ready");
   });
 });

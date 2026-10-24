@@ -1,5 +1,7 @@
-import express from "express";
+import express, { type RequestHandler } from "express";
+import { hasPermission, type PermissionCommand } from "./domain/reg/permissions";
 import cookieParser from "cookie-parser";
+import { apiCommandLogger } from "./application/http/ApiCommandLogger";
 import type { UserRepository } from "./domain/reg/ports/UserRepository";
 import type { PasswordHasher } from "./domain/reg/ports/PasswordHasher";
 import type { SessionTokenService } from "./domain/reg/ports/SessionTokenService";
@@ -26,7 +28,7 @@ import { OrderRoutes } from "./application/ord/OrderRoutes";
 import type { OrderRepository } from "./application/ord/OrderRepository";
 import type { MenuCatalog } from "./application/ord/MenuCatalog";
 import { OrderService } from "./application/ord/OrderService";
-import { toUserDto } from "./technical-services/http/userDto";
+import { toUserDto } from "./technical-services/http/UserDTO";
 
 export interface AppDeps {
   users: UserRepository;
@@ -39,9 +41,21 @@ export interface AppDeps {
   orderMenu?: MenuCatalog;
 }
 
+// Session authentication runs before these permission gates.
+function requirePermission(command: PermissionCommand): RequestHandler {
+  return (req, res, next) => {
+    if (!hasPermission(command, req.user)) {
+      res.status(403).json({ error: "Permission denied" });
+      return;
+    }
+    next();
+  };
+}
+
 export function createApp({ users, hasher, tokens, restaurants, menu, restaurantStatus, orders, orderMenu }: AppDeps) {
   
   const app = express();
+  app.use("/api", apiCommandLogger);
   app.use(express.json());
   app.use(cookieParser());
 
@@ -74,17 +88,22 @@ export function createApp({ users, hasher, tokens, restaurants, menu, restaurant
     app.get("/api/orders", orderRoutes.listMine);
     app.get("/api/orders/:orderId", orderRoutes.getOne);
     app.post("/api/orders/:orderId/cancel", orderRoutes.cancel);
+    app.post("/api/orders/:orderId/accept", orderRoutes.accept);
+    app.post("/api/orders/:orderId/reject", orderRoutes.reject);
+    app.post("/api/orders/:orderId/ready", orderRoutes.markReady);
+    app.get("/api/restaurants/:restaurantId/orders/incoming", orderRoutes.incoming);
+    app.get("/api/restaurants/:restaurantId/orders/queue", orderRoutes.queue);
   }
-  app.get("/api/restaurants", restaurantController.listRestaurants);
-  app.get("/api/restaurants/:restaurantId", restaurantController.getRestaurant);
-  app.get("/api/restaurants/:restaurantId/menu", restaurantController.getMenu);
+  app.get("/api/restaurants", requirePermission({ name: "browseRestaurants" }), restaurantController.listRestaurants);
+  app.get("/api/restaurants/:restaurantId", requirePermission({ name: "browseRestaurants" }), restaurantController.getRestaurant);
+  app.get("/api/restaurants/:restaurantId/menu", requirePermission({ name: "browseMenu" }), restaurantController.getMenu);
 
   app.post("/api/restaurants/:restaurantId/menu", menuController.add);
   app.patch("/api/restaurants/:restaurantId/menu/:itemId", menuController.update);
   app.delete("/api/restaurants/:restaurantId/menu/:itemId", menuController.remove);
   app.patch("/api/restaurants/:restaurantId/status", statusController.update);
 
-  app.get("/api/auth/me", async (req, res) => {
+  app.get("/api/auth/me", requirePermission({ name: "viewProfile" }), async (req, res) => {
   if (!req.user) {
     res.status(401).json({ error: "Authentication required" });
     return;

@@ -1,6 +1,7 @@
 
 import type { Request, Response } from "express";
 import type { RestaurantReadRepository } from "./RestaurantReadRepository.ts";
+import { Role } from "../../domain/reg/Role.ts";
 
 export class RestaurantQueryController {
   constructor(private readonly restaurants: RestaurantReadRepository) {}
@@ -54,6 +55,12 @@ export class RestaurantQueryController {
 
       if (!restaurant) {
         res.status(404).json({ error: "Restaurant not found" });
+        return;
+      }
+
+      // Customers can only browse an open restaurant (R-ORD-02); staff and operators still see the menu
+      if (req.user?.role === Role.CUSTOMER && restaurant.status !== "OPEN") {
+        res.status(409).json({ error: `This restaurant is ${restaurant.status.toLowerCase()}, so its menu is unavailable.` });
         return;
       }
 

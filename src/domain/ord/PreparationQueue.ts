@@ -2,6 +2,9 @@ import { Order } from "./Order.ts";
 import { OrderError, requireStringId } from "./OrderError.ts";
 import type { StateChangeEvent } from "./StateChangeEvent.ts";
 
+// Actor recorded when the queue starts an order on its own
+export const SYSTEM_ACTOR_ID = "system";
+
 export class PreparationQueue {
   readonly restaurantId: string;
   #orders: Order[] = [];
@@ -38,6 +41,11 @@ export class PreparationQueue {
     return this.#orders[0];
   }
 
+  // The front order should always be Preparing; returns it while it still has to be started
+  get waitingToStart(): Order | undefined {
+    return this.front?.status === "Accepted" ? this.front : undefined;
+  }
+
   find(orderId: number): Order | undefined {
     return this.#orders.find((order) => order.id === orderId);
   }
@@ -56,6 +64,9 @@ export class PreparationQueue {
 
   startPreparing(order: Order, actorId: string, eventId: number): StateChangeEvent {
     this.requireQueued(order);
+    if (this.front !== order) {
+      throw new OrderError("NOT_QUEUE_FRONT", "Only the front order can start preparing.");
+    }
     return order.startPreparing(actorId, eventId);
   }
 

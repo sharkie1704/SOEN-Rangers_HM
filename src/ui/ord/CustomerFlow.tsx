@@ -65,7 +65,8 @@ export default function CustomerFlow() {
         {cartNotice && <p role="status" style={{ textAlign: "center", color: "#923C32" }}>{cartNotice}</p>}
         <RestaurantListPage onSelectRestaurant={(restaurantId) => {
           if (cartItems.length > 0 && cartRestaurantId && cartRestaurantId !== restaurantId) {
-            setCartNotice("Your cart contains items from another restaurant. Finish or clear that cart first.");
+            const message = "Your cart contains items from another restaurant. Finish or clear that cart first.";
+            setCartNotice(message);
             return;
           }
           setCartNotice("");
