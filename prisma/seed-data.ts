@@ -11,6 +11,8 @@ export const restaurants = [
     description: "A bakery serving cakes, cookies, and other sweet treats.",
     imageUrl: "https://png.pngtree.com/background/20230518/original/pngtree-bakery-with-many-different-types-of-items-behind-glass-picture-image_2645229.jpg",
     status: "OPEN",
+    lat: 45.4973,
+    lng: -73.5789,
   },
   {
     id: RESTAURANT_IDS.SWEET_SPOT,
@@ -19,6 +21,8 @@ export const restaurants = [
     description: "A dessert shop offering pastries and specialty sweets.",
     imageUrl: "https://www.pjponline.com/wp-content/uploads/2019/02/shutterstock_475360618-scaled.jpg",
     status: "OPEN",
+    lat: 45.5131,
+    lng: -73.5683,
   },
 ] as const;
 
@@ -78,6 +82,9 @@ export const users = [
     email: "courier@dessertdash.test",
     password: "Demo123!",
     role: "COURIER",
+    courierLat: 45.5017,
+    courierLng: -73.5673,
+    courierStatus: "OFFLINE",
   },
   {
     name: "Demo Operator",
