@@ -14,7 +14,7 @@ import { loadSeedConfig } from "./technical-services/seed/loadSeedConfig";
 import { PrismaSeedRepository } from "./technical-services/seed/PrismaSeedRepository";
 
 async function startServer(): Promise<void> {
-  if (process.env.NODE_ENV !== "production") {
+  if (process.env.SEED_FROM_CONFIG === "true") {
     const seeder = new SeedController(new PrismaSeedRepository(), new BcryptPasswordHasher());
     await seeder.seed(await loadSeedConfig());
   }

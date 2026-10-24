@@ -43,6 +43,8 @@ DessertDash is a restaurant and dessert ordering application built with React, T
 
    Seed data is defined in `prisma/seed-data.ts`; the seeding logic is in `prisma/seed.ts`.
 
+(alternate) Seeding method on startup is disabled by default. Set `SEED_FROM_CONFIG=true` to `false`in server.ts to enable.
+
 ## Development
 
 Start the Vite frontend and Express API together:
@@ -56,11 +58,6 @@ The frontend is at `http://localhost:5173` and the API is at `http://localhost:3
 You can also start either process separately with `npm run dev:client` or `npm run dev:server`.
 
 ## Checks and tests
-
-When the API starts outside production, it loads `config.json` and
-demo accounts, restaurants, and menu items before starting the server. 
-
-Demo accounts: use the password `demo`; change `config.json` to customize the local seed data. Production startup skips seeding.
 
 ```sh
 npm run check      # TypeScript check
