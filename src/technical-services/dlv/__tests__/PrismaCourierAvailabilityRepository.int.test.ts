@@ -74,6 +74,15 @@ describe.skipIf(!run)("PrismaCourierAvailabilityRepository (integration)", () =>
     expect(await prisma.courierStatusEvent.count({ where: { courierId: actor.userId } })).toBe(1);
   });
 
+  it("refuses to store a courier without a status", async () => {
+    const actor = await registerCourier("required");
+    await expect(prisma.user.update({ where: { id: actor.userId }, data: { courierStatus: null } })).rejects.toThrow();
+    await expect(prisma.user.create({
+      data: { name: "No Status", email: email("no-status"), passwordHash: "hash", role: "COURIER" },
+    })).rejects.toThrow();
+    expect((await repository.findByCourierId(actor.userId))?.status).toBe("OFFLINE");
+  });
+
   it("does not treat other roles as couriers", async () => {
     const customer = await new CustomerRegistrar(users, new BcryptPasswordHasher(4))
       .register({ name: "Cu", email: email("customer"), password: "password123", address: { lat: 45.5, lng: -73.57 } });
