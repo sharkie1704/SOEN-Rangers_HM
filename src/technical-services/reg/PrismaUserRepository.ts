@@ -35,8 +35,10 @@ export class PrismaUserRepository implements UserRepository {
 
   async save(user: User): Promise<void> {
     const data = this.toRow(user);
+    // New couriers start off duty; updates leave the status alone because DLV owns it
+    const create = user instanceof Courier ? { ...data, courierStatus: "OFFLINE" as const } : data;
     try {
-      await prisma.user.upsert({ where: { id: user.id }, create: data, update: data });
+      await prisma.user.upsert({ where: { id: user.id }, create, update: data });
     } catch (e) {
       // Two simultaneous signups can both pass findByEmail; the DB constraint is the last line of defence.
       if ((e as { code?: string })?.code === "P2002") {

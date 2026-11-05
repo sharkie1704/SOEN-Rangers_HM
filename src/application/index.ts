@@ -7,3 +7,6 @@ export type { PlaceOrderDTO, PlaceOrderLineDTO } from "./ord/PlaceOrderDTO.ts";
 export { OrderService } from "./ord/OrderService.ts";
 export { OrderController } from "./ord/OrderController.ts";
 export { RestaurantController } from "./ord/RestaurantController.ts";
+export type { CourierAvailabilityRepository, CourierStatusEvent } from "./dlv/CourierAvailabilityRepository.ts";
+export { CourierAvailabilityService, type CourierActor } from "./dlv/CourierAvailabilityService.ts";
+export { CourierAvailabilityController } from "./dlv/CourierAvailabilityController.ts";
