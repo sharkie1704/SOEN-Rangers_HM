@@ -90,6 +90,14 @@ export class Order {
     return this.transition(this.#state.markReady(), "mark-ready", actorId, eventId);
   }
 
+  pickUp(actorId: string, eventId: number): StateChangeEvent {
+    return this.transition(this.#state.pickUp(), "pick-up", actorId, eventId);
+  }
+
+  deliver(actorId: string, eventId: number): StateChangeEvent {
+    return this.transition(this.#state.deliver(), "deliver", actorId, eventId);
+  }
+
   private transition(nextState: OrderState, action: OrderAction, actorId: string, eventId: number, reason?: string): StateChangeEvent {
     const event: StateChangeEvent = Object.freeze({
       eventId: requireId(eventId, "Event ID"),
