@@ -64,6 +64,8 @@ enum OrderStatus {
   ACCEPTED
   PREPARING
   READY
+  PICKED_UP
+  DELIVERED
   REJECTED
   CANCELLED
 }
@@ -75,6 +77,8 @@ enum OrderAction {
   CANCEL
   START_PREPARING
   MARK_READY
+  PICK_UP
+  DELIVER
 }
 
 model Restaurant {
