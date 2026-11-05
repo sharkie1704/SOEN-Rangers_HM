@@ -3,7 +3,7 @@ import { api, ApiError } from "../reg/api/client";
 import { page, row, input, primary, secondary } from "./MenuEditorPage";
 import "./button-interactions.css";
 
-export type OrderStatus = "Placed" | "Accepted" | "Preparing" | "Ready" | "Rejected" | "Cancelled";
+export type OrderStatus = "Placed" | "Accepted" | "Preparing" | "Ready" | "PickedUp" | "Delivered" | "Rejected" | "Cancelled";
 
 export type Order = {
   id: number;
