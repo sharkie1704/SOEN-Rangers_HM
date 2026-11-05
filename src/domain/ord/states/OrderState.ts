@@ -24,6 +24,14 @@ export abstract class OrderState {
     return this.disallow("mark-ready");
   }
 
+  pickUp(): OrderState {
+    return this.disallow("pick-up");
+  }
+
+  deliver(): OrderState {
+    return this.disallow("deliver");
+  }
+
   private disallow(action: OrderAction): never {
     throw new OrderError("INVALID_TRANSITION", `Cannot ${action} an order in ${this.status} state.`);
   }

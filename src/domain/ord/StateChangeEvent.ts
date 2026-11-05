@@ -3,6 +3,8 @@ export type OrderStatus =
   | "Accepted"
   | "Preparing"
   | "Ready"
+  | "PickedUp"
+  | "Delivered"
   | "Rejected"
   | "Cancelled";
 
@@ -12,7 +14,9 @@ export type OrderAction =
   | "reject"
   | "cancel"
   | "start-preparing"
-  | "mark-ready";
+  | "mark-ready"
+  | "pick-up"
+  | "deliver";
 
 export interface StateChangeEvent {
   readonly eventId: number;
