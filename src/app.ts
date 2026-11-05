@@ -28,6 +28,9 @@ import { OrderRoutes } from "./application/ord/OrderRoutes";
 import type { OrderRepository } from "./application/ord/OrderRepository";
 import type { MenuCatalog } from "./application/ord/MenuCatalog";
 import { OrderService } from "./application/ord/OrderService";
+import type { CourierAvailabilityRepository } from "./application/dlv/CourierAvailabilityRepository";
+import { CourierAvailabilityService } from "./application/dlv/CourierAvailabilityService";
+import { CourierAvailabilityController } from "./application/dlv/CourierAvailabilityController";
 import { toUserDto } from "./technical-services/http/UserDTO";
 
 export interface AppDeps {
@@ -39,6 +42,7 @@ export interface AppDeps {
   restaurantStatus: RestaurantStatusRepository;
   orders?: OrderRepository;
   orderMenu?: MenuCatalog;
+  couriers?: CourierAvailabilityRepository;
 }
 
 // Session authentication runs before these permission gates.
@@ -52,7 +56,7 @@ function requirePermission(command: PermissionCommand): RequestHandler {
   };
 }
 
-export function createApp({ users, hasher, tokens, restaurants, menu, restaurantStatus, orders, orderMenu }: AppDeps) {
+export function createApp({ users, hasher, tokens, restaurants, menu, restaurantStatus, orders, orderMenu, couriers }: AppDeps) {
   
   const app = express();
   app.use("/api", apiCommandLogger);
@@ -93,6 +97,11 @@ export function createApp({ users, hasher, tokens, restaurants, menu, restaurant
     app.post("/api/orders/:orderId/ready", orderRoutes.markReady);
     app.get("/api/restaurants/:restaurantId/orders/incoming", orderRoutes.incoming);
     app.get("/api/restaurants/:restaurantId/orders/queue", orderRoutes.queue);
+  }
+  if (couriers) {
+    const courierController = new CourierAvailabilityController(new CourierAvailabilityService(couriers));
+    app.get("/api/couriers/me/availability", courierController.get);
+    app.patch("/api/couriers/me/availability", courierController.update);
   }
   app.get("/api/restaurants", requirePermission({ name: "browseRestaurants" }), restaurantController.listRestaurants);
   app.get("/api/restaurants/:restaurantId", requirePermission({ name: "browseRestaurants" }), restaurantController.getRestaurant);
