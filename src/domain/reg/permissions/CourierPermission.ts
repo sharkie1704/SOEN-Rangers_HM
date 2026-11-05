@@ -4,7 +4,7 @@ import { isCommonCommand, type PermissionCommand, type PermissionUser, type Role
 export class CourierPermission implements RolePermissions {
   canExecute(cmd: PermissionCommand, user: PermissionUser): boolean {
     if (user.role !== Role.COURIER || !user.id?.trim()) return false;
-    // Delivery commands are outside the implemented Phase II scope.
-    return isCommonCommand(cmd);
+    if (isCommonCommand(cmd)) return true;
+    return cmd.name === "manageCourierAvailability" && cmd.courierId === user.id;
   }
 }
