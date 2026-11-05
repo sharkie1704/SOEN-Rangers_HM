@@ -7,7 +7,7 @@ export type PermissionCommand =
   | { name: "viewOrder"; customerId: string; restaurantId: string }
   | { name: "cancelOrder"; customerId: string }
   | { name: "manageOrders" | "manageMenu" | "changeRestaurantStatus"; restaurantId: string }
-  | { name: "answerOffer"; courierId: string };
+  | { name: "manageCourierAvailability" | "answerOffer"; courierId: string };
 
 export interface PermissionUser {
   readonly id: string;
