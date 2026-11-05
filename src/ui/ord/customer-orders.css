@@ -57,6 +57,18 @@
   transition: transform 150ms ease, box-shadow 150ms ease, background-color 150ms ease;
 }
 
+.order-comment {
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  margin: 0;
+  min-height: 42px;
+  border-radius: 9px;
+  padding: 9px 15px;
+  font: inherit;
+  font-weight: 600;
+}
+
 .orders-refresh-all {
   flex: 0 0 auto;
   border: 1px solid var(--orders-orange);
@@ -116,6 +128,11 @@
 .order-card-heading h2 {
   margin: 0;
   font-size: 1.2rem;
+}
+
+.order-rejection-reason {
+  background: #f2d8d5;
+  color: #923c32;
 }
 
 .order-status {
