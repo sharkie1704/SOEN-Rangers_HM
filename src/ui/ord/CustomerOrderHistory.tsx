@@ -10,6 +10,7 @@ type Order = {
   totalCents: number;
   lines: { name: string; quantity: number }[];
   events: { eventId: number; action: string; from: string; to: string; occurredAt: string }[];
+  rejectionReason: string;
 };
 
 export default function CustomerOrderHistory() {
@@ -103,12 +104,19 @@ export default function CustomerOrderHistory() {
               {order.events.map((event) => <span key={event.eventId}>{event.action} <strong>#{event.eventId}</strong></span>)}
             </div>
             <div className="order-card-actions">
-              <button className="order-action order-action-secondary" type="button" disabled={busyOrderId === order.id} onClick={() => refreshOrder(order.id)}>
-                {busyOrderId === order.id ? "Updating…" : "Refresh status"}
-              </button>
+              {order.status !== "Cancelled" && order.status !== "Rejected" && (
+                <button className="order-action order-action-secondary" type="button" disabled={busyOrderId === order.id} onClick={() => refreshOrder(order.id)}>
+                  {busyOrderId === order.id ? "Updating…" : "Refresh status"}
+                </button>
+              )}
               {order.status === "Placed" && <button className="order-action order-action-cancel" type="button" disabled={busyOrderId === order.id} onClick={() => cancelOrder(order.id)}>
                 Cancel order
               </button>}
+              {order.status === "Rejected" && (
+                <p className="order-comment order-rejection-reason">
+                  <u style={{ marginRight: "4px" }}>Rejection Reason:</u>{" "} {order.rejectionReason || "No reason provided."}
+                </p>
+              )}
             </div>
           </article>
         ))}
