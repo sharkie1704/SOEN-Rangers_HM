@@ -40,7 +40,7 @@ model User {
   deliveryLat  Float?
   deliveryLng  Float?
 
-  // Initial courier configuration only
+  // Courier only; a CHECK constraint requires courierStatus for couriers (see the require_courier_status migration)
   courierLat    Float?
   courierLng    Float?
   courierStatus CourierStatus?
@@ -173,4 +173,18 @@ model RestaurantStatusEvent {
   occurredAt   DateTime
 
   @@index([restaurantId])
+}
+
+// ---------- DLV ----------
+
+model CourierStatusEvent {
+  id         Int           @id @default(autoincrement())
+  // User.id; no FK so REG's User model stays untouched
+  courierId  String
+  actorId    String
+  fromStatus CourierStatus
+  toStatus   CourierStatus
+  occurredAt DateTime
+
+  @@index([courierId])
 }
