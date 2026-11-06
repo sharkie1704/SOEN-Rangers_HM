@@ -1,6 +1,6 @@
 import { AssignmentError } from "./AssignmentError.ts";
 
-export type AssignmentStatus = "Offered" | "Accepted" | "Declined";
+export type AssignmentStatus = "Offered" | "Accepted" | "Declined" | "Completed";
 
 export class Assignment {
   readonly orderId: number;
@@ -35,5 +35,12 @@ export class Assignment {
       throw new AssignmentError("INVALID_TRANSITION", "Only a pending offer can be declined.");
     }
     this.#status = "Declined";
+  }
+
+  complete(): void {
+    if (this.#status !== "Accepted") {
+      throw new AssignmentError("INVALID_TRANSITION", "Only an accepted offer can be completed.");
+    }
+    this.#status = "Completed";
   }
 }
