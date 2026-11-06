@@ -2,7 +2,8 @@ export type AssignmentErrorCode =
   | "INVALID_INPUT"
   | "INVALID_TRANSITION"
   | "FORBIDDEN"
-  | "NOT_FOUND";
+  | "NOT_FOUND"
+  | "CONFLICT";
 
 export class AssignmentError extends Error {
   readonly code: AssignmentErrorCode;

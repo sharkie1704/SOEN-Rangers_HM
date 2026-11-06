@@ -3,6 +3,7 @@ import { AssignmentError } from "../../domain/dlv/AssignmentError.ts";
 import { hasPermission } from "../../domain/reg/permissions";
 import type { Role } from "../../domain/reg/Role.ts";
 import type { AssignmentRepository, OfferAnsweredEvent } from "./AssignmentRepository.ts";
+import type { CourierAvailabilityRepository } from "./CourierAvailabilityRepository.ts";
 
 export interface AssignmentActor {
   readonly userId: string;
@@ -10,17 +11,31 @@ export interface AssignmentActor {
 }
 
 export class AssignmentService {
-  private readonly repository: AssignmentRepository;
+  private readonly assignments: AssignmentRepository;
+  private readonly couriers: CourierAvailabilityRepository;
 
-  constructor(repository: AssignmentRepository) {
-    this.repository = repository;
+  constructor(assignments: AssignmentRepository, couriers: CourierAvailabilityRepository) {
+    this.assignments = assignments;
+    this.couriers = couriers;
   }
 
   async accept(actor: AssignmentActor | null, orderId: number): Promise<{ assignment: Assignment; eventId: number }> {
     const assignment = await this.loadOwnOffer(actor, orderId);
+    const courier = await this.couriers.findByCourierId(assignment.courierId);
+    if (!courier) {
+      throw new AssignmentError("NOT_FOUND", "Courier was not found.");
+    }
     assignment.accept();
+    const fromStatus = courier.assign();
     const event = await this.answeredEvent(assignment);
-    await this.repository.saveAccepted(assignment, event);
+    await this.assignments.saveAccepted(assignment, event, courier, {
+      eventId: await this.couriers.nextEventId(),
+      courierId: courier.courierId,
+      actorId: courier.courierId,
+      fromStatus,
+      toStatus: courier.status,
+      occurredAt: event.occurredAt,
+    });
     return { assignment, eventId: event.eventId };
   }
 
@@ -28,7 +43,7 @@ export class AssignmentService {
     const assignment = await this.loadOwnOffer(actor, orderId);
     assignment.decline();
     const event = await this.answeredEvent(assignment);
-    await this.repository.saveDeclined(assignment, event);
+    await this.assignments.saveDeclined(assignment, event);
     return { assignment, eventId: event.eventId };
   }
 
@@ -36,7 +51,7 @@ export class AssignmentService {
     if (!actor) {
       throw new AssignmentError("FORBIDDEN", "Only the courier who received the offer can answer it.");
     }
-    const assignment = await this.repository.findActiveByOrderId(orderId);
+    const assignment = await this.assignments.findActiveByOrderId(orderId);
     if (!assignment) {
       throw new AssignmentError("NOT_FOUND", "No offer was found for this order.");
     }
@@ -48,7 +63,7 @@ export class AssignmentService {
 
   private async answeredEvent(assignment: Assignment): Promise<OfferAnsweredEvent> {
     return {
-      eventId: await this.repository.nextEventId(),
+      eventId: await this.assignments.nextEventId(),
       orderId: assignment.orderId,
       courierId: assignment.courierId,
       occurredAt: new Date(),

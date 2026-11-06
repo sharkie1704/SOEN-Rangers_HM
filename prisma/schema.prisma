@@ -119,8 +119,9 @@ model Order {
   status       OrderStatus
   placedAt     DateTime
 
-  lines  OrderLine[]
-  events OrderEvent[]
+  lines       OrderLine[]
+  events      OrderEvent[]
+  assignments Assignment[]
 
   @@index([restaurantId, status])
   @@index([customerId])
@@ -187,4 +188,40 @@ model CourierStatusEvent {
   occurredAt DateTime
 
   @@index([courierId])
+}
+
+enum AssignmentStatus {
+  OFFERED
+  ACCEPTED
+  DECLINED
+}
+
+enum AssignmentAction {
+  OFFER
+  ACCEPT
+  DECLINE
+}
+
+model Assignment {
+  id        Int              @id @default(autoincrement())
+  orderId   Int
+  order     Order            @relation(fields: [orderId], references: [id])
+  courierId String
+  status    AssignmentStatus
+
+  events AssignmentEvent[]
+
+  @@index([orderId])
+  @@index([courierId])
+}
+
+model AssignmentEvent {
+  id           Int              @id @default(autoincrement())
+  assignmentId Int
+  assignment   Assignment       @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+  actorId      String
+  action       AssignmentAction
+  occurredAt   DateTime
+
+  @@index([assignmentId])
 }
