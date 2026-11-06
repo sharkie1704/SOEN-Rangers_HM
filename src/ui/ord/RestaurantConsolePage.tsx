@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { api, ApiError } from "../reg/api/client";
+import { BAND_COLOURS, queueBand, type Band } from "../dash/queueBand";
 import { page, row, input, primary, secondary } from "./MenuEditorPage";
 import "./button-interactions.css";
 
@@ -19,6 +20,8 @@ type RestaurantConsolePageInputs = {
   restaurantId: string;
 };
 
+type RestaurantStatus = "OPEN" | "PAUSED" | "CLOSED";
+
 // New orders show up without a manual refresh
 export const REFRESH_MS = 5000;
 
@@ -35,6 +38,7 @@ const doneMessage = { accept: "accepted", reject: "rejected", ready: "marked rea
 export default function RestaurantConsolePage({ restaurantId }: RestaurantConsolePageInputs) {
   const [incoming, setIncoming] = useState<Order[]>([]);
   const [queue, setQueue] = useState<Order[]>([]);
+  const [restaurantStatus, setRestaurantStatus] = useState<RestaurantStatus>("OPEN");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
@@ -44,12 +48,14 @@ export default function RestaurantConsolePage({ restaurantId }: RestaurantConsol
   const loadOrders = useCallback(async () => {
     const path = `/api/restaurants/${encodeURIComponent(restaurantId)}/orders`;
     try {
-      const [placed, queued] = await Promise.all([
+      const [placed, queued, restaurant] = await Promise.all([
         api<{ orders: Order[] }>(`${path}/incoming`),
         api<{ orders: Order[] }>(`${path}/queue`),
+        api<{ restaurant: { status: RestaurantStatus } }>(`/api/restaurants/${encodeURIComponent(restaurantId)}`),
       ]);
       setIncoming(placed.orders);
       setQueue(queued.orders);
+      setRestaurantStatus(restaurant.restaurant.status);
       setError("");
     } catch {
       setError("Could not load orders. Retrying...");
@@ -77,10 +83,23 @@ export default function RestaurantConsolePage({ restaurantId }: RestaurantConsol
     await loadOrders();
   }
 
+  const band: Band = queueBand({ status: restaurantStatus, queue });
+
   return (
     <section style={{ ...page, minHeight: "auto", paddingBottom: 0 }}>
       <div style={{ maxWidth: "800px", margin: "0 auto" }}>
-        <h2 style={{ fontSize: "28px", margin: "0 0 16px" }}>Orders</h2>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "16px", marginBottom: "16px" }}>
+          <h2 style={{ fontSize: "28px", margin: 0 }}>Orders</h2>
+          <div style={{ display: "flex", alignItems: "center", gap: "8px", color: "#4B3028", fontWeight: 600 }}>
+            <span>Queue band</span>
+            <span
+              aria-label={`${band} queue band`}
+              style={{ width: "14px", height: "14px", borderRadius: "50%", backgroundColor: BAND_COLOURS[band] }}
+            />
+            <span style={{ textTransform: "capitalize" }}>{band}</span>
+            <span>({queue.length})</span>
+          </div>
+        </div>
 
         {loading && <p>Loading orders...</p>}
         {error && <p className="error">{error}</p>}
