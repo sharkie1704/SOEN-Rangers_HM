@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { api, ApiError } from "../reg/api/client";
+import MapView, { type MapRestaurant } from "../dash/MapView";
 import { page, row, primary, secondary, statusLabel, type RestaurantStatus } from "./MenuEditorPage";
 import "./button-interactions.css";
 
@@ -7,6 +8,8 @@ type OperatorRestaurant = {
   id: string;
   name: string;
   status: RestaurantStatus;
+  lat: number | null;
+  lng: number | null;
 };
 
 export default function OperatorRestaurantsPage() {
@@ -48,6 +51,18 @@ export default function OperatorRestaurantsPage() {
     }
   }
 
+  // temporary map view
+  const mapRestaurants: MapRestaurant[] = restaurants.flatMap((restaurant) => (
+    restaurant.lat === null || restaurant.lng === null ? [] : [{
+      id: restaurant.id,
+      name: restaurant.name,
+      lat: restaurant.lat,
+      lng: restaurant.lng,
+      status: restaurant.status,
+      queue: { length: 0 },
+    }]
+  ));
+
   return (
     <section style={page}>
       <div style={{ maxWidth: "800px", margin: "0 auto" }}>
@@ -57,6 +72,13 @@ export default function OperatorRestaurantsPage() {
         {error && <p className="error">{error}</p>}
         {message && <p role="status" style={{ fontWeight: 600 }}>{message}</p>}
         {!loading && !error && restaurants.length === 0 && <p>No restaurants yet.</p>}
+
+        {/* temporary map view */}
+        {mapRestaurants.length > 0 && (
+          <div style={{ height: "420px", marginBottom: "24px", border: "1px solid #EADBC8", borderRadius: "12px", overflow: "hidden" }}>
+            <MapView restaurants={mapRestaurants} couriers={[]} showLabels />
+          </div>
+        )}
 
         <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "grid", gap: "8px" }}>
           {restaurants.map((restaurant) => (
