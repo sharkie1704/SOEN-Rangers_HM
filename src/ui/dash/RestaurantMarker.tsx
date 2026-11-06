@@ -21,7 +21,13 @@ export default function RestaurantMarker({ restaurant, x, y, showLabel, selected
   return (
     <g onClick={() => onSelect?.(restaurant.id)} style={{ cursor: 'pointer' }}
        data-testid={`restaurant-${restaurant.id}`}>
-      <circle cx={x} cy={y} r={selected ? 11 : 8} fill={fill} stroke="#222" strokeWidth={selected ? 3 : 1} />
+      <path
+        d="M 0 -12 C 7 -12 11 -7 11 -1 C 11 5 5 10 0 15 C -5 10 -11 5 -11 -1 C -11 -7 -7 -12 0 -12 Z"
+        transform={`translate(${x} ${y})`}
+        fill={fill}
+        stroke="#222"
+        strokeWidth={selected ? 3 : 1}
+      />
       {showLabel && (
         <text x={x + 14} y={y + 4} fontSize={12}>
           {restaurant.name} · {restaurant.queue.length} queued
