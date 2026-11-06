@@ -1,0 +1,2 @@
+ALTER TYPE "AssignmentStatus" ADD VALUE 'COMPLETED';
+ALTER TYPE "AssignmentAction" ADD VALUE 'COMPLETE';

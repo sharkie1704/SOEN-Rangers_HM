@@ -1,10 +1,12 @@
 import { prisma } from "../db/PrismaClient.ts";
-import type { AssignmentStatus as DbAssignmentStatus } from "../../generated/prisma/client.ts";
+import type { AssignmentAction, AssignmentStatus as DbAssignmentStatus } from "../../generated/prisma/client.ts";
 import { Assignment, type AssignmentStatus } from "../../domain/dlv/Assignment.ts";
 import { AssignmentError } from "../../domain/dlv/AssignmentError.ts";
 import type { CourierAvailability } from "../../domain/dlv/CourierAvailability.ts";
-import type { AssignmentRepository, OfferAnsweredEvent } from "../../application/dlv/AssignmentRepository.ts";
+import type { Order } from "../../domain/ord/Order.ts";
+import type { AssignmentRepository, AssignmentChangeEvent } from "../../application/dlv/AssignmentRepository.ts";
 import type { CourierStatusEvent } from "../../application/dlv/CourierAvailabilityRepository.ts";
+import { PrismaOrderRepository } from "../ord/PrismaOrderRepository.ts";
 
 type Tx = Parameters<Parameters<typeof prisma.$transaction>[0]>[0];
 
@@ -12,6 +14,7 @@ const toDbStatus: Record<AssignmentStatus, DbAssignmentStatus> = {
   Offered: "OFFERED",
   Accepted: "ACCEPTED",
   Declined: "DECLINED",
+  Completed: "COMPLETED",
 };
 
 const fromDbStatus = Object.fromEntries(
@@ -31,50 +34,69 @@ export class PrismaAssignmentRepository implements AssignmentRepository {
     return row ? new Assignment(row.orderId, row.courierId, fromDbStatus[row.status]) : undefined;
   }
 
-  async saveAccepted(assignment: Assignment, event: OfferAnsweredEvent, courier: CourierAvailability, courierEvent: CourierStatusEvent): Promise<void> {
+  async saveAccepted(assignment: Assignment, event: AssignmentChangeEvent, courier: CourierAvailability, courierEvent: CourierStatusEvent): Promise<void> {
     await prisma.$transaction(async (tx) => {
-      await this.answer(tx, assignment, event, "ACCEPT");
-      const { count } = await tx.user.updateMany({
-        where: { id: courier.courierId, role: "COURIER", courierStatus: courierEvent.fromStatus },
-        data: { courierStatus: courier.status },
-      });
-      if (count === 0) {
-        throw new AssignmentError("CONFLICT", "Courier status just changed. Reload it and try again.");
-      }
-      await tx.courierStatusEvent.create({
-        data: {
-          id: courierEvent.eventId,
-          courierId: courierEvent.courierId,
-          actorId: courierEvent.actorId,
-          fromStatus: courierEvent.fromStatus,
-          toStatus: courierEvent.toStatus,
-          occurredAt: courierEvent.occurredAt,
-        },
-      });
+      await this.changeStatus(tx, assignment, event, "OFFERED", "ACCEPT");
+      await this.moveCourier(tx, courier, courierEvent);
     });
   }
 
-  async saveDeclined(assignment: Assignment, event: OfferAnsweredEvent): Promise<void> {
-    await prisma.$transaction((tx) => this.answer(tx, assignment, event, "DECLINE"));
+  async saveDeclined(assignment: Assignment, event: AssignmentChangeEvent): Promise<void> {
+    await prisma.$transaction((tx) => this.changeStatus(tx, assignment, event, "OFFERED", "DECLINE"));
   }
 
-  private async answer(tx: Tx, assignment: Assignment, event: OfferAnsweredEvent, action: "ACCEPT" | "DECLINE"): Promise<void> {
-    const offer = await tx.assignment.findFirst({
-      where: { orderId: assignment.orderId, courierId: assignment.courierId, status: "OFFERED" },
+  async savePickup(order: Order, courier: CourierAvailability, courierEvent: CourierStatusEvent): Promise<void> {
+    await prisma.$transaction(async (tx) => {
+      await new PrismaOrderRepository(tx).save(order);
+      await this.moveCourier(tx, courier, courierEvent);
+    });
+  }
+
+  async saveDelivery(order: Order, assignment: Assignment, event: AssignmentChangeEvent, courier: CourierAvailability, courierEvent: CourierStatusEvent): Promise<void> {
+    await prisma.$transaction(async (tx) => {
+      await new PrismaOrderRepository(tx).save(order);
+      await this.moveCourier(tx, courier, courierEvent);
+      await this.changeStatus(tx, assignment, event, "ACCEPTED", "COMPLETE");
+    });
+  }
+
+  private async changeStatus(tx: Tx, assignment: Assignment, event: AssignmentChangeEvent, from: DbAssignmentStatus, action: AssignmentAction): Promise<void> {
+    const row = await tx.assignment.findFirst({
+      where: { orderId: assignment.orderId, courierId: assignment.courierId, status: from },
       select: { id: true },
     });
-    if (!offer) {
-      throw new AssignmentError("CONFLICT", "This offer was already answered. Reload it and try again.");
+    if (!row) {
+      throw new AssignmentError("CONFLICT", "This assignment just changed. Reload it and try again.");
     }
     const { count } = await tx.assignment.updateMany({
-      where: { id: offer.id, status: "OFFERED" },
+      where: { id: row.id, status: from },
       data: { status: toDbStatus[assignment.status] },
     });
     if (count === 0) {
-      throw new AssignmentError("CONFLICT", "This offer was already answered. Reload it and try again.");
+      throw new AssignmentError("CONFLICT", "This assignment just changed. Reload it and try again.");
     }
     await tx.assignmentEvent.create({
-      data: { id: event.eventId, assignmentId: offer.id, actorId: event.courierId, action, occurredAt: event.occurredAt },
+      data: { id: event.eventId, assignmentId: row.id, actorId: event.courierId, action, occurredAt: event.occurredAt },
+    });
+  }
+
+  private async moveCourier(tx: Tx, courier: CourierAvailability, courierEvent: CourierStatusEvent): Promise<void> {
+    const { count } = await tx.user.updateMany({
+      where: { id: courier.courierId, role: "COURIER", courierStatus: courierEvent.fromStatus },
+      data: { courierStatus: courier.status },
+    });
+    if (count === 0) {
+      throw new AssignmentError("CONFLICT", "Courier status just changed. Reload it and try again.");
+    }
+    await tx.courierStatusEvent.create({
+      data: {
+        id: courierEvent.eventId,
+        courierId: courierEvent.courierId,
+        actorId: courierEvent.actorId,
+        fromStatus: courierEvent.fromStatus,
+        toStatus: courierEvent.toStatus,
+        occurredAt: courierEvent.occurredAt,
+      },
     });
   }
 }

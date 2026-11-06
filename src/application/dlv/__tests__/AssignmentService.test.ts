@@ -1,48 +1,18 @@
 import { beforeEach, describe, it, expect } from "vitest";
 import { Assignment } from "../../../domain/dlv/Assignment.ts";
-import type { CourierAvailability } from "../../../domain/dlv/CourierAvailability.ts";
 import { Role } from "../../../domain/reg/Role.ts";
-import type { AssignmentRepository, OfferAnsweredEvent } from "../AssignmentRepository.ts";
 import { AssignmentService } from "../AssignmentService.ts";
-import type { CourierStatusEvent } from "../CourierAvailabilityRepository.ts";
-import { InMemoryCourierAvailabilityRepository } from "./fakes.ts";
-
-class FakeAssignments implements AssignmentRepository {
-  readonly assignments = new Map<number, Assignment>();
-  readonly accepted: OfferAnsweredEvent[] = [];
-  readonly declined: OfferAnsweredEvent[] = [];
-  #eventId = 0;
-
-  constructor(private readonly couriers: InMemoryCourierAvailabilityRepository) {}
-
-  async nextEventId() {
-    return ++this.#eventId;
-  }
-
-  async findActiveByOrderId(orderId: number) {
-    const assignment = this.assignments.get(orderId);
-    return assignment?.status === "Declined" ? undefined : assignment;
-  }
-
-  async saveAccepted(_assignment: Assignment, event: OfferAnsweredEvent, courier: CourierAvailability, courierEvent: CourierStatusEvent) {
-    await this.couriers.save(courier, courierEvent);
-    this.accepted.push(event);
-  }
-
-  async saveDeclined(_assignment: Assignment, event: OfferAnsweredEvent) {
-    this.declined.push(event);
-  }
-}
+import { InMemoryAssignmentRepository, InMemoryCourierAvailabilityRepository } from "./fakes.ts";
 
 const courier = { userId: "courier-1", role: Role.COURIER };
 
 let couriers: InMemoryCourierAvailabilityRepository;
-let repository: FakeAssignments;
+let repository: InMemoryAssignmentRepository;
 let service: AssignmentService;
 
 beforeEach(() => {
   couriers = new InMemoryCourierAvailabilityRepository().withCourier("courier-1", "IDLE");
-  repository = new FakeAssignments(couriers);
+  repository = new InMemoryAssignmentRepository(couriers);
   repository.assignments.set(7, new Assignment(7, "courier-1"));
   service = new AssignmentService(repository, couriers);
 });

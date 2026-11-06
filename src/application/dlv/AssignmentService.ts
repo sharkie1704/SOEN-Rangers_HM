@@ -2,7 +2,7 @@ import type { Assignment } from "../../domain/dlv/Assignment.ts";
 import { AssignmentError } from "../../domain/dlv/AssignmentError.ts";
 import { hasPermission } from "../../domain/reg/permissions";
 import type { Role } from "../../domain/reg/Role.ts";
-import type { AssignmentRepository, OfferAnsweredEvent } from "./AssignmentRepository.ts";
+import type { AssignmentRepository, AssignmentChangeEvent } from "./AssignmentRepository.ts";
 import type { CourierAvailabilityRepository } from "./CourierAvailabilityRepository.ts";
 
 export interface AssignmentActor {
@@ -61,7 +61,7 @@ export class AssignmentService {
     return assignment;
   }
 
-  private async answeredEvent(assignment: Assignment): Promise<OfferAnsweredEvent> {
+  private async answeredEvent(assignment: Assignment): Promise<AssignmentChangeEvent> {
     return {
       eventId: await this.assignments.nextEventId(),
       orderId: assignment.orderId,
