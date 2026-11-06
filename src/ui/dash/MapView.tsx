@@ -1,4 +1,5 @@
 import { useRef, useState, type PointerEvent, type WheelEvent } from 'react';
+import mapImage from '../../assets/map-image.jpg';
 import type { Courier } from '../../domain/reg/Courier';
 import type { RestaurantStatus } from '../../domain/ord/Restaurant';
 import { computeBounds, project, type GeoPoint } from './MapProjection';
@@ -22,9 +23,12 @@ export type MapRestaurant = GeoPoint & {
 };
 
 const PADDING = 40;
-const MIN_ZOOM = 0.5;
-const MAX_ZOOM = 5;
+const MIN_ZOOM = 0.75;
+const MAX_ZOOM = 4;
+const DEFAULT_ZOOM = 1;
 const ZOOM_STEP = 0.25;
+const MAP_IMAGE_ASPECT = 1729 / 980;
+const MAP_IMAGE_SCALE = 1.25;
 
 export default function MapView({
   restaurants, couriers: _couriers, showLabels = true, selectedRestaurantId, onSelectRestaurant,
@@ -42,6 +46,11 @@ export default function MapView({
 //   const bounds = computeBounds([...restaurants, ...onDuty]);
 
   const bounds = computeBounds(restaurants);
+  const fittedImageWidth = Math.min(width, height * MAP_IMAGE_ASPECT);
+  const imageWidth = fittedImageWidth * MAP_IMAGE_SCALE;
+  const imageHeight = imageWidth / MAP_IMAGE_ASPECT;
+  const imageX = (width - imageWidth) / 2;
+  const imageY = (height - imageHeight) / 2;
 
   function changeZoom(delta: number) {
     setZoom((current) => Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, current + delta)));
@@ -75,7 +84,7 @@ export default function MapView({
   }
 
   function resetView() {
-    setZoom(MIN_ZOOM);
+    setZoom(DEFAULT_ZOOM);
     setPan({ x: 0, y: 0 });
   }
 
@@ -106,14 +115,27 @@ export default function MapView({
                 </pattern>
               </defs>
               <rect width={width} height={height} fill="#e8f0f3" />
-              <rect width={width} height={height} fill="url(#map-grid)" />
               <g transform={`translate(${pan.x} ${pan.y}) translate(${width / 2} ${height / 2}) scale(${zoom}) translate(${-width / 2} ${-height / 2})`}>
+                <image
+                  href={mapImage}
+                  x={imageX}
+                  y={imageY}
+                  width={imageWidth}
+                  height={imageHeight}
+                  preserveAspectRatio="none"
+                  opacity="0.82"
+                />
+                <rect x={imageX} y={imageY} width={imageWidth} height={imageHeight} fill="url(#map-grid)" opacity="0.38" />
                 {restaurants.map(r => {
-                  const { x, y } = project(r, bounds, width, height, PADDING);
+                  const { x, y } = project(r, bounds, imageWidth, imageHeight, PADDING);
+                  const markerX = x + imageX;
+                  const markerY = y + imageY;
                   return (
-                    <RestaurantMarker key={r.id} restaurant={r} x={x} y={y}
-                      showLabel={showLabels} selected={r.id === selectedRestaurantId}
-                      onSelect={onSelectRestaurant} />
+                    <g key={r.id} transform={`translate(${markerX} ${markerY}) scale(${1 / zoom}) translate(${-markerX} ${-markerY})`}>
+                      <RestaurantMarker restaurant={r} x={markerX} y={markerY}
+                        showLabel={showLabels} selected={r.id === selectedRestaurantId}
+                        onSelect={onSelectRestaurant} />
+                    </g>
                   );
                 })}
               </g>
@@ -123,9 +145,9 @@ export default function MapView({
             })} */}
             </svg>
             <div style={{ position: 'absolute', top: 12, right: 12, display: 'flex', gap: 6 }}>
+              {zoom !== DEFAULT_ZOOM && (<button type="button" aria-label="Reset map view" onClick={resetView}>Reset Zoom</button>)}
               <button type="button" aria-label="Zoom in" onClick={() => changeZoom(ZOOM_STEP)} disabled={zoom === MAX_ZOOM}>+</button>
               <button type="button" aria-label="Zoom out" onClick={() => changeZoom(-ZOOM_STEP)} disabled={zoom === MIN_ZOOM}>−</button>
-              <button type="button" aria-label="Reset map view" onClick={resetView}>Reset</button>
             </div>
           </>
         )
