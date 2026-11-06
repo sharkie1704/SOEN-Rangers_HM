@@ -2,38 +2,17 @@ import request from "supertest";
 import { beforeEach, describe, expect, it } from "vitest";
 import { createApp } from "../../../app";
 import { Assignment } from "../../../domain/dlv/Assignment.ts";
-import type { CourierAvailability } from "../../../domain/dlv/CourierAvailability.ts";
 import { FakePasswordHasher, InMemoryUserRepository } from "../../../domain/reg/__tests__/fakes";
 import { JwtSessionTokenService } from "../../../technical-services/reg/JwtSessionTokenService";
-import { InMemoryMenuRepository, InMemoryRestaurantStatusRepository } from "../../ord/__tests__/fakes";
+import { Order } from "../../../domain/ord/Order.ts";
+import { InMemoryMenuRepository, InMemoryOrderRepository, InMemoryRestaurantStatusRepository } from "../../ord/__tests__/fakes";
 import type { RestaurantReadRepository } from "../../ord/RestaurantReadRepository";
-import type { AssignmentRepository, OfferAnsweredEvent } from "../AssignmentRepository";
-import type { CourierStatusEvent } from "../CourierAvailabilityRepository";
-import { InMemoryCourierAvailabilityRepository } from "./fakes";
-
-class InMemoryAssignments implements AssignmentRepository {
-  readonly assignments = new Map<number, Assignment>();
-  #eventId = 0;
-
-  constructor(private readonly couriers: InMemoryCourierAvailabilityRepository) {}
-
-  async nextEventId() { return ++this.#eventId; }
-
-  async findActiveByOrderId(orderId: number) {
-    const assignment = this.assignments.get(orderId);
-    return assignment?.status === "Declined" ? undefined : assignment;
-  }
-
-  async saveAccepted(_assignment: Assignment, _event: OfferAnsweredEvent, courier: CourierAvailability, courierEvent: CourierStatusEvent) {
-    await this.couriers.save(courier, courierEvent);
-  }
-
-  async saveDeclined() {}
-}
+import { InMemoryAssignmentRepository, InMemoryCourierAvailabilityRepository } from "./fakes";
 
 let app: ReturnType<typeof createApp>;
 let couriers: InMemoryCourierAvailabilityRepository;
-let assignments: InMemoryAssignments;
+let assignments: InMemoryAssignmentRepository;
+let orders: InMemoryOrderRepository;
 
 beforeEach(() => {
   const restaurants: RestaurantReadRepository = {
@@ -42,7 +21,8 @@ beforeEach(() => {
     findMenuByRestaurantId: async () => [],
   };
   couriers = new InMemoryCourierAvailabilityRepository();
-  assignments = new InMemoryAssignments(couriers);
+  assignments = new InMemoryAssignmentRepository(couriers);
+  orders = new InMemoryOrderRepository();
   app = createApp({
     users: new InMemoryUserRepository(),
     hasher: new FakePasswordHasher(),
@@ -52,6 +32,7 @@ beforeEach(() => {
     restaurantStatus: new InMemoryRestaurantStatusRepository(),
     couriers,
     assignments,
+    orders,
   });
 });
 
@@ -115,5 +96,54 @@ describe("Offer routes", () => {
     await agent.post("/api/orders/7/offer/accept");
 
     expect((await agent.post("/api/orders/7/offer/accept")).status).toBe(409);
+  });
+});
+
+describe("Handoff routes", () => {
+  async function readyOrderFor(courierId: string) {
+    await orders.add(Order.restore({
+      id: 7,
+      restaurantId: "rest-a",
+      customerId: "customer-1",
+      lines: [{ menuItemId: 1, name: "Brownie", quantity: 1, unitPriceCents: 450 }],
+      placedAt: new Date("2026-11-05T12:00:00Z"),
+      status: "Ready",
+      events: [],
+    }));
+    assignments.withAssignment(7, courierId, "Accepted");
+    couriers.withCourier(courierId, "ASSIGNED");
+  }
+
+  it("require a session", async () => {
+    expect((await request(app).post("/api/orders/7/pickup")).status).toBe(401);
+    expect((await request(app).post("/api/orders/7/deliver")).status).toBe(401);
+  });
+
+  it("let the assigned courier pick up then deliver", async () => {
+    const { agent, id } = await courierAgent("casey@example.com");
+    await readyOrderFor(id);
+
+    const picked = await agent.post("/api/orders/7/pickup");
+    expect(picked.status).toBe(200);
+    expect(picked.body).toEqual({ order: { id: 7, status: "PickedUp" }, courier: { id, status: "CARRYING" } });
+
+    const delivered = await agent.post("/api/orders/7/deliver");
+    expect(delivered.status).toBe(200);
+    expect(delivered.body).toEqual({ order: { id: 7, status: "Delivered" }, courier: { id, status: "IDLE" } });
+  });
+
+  it("refuse another courier", async () => {
+    const owner = await courierAgent("owner@example.com");
+    const other = await courierAgent("other@example.com");
+    await readyOrderFor(owner.id);
+
+    expect((await other.agent.post("/api/orders/7/pickup")).status).toBe(403);
+  });
+
+  it("refuse delivery before pickup", async () => {
+    const { agent, id } = await courierAgent("casey@example.com");
+    await readyOrderFor(id);
+
+    expect((await agent.post("/api/orders/7/deliver")).status).toBe(409);
   });
 });

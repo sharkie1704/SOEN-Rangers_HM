@@ -1,4 +1,7 @@
+import { Assignment, type AssignmentStatus } from "../../../domain/dlv/Assignment.ts";
 import { CourierAvailability } from "../../../domain/dlv/CourierAvailability.ts";
+import type { Order } from "../../../domain/ord/Order.ts";
+import type { AssignmentChangeEvent, AssignmentRepository } from "../AssignmentRepository.ts";
 import { CourierError } from "../../../domain/dlv/CourierError.ts";
 import type { CourierStatus } from "../../../domain/dlv/states/CourierState.ts";
 import type { CourierAvailabilityRepository, CourierStatusEvent } from "../CourierAvailabilityRepository.ts";
@@ -27,5 +30,45 @@ export class InMemoryCourierAvailabilityRepository implements CourierAvailabilit
     }
     this.statuses.set(courier.courierId, courier.status);
     this.events.push(event);
+  }
+}
+
+export class InMemoryAssignmentRepository implements AssignmentRepository {
+  readonly assignments = new Map<number, Assignment>();
+  readonly accepted: AssignmentChangeEvent[] = [];
+  readonly declined: AssignmentChangeEvent[] = [];
+  readonly completed: AssignmentChangeEvent[] = [];
+  private eventSeq = 0;
+
+  constructor(private readonly couriers: InMemoryCourierAvailabilityRepository) {}
+
+  withAssignment(orderId: number, courierId: string, status: AssignmentStatus = "Offered"): this {
+    this.assignments.set(orderId, new Assignment(orderId, courierId, status));
+    return this;
+  }
+
+  async nextEventId(): Promise<number> { return ++this.eventSeq; }
+
+  async findActiveByOrderId(orderId: number): Promise<Assignment | undefined> {
+    const assignment = this.assignments.get(orderId);
+    return assignment?.status === "Offered" || assignment?.status === "Accepted" ? assignment : undefined;
+  }
+
+  async saveAccepted(_assignment: Assignment, event: AssignmentChangeEvent, courier: CourierAvailability, courierEvent: CourierStatusEvent): Promise<void> {
+    await this.couriers.save(courier, courierEvent);
+    this.accepted.push(event);
+  }
+
+  async saveDeclined(_assignment: Assignment, event: AssignmentChangeEvent): Promise<void> {
+    this.declined.push(event);
+  }
+
+  async savePickup(_order: Order, courier: CourierAvailability, courierEvent: CourierStatusEvent): Promise<void> {
+    await this.couriers.save(courier, courierEvent);
+  }
+
+  async saveDelivery(_order: Order, _assignment: Assignment, event: AssignmentChangeEvent, courier: CourierAvailability, courierEvent: CourierStatusEvent): Promise<void> {
+    await this.couriers.save(courier, courierEvent);
+    this.completed.push(event);
   }
 }

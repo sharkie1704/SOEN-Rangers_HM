@@ -34,6 +34,8 @@ import { CourierAvailabilityController } from "./application/dlv/CourierAvailabi
 import type { AssignmentRepository } from "./application/dlv/AssignmentRepository";
 import { AssignmentService } from "./application/dlv/AssignmentService";
 import { AssignmentController } from "./application/dlv/AssignmentController";
+import { HandoffService } from "./application/dlv/HandoffService";
+import { HandoffController } from "./application/dlv/HandoffController";
 import { toUserDto } from "./technical-services/http/UserDTO";
 
 export interface AppDeps {
@@ -111,6 +113,11 @@ export function createApp({ users, hasher, tokens, restaurants, menu, restaurant
     const assignmentController = new AssignmentController(new AssignmentService(assignments, couriers));
     app.post("/api/orders/:orderId/offer/accept", assignmentController.accept);
     app.post("/api/orders/:orderId/offer/decline", assignmentController.decline);
+  }
+  if (assignments && couriers && orders) {
+    const handoffController = new HandoffController(new HandoffService(assignments, couriers, orders));
+    app.post("/api/orders/:orderId/pickup", handoffController.pickUp);
+    app.post("/api/orders/:orderId/deliver", handoffController.deliver);
   }
   app.get("/api/restaurants", requirePermission({ name: "browseRestaurants" }), restaurantController.listRestaurants);
   app.get("/api/restaurants/:restaurantId", requirePermission({ name: "browseRestaurants" }), restaurantController.getRestaurant);

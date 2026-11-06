@@ -194,12 +194,14 @@ enum AssignmentStatus {
   OFFERED
   ACCEPTED
   DECLINED
+  COMPLETED
 }
 
 enum AssignmentAction {
   OFFER
   ACCEPT
   DECLINE
+  COMPLETE
 }
 
 model Assignment {
