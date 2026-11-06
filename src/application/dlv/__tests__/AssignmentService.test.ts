@@ -1,14 +1,19 @@
 import { beforeEach, describe, it, expect } from "vitest";
 import { Assignment } from "../../../domain/dlv/Assignment.ts";
+import type { CourierAvailability } from "../../../domain/dlv/CourierAvailability.ts";
 import { Role } from "../../../domain/reg/Role.ts";
 import type { AssignmentRepository, OfferAnsweredEvent } from "../AssignmentRepository.ts";
 import { AssignmentService } from "../AssignmentService.ts";
+import type { CourierStatusEvent } from "../CourierAvailabilityRepository.ts";
+import { InMemoryCourierAvailabilityRepository } from "./fakes.ts";
 
 class FakeAssignments implements AssignmentRepository {
   readonly assignments = new Map<number, Assignment>();
   readonly accepted: OfferAnsweredEvent[] = [];
   readonly declined: OfferAnsweredEvent[] = [];
   #eventId = 0;
+
+  constructor(private readonly couriers: InMemoryCourierAvailabilityRepository) {}
 
   async nextEventId() {
     return ++this.#eventId;
@@ -19,7 +24,8 @@ class FakeAssignments implements AssignmentRepository {
     return assignment?.status === "Declined" ? undefined : assignment;
   }
 
-  async saveAccepted(_assignment: Assignment, event: OfferAnsweredEvent) {
+  async saveAccepted(_assignment: Assignment, event: OfferAnsweredEvent, courier: CourierAvailability, courierEvent: CourierStatusEvent) {
+    await this.couriers.save(courier, courierEvent);
     this.accepted.push(event);
   }
 
@@ -30,13 +36,39 @@ class FakeAssignments implements AssignmentRepository {
 
 const courier = { userId: "courier-1", role: Role.COURIER };
 
+let couriers: InMemoryCourierAvailabilityRepository;
 let repository: FakeAssignments;
 let service: AssignmentService;
 
 beforeEach(() => {
-  repository = new FakeAssignments();
+  couriers = new InMemoryCourierAvailabilityRepository().withCourier("courier-1", "IDLE");
+  repository = new FakeAssignments(couriers);
   repository.assignments.set(7, new Assignment(7, "courier-1"));
-  service = new AssignmentService(repository);
+  service = new AssignmentService(repository, couriers);
+});
+
+describe("AssignmentService.accept moves the courier", () => {
+  it("moves the courier from idle to assigned and records the courier event", async () => {
+    await service.accept(courier, 7);
+
+    expect(couriers.statuses.get("courier-1")).toBe("ASSIGNED");
+    expect(couriers.events).toEqual([expect.objectContaining({ courierId: "courier-1", fromStatus: "IDLE", toStatus: "ASSIGNED" })]);
+  });
+
+  it.each(["OFFLINE", "CARRYING"] as const)("refuses when the courier is %s", async (status) => {
+    couriers.withCourier("courier-1", status);
+
+    await expect(service.accept(courier, 7)).rejects.toMatchObject({ code: "INVALID_TRANSITION" });
+    expect(couriers.statuses.get("courier-1")).toBe(status);
+    expect(repository.accepted).toHaveLength(0);
+  });
+
+  it("leaves the courier alone on decline", async () => {
+    await service.decline(courier, 7);
+
+    expect(couriers.statuses.get("courier-1")).toBe("IDLE");
+    expect(couriers.events).toHaveLength(0);
+  });
 });
 
 describe("AssignmentService.accept", () => {
