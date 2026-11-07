@@ -28,6 +28,7 @@ import { OrderRoutes } from "./application/ord/OrderRoutes";
 import type { OrderRepository } from "./application/ord/OrderRepository";
 import type { MenuCatalog } from "./application/ord/MenuCatalog";
 import { OrderService } from "./application/ord/OrderService";
+import type { PricingSettingsRepository } from "./application/prc/PricingSettingsRepository";
 import type { CourierAvailabilityRepository } from "./application/dlv/CourierAvailabilityRepository";
 import { CourierAvailabilityService } from "./application/dlv/CourierAvailabilityService";
 import { CourierAvailabilityController } from "./application/dlv/CourierAvailabilityController";
@@ -47,6 +48,7 @@ export interface AppDeps {
   restaurantStatus: RestaurantStatusRepository;
   orders?: OrderRepository;
   orderMenu?: MenuCatalog;
+  pricing?: PricingSettingsRepository;
   couriers?: CourierAvailabilityRepository;
   assignments?: AssignmentRepository;
 }
@@ -62,7 +64,7 @@ function requirePermission(command: PermissionCommand): RequestHandler {
   };
 }
 
-export function createApp({ users, hasher, tokens, restaurants, menu, restaurantStatus, orders, orderMenu, couriers, assignments }: AppDeps) {
+export function createApp({ users, hasher, tokens, restaurants, menu, restaurantStatus, orders, orderMenu, pricing, couriers, assignments }: AppDeps) {
   
   const app = express();
   app.use("/api", apiCommandLogger);
@@ -93,7 +95,10 @@ export function createApp({ users, hasher, tokens, restaurants, menu, restaurant
   
   app.use("/api", authenticate(tokens));
   if (orders && orderMenu) {
-    const orderRoutes = new OrderRoutes(new OrderController(new OrderService(orders, orderMenu)));
+    const orderRoutes = new OrderRoutes(
+      new OrderController(new OrderService(orders, orderMenu, pricing)),
+    );
+    app.post("/api/orders/quote", orderRoutes.quote);
     app.post("/api/orders", orderRoutes.place);
     app.get("/api/orders", orderRoutes.listMine);
     app.get("/api/orders/:orderId", orderRoutes.getOne);
