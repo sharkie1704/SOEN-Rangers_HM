@@ -3,6 +3,7 @@ import { AssignmentError } from "../../domain/dlv/AssignmentError.ts";
 import type { CourierAvailability } from "../../domain/dlv/CourierAvailability.ts";
 import type { CourierStatus } from "../../domain/dlv/states/CourierState.ts";
 import type { Order } from "../../domain/ord/Order.ts";
+import { createOrderSummary } from "../../domain/prc/OrderSummary.ts";
 import { hasPermission } from "../../domain/reg/permissions";
 import type { OrderRepository } from "../ord/OrderRepository.ts";
 import type { AssignmentRepository } from "./AssignmentRepository.ts";
@@ -34,13 +35,20 @@ export class HandoffService {
     const orderEvent = order.deliver(courier.courierId, await this.orders.nextEventId());
     const fromStatus = courier.completeDelivery();
     assignment.complete();
+    const summary = order.fare ? createOrderSummary(order, orderEvent) : null;
     await this.assignments.saveDelivery(
       order,
       assignment,
       { eventId: await this.assignments.nextEventId(), orderId, courierId: courier.courierId, occurredAt: orderEvent.occurredAt },
       courier,
       await this.courierEvent(courier, fromStatus, orderEvent.occurredAt),
+      summary,
     );
+    if (summary) {
+      console.info(`[PRC] created order summary orderId=${summary.orderId} customerId=${summary.customerId} totalCents=${summary.fare.totalCents}`);
+    } else {
+      console.warn(`[PRC] omitted order summary for legacy orderId=${order.id}: no fare snapshot exists.`);
+    }
     return { order, courier };
   }
 
