@@ -65,6 +65,14 @@ You can also start either process separately with `npm run dev:client` or `npm r
 - API: `POST /api/orders/quote`; order placement checks `expectedTotalCents`.
 - Example: $12.00 subtotal → $18.50 total.
 
+## Delivered order summaries (US-PRC-02)
+
+- Order placement stores the fare breakdown and restaurant name as an immutable snapshot.
+- Delivery creates a persisted summary transactionally with the delivery state change.
+- Customers can view their own summaries in Pricing & History; operators can view all summaries.
+- Pre-existing orders without a fare snapshot can still be delivered, but do not receive a summary because their historical charge cannot be reconstructed safely.
+- Apply the database changes with `npm run db:migrate` after generating the client with `npm run db:generate`.
+
 ## Checks and tests
 
 ```sh
