@@ -6,6 +6,18 @@ import { MenuItem, type MenuItemProps } from "../../../domain/ord/MenuItem.ts";
 import type { MenuItemEvent, MenuRepository } from "../MenuRepository.ts";
 import { Restaurant, type RestaurantStatus } from "../../../domain/ord/Restaurant.ts";
 import type { RestaurantStatusEvent, RestaurantStatusRepository } from "../RestaurantStatusRepository.ts";
+import type { PricingSettingsRepository } from "../../prc/PricingSettingsRepository.ts";
+
+export class FakePricingSettingsRepository implements PricingSettingsRepository {
+  settings = {
+    deliveryFeeCents: 300,
+    serviceFeeCents: 150,
+    smallOrderThresholdCents: 2000,
+    smallOrderSurchargeCents: 200,
+  };
+
+  async getSettings() { return { ...this.settings }; }
+}
 
 // Keeps live Order instances, so save() has nothing to do
 export class InMemoryOrderRepository implements OrderRepository {
