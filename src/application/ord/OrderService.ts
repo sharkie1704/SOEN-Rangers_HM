@@ -11,35 +11,35 @@ import type { OrderRepository } from "./OrderRepository.ts";
 import { toOrderDTO, type OrderDTO } from "./OrderDTO.ts";
 import type { PlaceOrderDTO, PlaceOrderLineDTO } from "./PlaceOrderDTO.ts";
 import type { OrderTransitionDTO } from "./OrderTransitionDTO.ts";
+import { OrderLine } from "../../domain/ord/OrderLine.ts";
+import { calculateSubtotalCents } from "../../domain/ord/calculateSubtotalCents.ts";
+import { calculate } from "../../domain/prc/FareCalculator.ts";
+import type { FareBreakdown } from "../../domain/prc/FareBreakdown.ts";
+import type { PricingSettingsRepository } from "../prc/PricingSettingsRepository.ts";
+
 
 export const MAX_LINE_QUANTITY = 50;
 
 export class OrderService {
   private readonly repository: OrderRepository;
   private readonly menu: MenuCatalog;
+  private readonly pricing?: PricingSettingsRepository;
 
-  constructor(repository: OrderRepository, menu: MenuCatalog) {
+  constructor(
+    repository: OrderRepository,
+    menu: MenuCatalog,
+    pricing?: PricingSettingsRepository,
+  ) {
     this.repository = repository;
     this.menu = menu;
+    this.pricing = pricing;
   }
 
-  async place(actor: OrderActor | null, input: PlaceOrderDTO): Promise<OrderDTO> {
-    const customer = this.requireActor(actor);
-    if (!hasPermission({ name: "placeOrder" }, { ...customer, id: customer.userId })) {
-      throw new OrderError("FORBIDDEN", "Only customers can place orders.");
-    }
-    if (!Array.isArray(input.lines) || input.lines.length === 0) {
-      throw new OrderError("INVALID_INPUT", "An order must contain at least one item.");
-    }
-    const restaurantId = requireStringId(input.restaurantId, "Restaurant ID");
-    const restaurant = await this.menu.findRestaurant(restaurantId);
-    if (!restaurant) {
-      throw new OrderError("NOT_FOUND", "Restaurant was not found.");
-    }
-    if (!restaurant.isOpen) {
-      throw new OrderError("CONFLICT", "Restaurant is not accepting orders.");
-    }
-    const lines = await this.priceLines(restaurantId, input.lines);
+  async place(
+    actor: OrderActor | null,
+    input: PlaceOrderDTO,
+  ): Promise<OrderDTO & { readonly fare: FareBreakdown }> {
+    const { customer, restaurantId, lines, fare } = await this.prepareOrder(actor, input);
     const placedEventId = await this.repository.nextEventId();
     const order = new Order({
       id: await this.repository.nextOrderId(),
@@ -49,7 +49,16 @@ export class OrderService {
     }, new Date(), { actorId: customer.userId, eventId: placedEventId });
     await this.repository.add(order);
     this.logEvent(order.events[0]);
-    return toOrderDTO(order);
+    return Object.freeze({ ...toOrderDTO(order), fare });
+  }
+
+  // A quote calculates the fare without creating an order or allocating IDs.
+  async quote(
+    actor: OrderActor | null,
+    input: PlaceOrderDTO,
+  ): Promise<{ readonly lines: readonly OrderLineDTO[]; readonly fare: FareBreakdown }> {
+    const { lines, fare } = await this.prepareOrder(actor, input);
+    return { lines, fare };
   }
 
   async get(actor: OrderActor | null, orderId: number): Promise<OrderDTO> {
@@ -142,6 +151,37 @@ export class OrderService {
     for (const order of new Set(changed)) {
       if (order) await orders.save(order);
     }
+  }
+
+  // Quote and placement share the same checks, menu prices and fare calculation.
+  private async prepareOrder(actor: OrderActor | null, input: PlaceOrderDTO) {
+    const customer = this.requireActor(actor);
+    if (!hasPermission({ name: "placeOrder" }, { ...customer, id: customer.userId })) {
+      throw new OrderError("FORBIDDEN", "Only customers can place orders.");
+    }
+    if (!Array.isArray(input.lines) || input.lines.length === 0) {
+      throw new OrderError("INVALID_INPUT", "An order must contain at least one item.");
+    }
+    const restaurantId = requireStringId(input.restaurantId, "Restaurant ID");
+    const restaurant = await this.menu.findRestaurant(restaurantId);
+    if (!restaurant) {
+      throw new OrderError("NOT_FOUND", "Restaurant was not found.");
+    }
+    if (!restaurant.isOpen) {
+      throw new OrderError("CONFLICT", "Restaurant is not accepting orders.");
+    }
+
+    const pricedLines = await this.priceLines(restaurantId, input.lines);
+    const lines = pricedLines.map((line) => new OrderLine(line));
+    const subtotalCents = calculateSubtotalCents(lines);
+
+    if (!this.pricing) {
+      throw new Error("Pricing settings repository is not configured.");
+    }
+    const settings = await this.pricing.getSettings();
+    const fare = calculate(subtotalCents, settings);
+
+    return { customer, restaurantId, lines, fare };
   }
 
   // Name and price always come from the menu, never from the client

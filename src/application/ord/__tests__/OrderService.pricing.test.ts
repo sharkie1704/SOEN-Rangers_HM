@@ -3,7 +3,7 @@ import { Role } from "../../../domain/reg/Role.ts";
 import { MAX_LINE_QUANTITY, OrderService } from "../OrderService.ts";
 import type { OrderActor } from "../OrderActor.ts";
 import type { PlaceOrderDTO } from "../PlaceOrderDTO.ts";
-import { FakeMenuCatalog, InMemoryOrderRepository } from "./fakes.ts";
+import { FakeMenuCatalog, FakePricingSettingsRepository, InMemoryOrderRepository } from "./fakes.ts";
 
 const alice: OrderActor = { userId: "cust-alice", role: Role.CUSTOMER };
 
@@ -19,7 +19,7 @@ beforeEach(() => {
     .addItem({ menuItemId: 2, restaurantId: "rest-a", name: "Eclair", unitPriceCents: 500 })
     .addItem({ menuItemId: 3, restaurantId: "rest-a", name: "Mille-feuille", unitPriceCents: 800, available: false })
     .addItem({ menuItemId: 9, restaurantId: "rest-b", name: "Cheap tart", unitPriceCents: 1 });
-  service = new OrderService(new InMemoryOrderRepository(), menu);
+  service = new OrderService(new InMemoryOrderRepository(), menu, new FakePricingSettingsRepository());
 });
 
 async function expectCode(code: string, input: PlaceOrderDTO) {
@@ -37,6 +37,13 @@ describe("OrderService prices orders from the menu", () => {
       { menuItemId: 2, name: "Eclair", quantity: 1, unitPriceCents: 500 },
     ]);
     expect(order.totalCents).toBe(1200);
+    expect(order.fare).toEqual({
+      subtotalCents: 1200,
+      deliveryFeeCents: 300,
+      serviceFeeCents: 150,
+      smallOrderSurchargeCents: 200,
+      totalCents: 1850,
+    });
   });
 
   it("ignores a name and price smuggled in by the client", async () => {
