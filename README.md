@@ -73,6 +73,10 @@ You can also start either process separately with `npm run dev:client` or `npm r
 - Pre-existing orders without a fare snapshot can still be delivered, but do not receive a summary because their historical charge cannot be reconstructed safely.
 - Apply the database changes with `npm run db:migrate` after generating the client with `npm run db:generate`.
 
+### Image attribution
+
+The Maple Sweets image is supplied from [Delicious](https://img.delicious.com.au/BVnXxQQR/w759-h506-cfill/del/2019/11/maple-syrup-tart-119653-2.jpg) with the project owner's confirmation of permission to use it.
+
 ## Checks and tests
 
 ```sh
