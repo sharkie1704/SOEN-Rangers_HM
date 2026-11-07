@@ -57,8 +57,8 @@ export class FakeMenuCatalog implements MenuCatalog {
   restaurants = new Map<string, CatalogRestaurant>();
   items = new Map<number, CatalogMenuItem>();
 
-  addRestaurant(restaurantId: string, isOpen = true): this {
-    this.restaurants.set(restaurantId, { restaurantId, isOpen });
+  addRestaurant(restaurantId: string, isOpen = true, name = restaurantId): this {
+    this.restaurants.set(restaurantId, { restaurantId, name, isOpen });
     return this;
   }
 

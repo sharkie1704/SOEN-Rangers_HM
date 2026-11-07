@@ -37,6 +37,9 @@ import { AssignmentService } from "./application/dlv/AssignmentService";
 import { AssignmentController } from "./application/dlv/AssignmentController";
 import { HandoffService } from "./application/dlv/HandoffService";
 import { HandoffController } from "./application/dlv/HandoffController";
+import { OrderSummaryRoutes } from "./application/prc/OrderSummaryRoutes";
+import { OrderSummaryService } from "./application/prc/OrderSummaryService";
+import type { OrderSummaryRepository } from "./application/prc/OrderSummaryRepository";
 import { toUserDto } from "./technical-services/http/UserDTO";
 
 export interface AppDeps {
@@ -49,6 +52,7 @@ export interface AppDeps {
   orders?: OrderRepository;
   orderMenu?: MenuCatalog;
   pricing?: PricingSettingsRepository;
+  orderSummaries?: OrderSummaryRepository;
   couriers?: CourierAvailabilityRepository;
   assignments?: AssignmentRepository;
 }
@@ -64,7 +68,9 @@ function requirePermission(command: PermissionCommand): RequestHandler {
   };
 }
 
-export function createApp({ users, hasher, tokens, restaurants, menu, restaurantStatus, orders, orderMenu, pricing, couriers, assignments }: AppDeps) {
+export function createApp({
+  users, hasher, tokens, restaurants, menu, restaurantStatus, orders, orderMenu, pricing, orderSummaries, couriers, assignments,
+}: AppDeps) {
   
   const app = express();
   app.use("/api", apiCommandLogger);
@@ -94,6 +100,10 @@ export function createApp({ users, hasher, tokens, restaurants, menu, restaurant
   // Please put your own routes after this line !
   
   app.use("/api", authenticate(tokens));
+  if (orderSummaries) {
+    const summaryRoutes = new OrderSummaryRoutes(new OrderSummaryService(orderSummaries));
+    app.get("/api/order-summaries", summaryRoutes.list);
+  }
   if (orders && orderMenu) {
     const orderRoutes = new OrderRoutes(
       new OrderController(new OrderService(orders, orderMenu, pricing)),
