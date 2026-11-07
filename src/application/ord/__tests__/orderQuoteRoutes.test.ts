@@ -128,6 +128,42 @@ describe("checkout quote routes", () => {
     expect(await orders.findByCustomer("user-a")).toEqual([]);
   });
 
+  // A changed total is rejected before any order or event IDs are used.
+  it.each(["menu", "fees"])("requires confirmation again after %s prices change", async (change) => {
+    const auth = authorization();
+    const quoted = await request(app).post(QUOTE).set("Authorization", auth).send(cart);
+    expect(quoted.status).toBe(200);
+    if (change === "menu") {
+      menu.addItem({ menuItemId: 1, restaurantId: "rest-a", name: "Cake", unitPriceCents: 1100 });
+    } else {
+      pricing.settings.deliveryFeeCents = 200;
+    }
+    const calls = [vi.spyOn(orders, "add"), vi.spyOn(orders, "nextOrderId"), vi.spyOn(orders, "nextEventId")];
+    const rejected = await request(app).post("/api/orders").set("Authorization", auth)
+      .send({ ...cart, expectedTotalCents: quoted.body.quote.fare.totalCents });
+    expect(rejected.status).toBe(409);
+    expect(rejected.body.code).toBe("CONFLICT");
+    for (const call of calls) expect(call).not.toHaveBeenCalled();
+    expect(await orders.findByCustomer("user-a")).toEqual([]);
+
+    const refreshed = await request(app).post(QUOTE).set("Authorization", auth).send(cart);
+    const accepted = await request(app).post("/api/orders").set("Authorization", auth)
+      .send({ ...cart, expectedTotalCents: refreshed.body.quote.fare.totalCents });
+    expect(accepted.status).toBe(201);
+    expect(accepted.body.order.fare).toEqual(refreshed.body.quote.fare);
+  });
+
+  it.each([-1, 1.5, "1650", null, Number.MAX_SAFE_INTEGER + 1])(
+    "rejects invalid expected total %s", async (expectedTotalCents) => {
+      const add = vi.spyOn(orders, "add");
+      const response = await request(app).post("/api/orders").set("Authorization", authorization())
+        .send({ ...cart, expectedTotalCents });
+      expect(response.status).toBe(400);
+      expect(response.body.code).toBe("INVALID_INPUT");
+      expect(add).not.toHaveBeenCalled();
+    },
+  );
+
   // Placement reads current menu prices and fees instead of trusting an earlier quote.
   it("recalculates pricing when the customer places the order", async () => {
     const auth = authorization();
