@@ -128,6 +128,7 @@ async function seedUsers() {
 
     await prisma.user.create({
       data: {
+        ...("id" in user ? { id: user.id } : {}),
         name: user.name,
         email: normalizedEmail,
         passwordHash,
