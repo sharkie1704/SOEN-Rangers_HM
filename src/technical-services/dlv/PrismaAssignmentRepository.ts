@@ -34,6 +34,34 @@ export class PrismaAssignmentRepository implements AssignmentRepository {
     return row ? new Assignment(row.orderId, row.courierId, fromDbStatus[row.status]) : undefined;
   }
 
+  async findActiveByCourierId(courierId: string): Promise<Assignment | undefined> {
+    const row = await prisma.assignment.findFirst({ where: { courierId, status: { in: activeStatuses } } });
+    return row ? new Assignment(row.orderId, row.courierId, fromDbStatus[row.status]) : undefined;
+  }
+
+  async findDeclinedOrderIds(courierId: string): Promise<number[]> {
+    const rows = await prisma.assignment.findMany({ where: { courierId, status: "DECLINED" }, select: { orderId: true } });
+    return rows.map((row) => row.orderId);
+  }
+
+  async saveOffer(assignment: Assignment, event: AssignmentChangeEvent): Promise<void> {
+    try {
+      await prisma.$transaction(async (tx) => {
+        const row = await tx.assignment.create({
+          data: { orderId: assignment.orderId, courierId: assignment.courierId, status: toDbStatus[assignment.status] },
+        });
+        await tx.assignmentEvent.create({
+          data: { id: event.eventId, assignmentId: row.id, actorId: event.courierId, action: "OFFER", occurredAt: event.occurredAt },
+        });
+      });
+    } catch (error) {
+      if ((error as { code?: string })?.code === "P2002") {
+        throw new AssignmentError("CONFLICT", "This order or courier already has an active offer.");
+      }
+      throw error;
+    }
+  }
+
   async saveAccepted(assignment: Assignment, event: AssignmentChangeEvent, courier: CourierAvailability, courierEvent: CourierStatusEvent): Promise<void> {
     await prisma.$transaction(async (tx) => {
       await this.changeStatus(tx, assignment, event, "OFFERED", "ACCEPT");
