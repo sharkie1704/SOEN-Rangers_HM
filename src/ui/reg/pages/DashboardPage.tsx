@@ -6,6 +6,7 @@ import RestaurantConsolePage from "../../ord/RestaurantConsolePage";
 import OperatorRestaurantsPage from "../../ord/OperatorRestaurantsPage";
 import CourierAvailabilityPage from "../../dlv/CourierAvailabilityPage";
 import Header from "../../components/Header";
+import OrderSummaryList from "../../prc/OrderSummaryList";
 
 export default function DashboardPage() {
   const { user, logout } = useAuth();
@@ -28,7 +29,12 @@ export default function DashboardPage() {
           <MenuEditorPage restaurantId={user.restaurantId} />
         </>
       )}
-      {user.role === "OPERATOR" && <OperatorRestaurantsPage />}
+      {user.role === "OPERATOR" && (
+        <>
+          <OperatorRestaurantsPage />
+          <OrderSummaryList />
+        </>
+      )}
       {user.role === "COURIER" && <CourierAvailabilityPage />}
     </main>
   );

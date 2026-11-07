@@ -1,17 +1,20 @@
 import type { Order } from "../../domain/ord/Order.ts";
 import type { OrderLineDTO } from "../../domain/ord/OrderLineDTO.ts";
 import type { OrderStatus, StateChangeEvent } from "../../domain/ord/StateChangeEvent.ts";
+import type { FareBreakdown } from "../../domain/prc/FareBreakdown.ts";
 
 export interface OrderDTO {
   readonly id: number;
   readonly restaurantId: string;
   readonly customerId: string;
+  readonly restaurantName: string;
   readonly status: OrderStatus;
   readonly lines: readonly Readonly<OrderLineDTO>[];
   readonly totalCents: number;
   readonly placedAt: Date;
   readonly rejectionReason?: string;
   readonly events: readonly StateChangeEvent[];
+  readonly fare?: FareBreakdown;
 }
 
 export function toOrderDTO(order: Order): OrderDTO {
@@ -19,6 +22,7 @@ export function toOrderDTO(order: Order): OrderDTO {
     id: order.id,
     restaurantId: order.restaurantId,
     customerId: order.customerId,
+    restaurantName: order.restaurantName,
     status: order.status,
     lines: Object.freeze(order.lines.map((line) => Object.freeze({
       menuItemId: line.menuItemId,
@@ -30,5 +34,6 @@ export function toOrderDTO(order: Order): OrderDTO {
     placedAt: order.placedAt,
     rejectionReason: order.rejectionReason,
     events: order.events,
+    ...(order.fare ? { fare: order.fare } : {}),
   });
 }

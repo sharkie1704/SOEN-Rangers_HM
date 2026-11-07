@@ -62,6 +62,11 @@ export class PrismaOrderRepository implements OrderRepository {
         customerId: order.customerId,
         status: toDbStatus[order.status],
         placedAt: order.placedAt,
+        restaurantName: order.restaurantName,
+        deliveryFeeCents: order.fare?.deliveryFeeCents ?? null,
+        serviceFeeCents: order.fare?.serviceFeeCents ?? null,
+        smallOrderSurchargeCents: order.fare?.smallOrderSurchargeCents ?? null,
+        fareTotalCents: order.fare?.totalCents ?? null,
         lines: {
           create: order.lines.map((line, position) => ({
             position,
@@ -141,6 +146,7 @@ export class PrismaOrderRepository implements OrderRepository {
       id: row.id,
       restaurantId: row.restaurantId,
       customerId: row.customerId,
+      restaurantName: row.restaurantName ?? row.restaurantId,
       lines: row.lines.map((line) => ({
         menuItemId: line.menuItemId,
         name: line.name,
@@ -149,8 +155,29 @@ export class PrismaOrderRepository implements OrderRepository {
       })),
       placedAt: row.placedAt,
       status: fromDbStatus[row.status],
+      fare: this.toFare(row),
       events: row.events.map((event) => this.toDomainEvent(event)),
     });
+  }
+
+  private toFare(row: OrderRow): Order["fare"] {
+    const snapshot = [
+      row.deliveryFeeCents,
+      row.serviceFeeCents,
+      row.smallOrderSurchargeCents,
+      row.fareTotalCents,
+    ];
+    if (snapshot.every((amount) => amount === null)) return null;
+    if (snapshot.some((amount) => amount === null)) {
+      throw new Error(`Order ${row.id} has an incomplete persisted fare snapshot.`);
+    }
+    return {
+      subtotalCents: row.lines.reduce((sum, line) => sum + line.quantity * line.unitPriceCents, 0),
+      deliveryFeeCents: row.deliveryFeeCents!,
+      serviceFeeCents: row.serviceFeeCents!,
+      smallOrderSurchargeCents: row.smallOrderSurchargeCents!,
+      totalCents: row.fareTotalCents!,
+    };
   }
 
   private toDomainEvent(row: EventRow): StateChangeEvent {
