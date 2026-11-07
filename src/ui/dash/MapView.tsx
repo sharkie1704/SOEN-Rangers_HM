@@ -77,6 +77,8 @@ function RestaurantMapMarker({
           {restaurant.name} · {restaurant.queue.length} queued
         </Tooltip>
       )}
+      
+      {/* to be changed to a mroe informative and user friendly popup */}
       <Popup>
         <strong>{restaurant.name}</strong>
         <br />
