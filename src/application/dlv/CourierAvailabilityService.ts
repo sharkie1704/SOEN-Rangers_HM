@@ -4,6 +4,7 @@ import type { CourierStatus } from "../../domain/dlv/states/CourierState.ts";
 import { hasPermission } from "../../domain/reg/permissions";
 import type { Role } from "../../domain/reg/Role.ts";
 import type { CourierAvailabilityRepository } from "./CourierAvailabilityRepository.ts";
+import type { CourierIdleSubject } from "./CourierIdleSubject.ts";
 
 export interface CourierActor {
   readonly userId: string;
@@ -12,9 +13,11 @@ export interface CourierActor {
 
 export class CourierAvailabilityService {
   private readonly repository: CourierAvailabilityRepository;
+  private readonly idle?: CourierIdleSubject;
 
-  constructor(repository: CourierAvailabilityRepository) {
+  constructor(repository: CourierAvailabilityRepository, idle?: CourierIdleSubject) {
     this.repository = repository;
+    this.idle = idle;
   }
 
   async get(actor: CourierActor | null): Promise<CourierAvailability> {
@@ -23,7 +26,9 @@ export class CourierAvailabilityService {
 
   async goOnDuty(actor: CourierActor | null): Promise<{ courier: CourierAvailability; eventId: number }> {
     const courier = await this.loadOwn(actor);
-    return this.record(courier, courier.goOnDuty());
+    const result = await this.record(courier, courier.goOnDuty());
+    await this.idle?.notify(courier.courierId);
+    return result;
   }
 
   async goOffDuty(actor: CourierActor | null): Promise<{ courier: CourierAvailability; eventId: number }> {

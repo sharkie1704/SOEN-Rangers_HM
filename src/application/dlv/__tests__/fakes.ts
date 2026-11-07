@@ -1,4 +1,5 @@
 import { Assignment, type AssignmentStatus } from "../../../domain/dlv/Assignment.ts";
+import { AssignmentError } from "../../../domain/dlv/AssignmentError.ts";
 import { CourierAvailability } from "../../../domain/dlv/CourierAvailability.ts";
 import type { Order } from "../../../domain/ord/Order.ts";
 import type { AssignmentChangeEvent, AssignmentRepository } from "../AssignmentRepository.ts";
@@ -38,12 +39,15 @@ export class InMemoryAssignmentRepository implements AssignmentRepository {
   readonly accepted: AssignmentChangeEvent[] = [];
   readonly declined: AssignmentChangeEvent[] = [];
   readonly completed: AssignmentChangeEvent[] = [];
+  readonly offered: AssignmentChangeEvent[] = [];
+  private readonly declinedPairs = new Set<string>();
   private eventSeq = 0;
 
   constructor(private readonly couriers: InMemoryCourierAvailabilityRepository) {}
 
   withAssignment(orderId: number, courierId: string, status: AssignmentStatus = "Offered"): this {
     this.assignments.set(orderId, new Assignment(orderId, courierId, status));
+    if (status === "Declined") this.declinedPairs.add(`${orderId}:${courierId}`);
     return this;
   }
 
@@ -54,12 +58,29 @@ export class InMemoryAssignmentRepository implements AssignmentRepository {
     return assignment?.status === "Offered" || assignment?.status === "Accepted" ? assignment : undefined;
   }
 
+  async findActiveByCourierId(courierId: string): Promise<Assignment | undefined> {
+    return [...this.assignments.values()].find((a) => a.courierId === courierId && (a.status === "Offered" || a.status === "Accepted"));
+  }
+
+  async findDeclinedOrderIds(courierId: string): Promise<number[]> {
+    return [...this.declinedPairs].filter((pair) => pair.endsWith(`:${courierId}`)).map((pair) => Number(pair.split(":")[0]));
+  }
+
+  async saveOffer(assignment: Assignment, event: AssignmentChangeEvent): Promise<void> {
+    if (await this.findActiveByOrderId(assignment.orderId) || await this.findActiveByCourierId(assignment.courierId)) {
+      throw new AssignmentError("CONFLICT", "This order or courier already has an active offer.");
+    }
+    this.assignments.set(assignment.orderId, assignment);
+    this.offered.push(event);
+  }
+
   async saveAccepted(_assignment: Assignment, event: AssignmentChangeEvent, courier: CourierAvailability, courierEvent: CourierStatusEvent): Promise<void> {
     await this.couriers.save(courier, courierEvent);
     this.accepted.push(event);
   }
 
-  async saveDeclined(_assignment: Assignment, event: AssignmentChangeEvent): Promise<void> {
+  async saveDeclined(assignment: Assignment, event: AssignmentChangeEvent): Promise<void> {
+    this.declinedPairs.add(`${assignment.orderId}:${assignment.courierId}`);
     this.declined.push(event);
   }
 
