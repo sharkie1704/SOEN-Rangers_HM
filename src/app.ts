@@ -36,6 +36,8 @@ import { AssignmentService } from "./application/dlv/AssignmentService";
 import { AssignmentController } from "./application/dlv/AssignmentController";
 import { HandoffService } from "./application/dlv/HandoffService";
 import { HandoffController } from "./application/dlv/HandoffController";
+import type { DispatchRepository } from "./application/dlv/DispatchRepository";
+import { DispatchService } from "./application/dlv/DispatchService";
 import { toUserDto } from "./technical-services/http/UserDTO";
 
 export interface AppDeps {
@@ -49,6 +51,7 @@ export interface AppDeps {
   orderMenu?: MenuCatalog;
   couriers?: CourierAvailabilityRepository;
   assignments?: AssignmentRepository;
+  dispatch?: DispatchRepository;
 }
 
 // Session authentication runs before these permission gates.
@@ -62,7 +65,7 @@ function requirePermission(command: PermissionCommand): RequestHandler {
   };
 }
 
-export function createApp({ users, hasher, tokens, restaurants, menu, restaurantStatus, orders, orderMenu, couriers, assignments }: AppDeps) {
+export function createApp({ users, hasher, tokens, restaurants, menu, restaurantStatus, orders, orderMenu, couriers, assignments, dispatch }: AppDeps) {
   
   const app = express();
   app.use("/api", apiCommandLogger);
@@ -92,8 +95,10 @@ export function createApp({ users, hasher, tokens, restaurants, menu, restaurant
   // Please put your own routes after this line !
   
   app.use("/api", authenticate(tokens));
+  // Offers an order to a courier when it becomes ready, and again when a courier declines it
+  const dispatcher = orders && assignments && dispatch ? new DispatchService(orders, assignments, dispatch) : undefined;
   if (orders && orderMenu) {
-    const orderRoutes = new OrderRoutes(new OrderController(new OrderService(orders, orderMenu)));
+    const orderRoutes = new OrderRoutes(new OrderController(new OrderService(orders, orderMenu, dispatcher)));
     app.post("/api/orders", orderRoutes.place);
     app.get("/api/orders", orderRoutes.listMine);
     app.get("/api/orders/:orderId", orderRoutes.getOne);
@@ -110,7 +115,7 @@ export function createApp({ users, hasher, tokens, restaurants, menu, restaurant
     app.patch("/api/couriers/me/availability", courierController.update);
   }
   if (assignments && couriers) {
-    const assignmentController = new AssignmentController(new AssignmentService(assignments, couriers));
+    const assignmentController = new AssignmentController(new AssignmentService(assignments, couriers, dispatcher));
     app.post("/api/orders/:orderId/offer/accept", assignmentController.accept);
     app.post("/api/orders/:orderId/offer/decline", assignmentController.decline);
   }
