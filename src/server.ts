@@ -11,6 +11,7 @@ import { PrismaOrderRepository } from "./technical-services/ord/PrismaOrderRepos
 import { PrismaMenuCatalog } from "./technical-services/ord/PrismaMenuCatalog";
 import { PrismaCourierAvailabilityRepository } from "./technical-services/dlv/PrismaCourierAvailabilityRepository";
 import { PrismaAssignmentRepository } from "./technical-services/dlv/PrismaAssignmentRepository";
+import { PrismaDispatchRepository } from "./technical-services/dlv/PrismaDispatchRepository";
 
 const app = createApp({
   users: new PrismaUserRepository(),
@@ -23,6 +24,7 @@ const app = createApp({
   orderMenu: new PrismaMenuCatalog(),
   couriers: new PrismaCourierAvailabilityRepository(),
   assignments: new PrismaAssignmentRepository(),
+  dispatch: new PrismaDispatchRepository(),
 });
 
 const PORT = Number(process.env.PORT ?? 3000);
