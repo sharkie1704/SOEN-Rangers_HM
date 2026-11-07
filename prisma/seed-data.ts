@@ -3,6 +3,12 @@ export const RESTAURANT_IDS = {
   SWEET_SPOT: "22222222-2222-4222-8222-222222222222",
 } as const;
 
+// Fixed so the dispatch tie-break (lowest courier ID) gives the same result in every demo
+export const COURIER_IDS = {
+  COURIER_2: "33333333-3333-4333-8333-333333333333",
+  COURIER_3: "44444444-4444-4444-8444-444444444444",
+} as const;
+
 export const restaurants = [
   {
     id: RESTAURANT_IDS.DEMO_BAKERY,
@@ -84,6 +90,27 @@ export const users = [
     role: "COURIER",
     courierLat: 45.5017,
     courierLng: -73.5673,
+    courierStatus: "OFFLINE",
+  },
+  // Couriers 2 and 3 are the same distance from Sweet Spot, to demo the tie-break
+  {
+    id: COURIER_IDS.COURIER_2,
+    name: "Demo Courier 2",
+    email: "courier2@dessertdash.test",
+    password: "Demo123!",
+    role: "COURIER",
+    courierLat: 45.5131,
+    courierLng: -73.5713,
+    courierStatus: "OFFLINE",
+  },
+  {
+    id: COURIER_IDS.COURIER_3,
+    name: "Demo Courier 3",
+    email: "courier3@dessertdash.test",
+    password: "Demo123!",
+    role: "COURIER",
+    courierLat: 45.5131,
+    courierLng: -73.5653,
     courierStatus: "OFFLINE",
   },
   {
