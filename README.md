@@ -55,6 +55,16 @@ The frontend is at `http://localhost:5173` and the API is at `http://localhost:3
 
 You can also start either process separately with `npm run dev:client` or `npm run dev:server`.
 
+## Pricing (US-PRC-01)
+
+- Fare = subtotal + delivery fee + service fee + applicable small-order surcharge.
+- Delivery fee: $3.00.
+- Service fee: $1.50.
+- Small-order surcharge: $2.00 when the subtotal is strictly below $20.00.
+- Pricing source: `config/pricing.json`, seeded into PostgreSQL.
+- API: `POST /api/orders/quote`; order placement checks `expectedTotalCents`.
+- Example: $12.00 subtotal → $18.50 total.
+
 ## Checks and tests
 
 ```sh
