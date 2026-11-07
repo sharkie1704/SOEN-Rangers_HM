@@ -195,6 +195,7 @@ enum AssignmentStatus {
   ACCEPTED
   DECLINED
   COMPLETED
+  RELEASED
 }
 
 enum AssignmentAction {
@@ -202,6 +203,7 @@ enum AssignmentAction {
   ACCEPT
   DECLINE
   COMPLETE
+  RELEASE
 }
 
 model Assignment {

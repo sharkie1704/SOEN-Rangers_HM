@@ -9,6 +9,7 @@ const allowed: [CourierStatus, Action, CourierStatus][] = [
   ["IDLE", "goOffDuty", "OFFLINE"],
   ["IDLE", "assign", "ASSIGNED"],
   ["ASSIGNED", "unassign", "IDLE"],
+  ["ASSIGNED", "goOffDuty", "OFFLINE"],
   ["ASSIGNED", "pickUp", "CARRYING"],
   ["CARRYING", "completeDelivery", "IDLE"],
 ];
@@ -44,8 +45,11 @@ describe("CourierAvailability", () => {
     expect(() => new CourierAvailability("courier-1", "CARRYING").goOffDuty()).toThrow("while carrying an order");
   });
 
-  it("explains why an assigned courier cannot go offline", () => {
-    expect(() => new CourierAvailability("courier-1", "ASSIGNED").goOffDuty()).toThrow("while assigned to an order");
+  it("lets an assigned courier go offline so the order can be reassigned", () => {
+    const courier = new CourierAvailability("courier-1", "ASSIGNED");
+
+    expect(courier.goOffDuty()).toBe("ASSIGNED");
+    expect(courier.status).toBe("OFFLINE");
   });
 
   it("completes a full delivery cycle", () => {
