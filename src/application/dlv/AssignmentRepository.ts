@@ -18,6 +18,7 @@ export interface AssignmentRepository {
   saveOffer(assignment: Assignment, event: AssignmentChangeEvent): Promise<void>;
   saveAccepted(assignment: Assignment, event: AssignmentChangeEvent, courier: CourierAvailability, courierEvent: CourierStatusEvent): Promise<void>;
   saveDeclined(assignment: Assignment, event: AssignmentChangeEvent): Promise<void>;
+  saveReleased(assignment: Assignment, event: AssignmentChangeEvent): Promise<void>;
   savePickup(order: Order, courier: CourierAvailability, courierEvent: CourierStatusEvent): Promise<void>;
   saveDelivery(order: Order, assignment: Assignment, event: AssignmentChangeEvent, courier: CourierAvailability, courierEvent: CourierStatusEvent): Promise<void>;
 }
