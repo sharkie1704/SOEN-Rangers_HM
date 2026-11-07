@@ -40,6 +40,14 @@ export class OrderService {
     input: PlaceOrderDTO,
   ): Promise<OrderDTO & { readonly fare: FareBreakdown }> {
     const { customer, restaurantId, lines, fare } = await this.prepareOrder(actor, input);
+    if (input.expectedTotalCents !== undefined) {
+      if (!Number.isSafeInteger(input.expectedTotalCents) || input.expectedTotalCents < 0) {
+        throw new OrderError("INVALID_INPUT", "Expected total must be a non-negative safe integer in cents.");
+      }
+      if (input.expectedTotalCents !== fare.totalCents) {
+        throw new OrderError("CONFLICT", "Your order price changed. Review the updated fare and confirm again.");
+      }
+    }
     const placedEventId = await this.repository.nextEventId();
     const order = new Order({
       id: await this.repository.nextOrderId(),

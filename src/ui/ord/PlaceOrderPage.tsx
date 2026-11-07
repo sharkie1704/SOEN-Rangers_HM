@@ -1,6 +1,9 @@
 import { useEffect, useState } from "react";
 import CartItemRow from "./CartItemRow";
-import { api, ApiError } from "../reg/api/client";
+import CheckoutFare from "./CheckoutFare";
+import { checkoutKey, fetchCheckoutQuote, placeQuotedOrder, type CheckoutQuote } from "./checkoutQuote";
+import type { FareBreakdown } from "../../domain/prc/FareBreakdown.ts";
+import { ApiError } from "../reg/api/client";
 import "./button-interactions.css";
 
 export type CartItem = {
@@ -32,11 +35,8 @@ type PlacedOrder = {
     status: string;
     totalCents: number;
     items: CartItem[];
+    fare: FareBreakdown;
 };
-
-function sumTotal(items: CartItem[]) {
-    return items.reduce((sum, item) => sum + item.price * item.quantity, 0);
-}
 
 export default function PlaceOrderPage({
     cartItems,
@@ -50,19 +50,27 @@ export default function PlaceOrderPage({
     const [placedOrder, setPlacedOrder] = useState<PlacedOrder | null>(null);
     const [placingOrder, setPlacingOrder] = useState(false);
     const [placeError, setPlaceError] = useState("");
-    const [restaurantOpen, setRestaurantOpen] = useState(false);
+    const [quoteState, setQuoteState] = useState<{ key: string; quote?: CheckoutQuote; error?: string } | null>(null);
+    const [quoteAttempt, setQuoteAttempt] = useState(0);
+    const key = checkoutKey(restaurantId, cartItems);
+    const hasItems = cartItems.length > 0;
+    const current = quoteState?.key === key ? quoteState : null;
+    const quote = current?.quote;
+    const quoteLoading = hasItems && !quote && !current?.error;
+    const canPlace = !!quote && !quoteLoading && !placingOrder;
 
     useEffect(() => {
         let cancelled = false;
-        api<{ restaurant: { status: "OPEN" | "PAUSED" | "CLOSED" } }>(`/api/restaurants/${encodeURIComponent(restaurantId)}`)
-            .then(({ restaurant }) => { if (!cancelled) setRestaurantOpen(restaurant.status === "OPEN"); })
-            .catch(() => { if (!cancelled) setRestaurantOpen(false); });
+        setQuoteState(null);
+        if (hasItems) {
+            fetchCheckoutQuote(key)
+                .then((quote) => { if (!cancelled) setQuoteState({ key, quote }); })
+                .catch((error: unknown) => {
+                    if (!cancelled) setQuoteState({ key, error: error instanceof ApiError ? error.message : "Could not load your fare. Please try again." });
+                });
+        }
         return () => { cancelled = true; };
-    }, [restaurantId]);
-
-    // Totals are calculated from the cart every time it changes
-    const total = sumTotal(cartItems);
-    const itemCount = cartItems.reduce((sum, item) => sum + item.quantity, 0);
+    }, [key, hasItems, quoteAttempt]);
 
     function changeQuantity(id: number, change: number) {
         onCartChange(
@@ -79,21 +87,23 @@ export default function PlaceOrderPage({
     }
 
     async function placeOrder() {
-        if (placingOrder || cartItems.length === 0 || restaurantOpen !== true) return;
+        if (!canPlace || !quote) return;
         setPlacingOrder(true);
         setPlaceError("");
         try {
-            const result = await api<{ order: { id: number; status: string; totalCents: number } }>("/api/orders", {
-                method: "POST",
-                body: {
-                    restaurantId,
-                    lines: cartItems.map((item) => ({ menuItemId: item.id, quantity: item.quantity })),
-                },
-            });
-            setPlacedOrder({ ...result.order, items: cartItems });
+            const order = await placeQuotedOrder(key, quote.fare.totalCents);
+            const items = order.lines.map((line) => ({
+                id: line.menuItemId, name: line.name, quantity: line.quantity,
+                price: line.unitPriceCents / 100,
+                image: cartItems.find((item) => item.id === line.menuItemId)?.image ?? "",
+            }));
+            setPlacedOrder({ ...order, items });
             onCartChange([]);
         } catch (error) {
             setPlaceError(error instanceof ApiError ? error.message : "Could not place your order. Please try again.");
+            // Never submit again automatically; get a fresh quote for the customer to review.
+            setQuoteState(null);
+            setQuoteAttempt((attempt) => attempt + 1);
         } finally {
             setPlacingOrder(false);
         }
@@ -210,7 +220,7 @@ export default function PlaceOrderPage({
                             }}
                         >
                             <span>Total</span>
-                            <span>${(placedOrder.totalCents / 100).toFixed(2)}</span>
+                            <span>${(placedOrder.fare.totalCents / 100).toFixed(2)}</span>
                         </p>
                     </section>
 
@@ -271,8 +281,8 @@ export default function PlaceOrderPage({
                         {cartItems.map((item) => (
                             <CartItemRow
                                 key={item.id}
-                                name={item.name}
-                                price={item.price}
+                                name={quote?.lines.find((line) => line.menuItemId === item.id)?.name ?? item.name}
+                                price={(quote?.lines.find((line) => line.menuItemId === item.id)?.unitPriceCents ?? item.price * 100) / 100}
                                 quantity={item.quantity}
                                 image={item.image}
                                 onIncrease={() => changeQuantity(item.id, 1)}
@@ -286,44 +296,22 @@ export default function PlaceOrderPage({
                 {/* Order summary */}
                 <section aria-label="Order summary" style={{ ...cardStyle, marginTop: "32px" }}>
                     {placeError && <p role="alert" style={{ color: "#9B1C1C" }}>{placeError}</p>}
-                    {restaurantOpen === false && <p role="status" style={{ color: "#923C32" }}>This restaurant is paused or closed. Ordering is unavailable.</p>}
-                    <p
-                        style={{
-                            display: "flex",
-                            justifyContent: "space-between",
-                            color: "#4B3028",
-                            margin: "0 0 12px",
-                        }}
-                    >
-                        <span>Items ({itemCount})</span>
-                        <span>${total.toFixed(2)}</span>
-                    </p>
-
-                    <p
-                        style={{
-                            display: "flex",
-                            justifyContent: "space-between",
-                            borderTop: "1px solid #C89F7A",
-                            paddingTop: "16px",
-                            margin: "0 0 20px",
-                            color: "#4B3028",
-                            fontSize: "20px",
-                            fontWeight: 600,
-                        }}
-                    >
-                        <span>Total</span>
-                        <span>${total.toFixed(2)}</span>
-                    </p>
+                    {quoteLoading && <p role="status">Updating your fare…</p>}
+                    {current?.error && <div role="alert">
+                        <p>{current.error}</p>
+                        <button type="button" onClick={() => { setQuoteState(null); setQuoteAttempt((attempt) => attempt + 1); }}>Retry quote</button>
+                    </div>}
+                    {quote && <CheckoutFare fare={quote.fare} />}
 
                     <button
                         type="button"
                         className="interactive-button"
                         onClick={placeOrder}
-                        disabled={cartItems.length === 0 || placingOrder || !restaurantOpen}
+                        disabled={!canPlace}
                         style={{
                             ...primaryButtonStyle,
-                            backgroundColor: cartItems.length === 0 || placingOrder || !restaurantOpen ? "#BCA99B" : "#C66B32",
-                            cursor: cartItems.length === 0 || placingOrder || !restaurantOpen ? "not-allowed" : "pointer",
+                            backgroundColor: !canPlace ? "#BCA99B" : "#C66B32",
+                            cursor: !canPlace ? "not-allowed" : "pointer",
                         }}
                     >
                         {placingOrder ? "Placing order…" : "Place Order"}
