@@ -51,6 +51,17 @@ model User {
   @@index([role])
 }
 
+// ---------- PRC ----------
+
+// The seed always upserts the same ID rather than creating new settings rows.
+model PricingSettings {
+  id                       String @id @default("default")
+  deliveryFeeCents          Int
+  serviceFeeCents           Int
+  smallOrderThresholdCents  Int
+  smallOrderSurchargeCents  Int
+}
+
 // ---------- ORD ----------
 
 enum RestaurantStatus {
