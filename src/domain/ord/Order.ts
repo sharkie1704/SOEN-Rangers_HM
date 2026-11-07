@@ -1,5 +1,6 @@
 import { OrderError, requireId, requireStringId, requireText } from "./OrderError.ts";
 import { OrderLine } from "./OrderLine.ts";
+import { calculateSubtotalCents } from "./calculateSubtotalCents.ts";
 import type { CreateOrderDTO } from "./CreateOrderDTO.ts";
 import type { RestoredOrderDTO } from "./RestoredOrderDTO.ts";
 import type { OrderAction, OrderStatus, StateChangeEvent } from "./StateChangeEvent.ts";
@@ -24,9 +25,7 @@ export class Order {
       throw new OrderError("INVALID_INPUT", "An order must contain at least one item.");
     }
     this.lines = Object.freeze(input.lines.map((line) => new OrderLine(line)));
-    if (!Number.isSafeInteger(this.totalCents)) {
-      throw new OrderError("INVALID_INPUT", "Order total exceeds the supported amount.");
-    }
+    calculateSubtotalCents(this.lines);
     this.#placedAt = new Date(placedAt);
     if (placedEvent) {
       this.#events.push(Object.freeze({
@@ -59,7 +58,7 @@ export class Order {
   }
 
   get totalCents(): number {
-    return this.lines.reduce((total, line) => total + line.totalCents, 0);
+    return calculateSubtotalCents(this.lines);
   }
 
   get events(): readonly StateChangeEvent[] {
