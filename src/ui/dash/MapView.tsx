@@ -1,15 +1,22 @@
-import { useRef, useState, type PointerEvent, type WheelEvent } from 'react';
-import mapImage from '../../assets/map-image.jpg';
-import type { Courier } from '../../domain/reg/Courier';
-import type { RestaurantStatus } from '../../domain/ord/Restaurant';
-import { computeBounds, project, type GeoPoint } from './MapProjection';
-import { useElementSize } from './UseElementSize';
-import RestaurantMarker from './RestaurantMarker';
-// import CourierMarker from './CourierMarker';
+import { useEffect, useMemo } from "react";
+import {
+  MapContainer,
+  Marker,
+  Popup,
+  TileLayer,
+  Tooltip,
+  useMap,
+} from "react-leaflet";
+import L, { type LatLngTuple } from "leaflet";
+import type { RestaurantStatus } from "../../domain/ord/Restaurant";
+import { BAND_COLOURS, queueBand } from "./QueueBand";
+import type { GeoPoint } from "./MapProjection";
+import "leaflet/dist/leaflet.css";
+import "./MapView.css";
 
 interface Props {
   restaurants: MapRestaurant[];
-  couriers: Courier[];
+  couriers: MapCourier[];
   showLabels?: boolean;
   selectedRestaurantId?: string | null;
   onSelectRestaurant?: (id: string) => void;
@@ -22,135 +29,150 @@ export type MapRestaurant = GeoPoint & {
   queue: { length: number };
 };
 
-const PADDING = 40;
-const MIN_ZOOM = 0.75;
-const MAX_ZOOM = 4;
-const DEFAULT_ZOOM = 1;
-const ZOOM_STEP = 0.25;
-const MAP_IMAGE_ASPECT = 1729 / 980;
-const MAP_IMAGE_SCALE = 1.25;
+export type MapCourier = GeoPoint & {
+  id: string;
+  name: string;
+  status: "OFFLINE" | "IDLE" | "ASSIGNED" | "CARRYING";
+};
 
-export default function MapView({
-  restaurants, couriers: _couriers, showLabels = true, selectedRestaurantId, onSelectRestaurant,
-}: Props) {
-  const [ref, { width, height }] = useElementSize<HTMLDivElement>();
-  const [zoom, setZoom] = useState(MIN_ZOOM);
-  const [pan, setPan] = useState({ x: 0, y: 0 });
-  const [dragging, setDragging] = useState(false);
-  const dragStart = useRef<{ pointerX: number; pointerY: number; panX: number; panY: number } | null>(null);
+const MONTREAL_ISLAND_BOUNDS: [[number, number], [number, number]] = [
+  [45.38, -74.02],
+  [45.72, -73.43],
+];
+const MONTREAL_CENTER: LatLngTuple = [45.52, -73.62];
+const MAX_AUTO_ZOOM = 14;
 
-//   // R-DASH-02: only on-duty couriers are drawn
-//   const onDuty = couriers.filter(c => c.state !== 'offline');
-
-//   // One shared bounds for ALL markers so both kinds use the same scale
-//   const bounds = computeBounds([...restaurants, ...onDuty]);
-
-  const bounds = computeBounds(restaurants);
-  const fittedImageWidth = Math.min(width, height * MAP_IMAGE_ASPECT);
-  const imageWidth = fittedImageWidth * MAP_IMAGE_SCALE;
-  const imageHeight = imageWidth / MAP_IMAGE_ASPECT;
-  const imageX = (width - imageWidth) / 2;
-  const imageY = (height - imageHeight) / 2;
-
-  function changeZoom(delta: number) {
-    setZoom((current) => Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, current + delta)));
-  }
-
-  function handleWheel(event: WheelEvent<SVGSVGElement>) {
-    event.preventDefault();
-    changeZoom(event.deltaY < 0 ? ZOOM_STEP : -ZOOM_STEP);
-  }
-
-  function handlePointerDown(event: PointerEvent<SVGSVGElement>) {
-    event.currentTarget.setPointerCapture(event.pointerId);
-    dragStart.current = { pointerX: event.clientX, pointerY: event.clientY, panX: pan.x, panY: pan.y };
-    setDragging(true);
-  }
-
-  function handlePointerMove(event: PointerEvent<SVGSVGElement>) {
-    if (!dragStart.current) return;
-    setPan({
-      x: dragStart.current.panX + event.clientX - dragStart.current.pointerX,
-      y: dragStart.current.panY + event.clientY - dragStart.current.pointerY,
-    });
-  }
-
-  function stopDragging(event: PointerEvent<SVGSVGElement>) {
-    dragStart.current = null;
-    setDragging(false);
-    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
-      event.currentTarget.releasePointerCapture(event.pointerId);
-    }
-  }
-
-  function resetView() {
-    setZoom(DEFAULT_ZOOM);
-    setPan({ x: 0, y: 0 });
-  }
+function RestaurantMapMarker({
+  restaurant,
+  showLabel,
+  selected,
+  onSelect,
+}: {
+  restaurant: MapRestaurant;
+  showLabel: boolean;
+  selected: boolean;
+  onSelect?: (id: string) => void;
+}) {
+  const band = queueBand(restaurant);
+  const icon = L.divIcon({
+    className: [
+      "map-view__restaurant-icon",
+      `map-view__restaurant-icon--${band}`,
+      selected ? "map-view__restaurant-icon--selected" : "",
+    ].filter(Boolean).join(" "),
+    html: `<span class="map-view__restaurant-pin" style="background-color:${BAND_COLOURS[band]}"></span>`,
+    iconSize: [28, 36],
+    iconAnchor: [14, 34],
+  });
 
   return (
-    <div ref={ref} style={{ width: '100%', height: '100%', minHeight: 400, position: 'relative', overflow: 'hidden', background: '#e8f0f3' }}>
-      {!bounds ? (
-        // minimal guard; will need to turns this into the full empty-map handling
-        <p>No restaurants or couriers to display</p>
-      ) : (
-        width > 0 && height > 0 && (
-          <>
-            <svg
-              width={width}
-              height={height}
-              role="img"
-              aria-label="City map"
-              onWheel={handleWheel}
-              onPointerDown={handlePointerDown}
-              onPointerMove={handlePointerMove}
-              onPointerUp={stopDragging}
-              onPointerCancel={stopDragging}
-              style={{ display: 'block', touchAction: 'none', cursor: dragging ? 'grabbing' : 'grab' }}
-            >
-              <defs>
-                <pattern id="map-grid" width="32" height="32" patternUnits="userSpaceOnUse">
-                  <path d="M 32 0 L 0 0 0 32" fill="none" stroke="#c6d9df" strokeWidth="1" />
-                  <path d="M 16 0 L 16 32 M 0 16 L 32 16" fill="none" stroke="#d8e6e9" strokeWidth="0.5" />
-                </pattern>
-              </defs>
-              <rect width={width} height={height} fill="#e8f0f3" />
-              <g transform={`translate(${pan.x} ${pan.y}) translate(${width / 2} ${height / 2}) scale(${zoom}) translate(${-width / 2} ${-height / 2})`}>
-                <image
-                  href={mapImage}
-                  x={imageX}
-                  y={imageY}
-                  width={imageWidth}
-                  height={imageHeight}
-                  preserveAspectRatio="none"
-                  opacity="0.82"
-                />
-                <rect x={imageX} y={imageY} width={imageWidth} height={imageHeight} fill="url(#map-grid)" opacity="0.38" />
-                {restaurants.map(r => {
-                  const { x, y } = project(r, bounds, imageWidth, imageHeight, PADDING);
-                  const markerX = x + imageX;
-                  const markerY = y + imageY;
-                  return (
-                    <g key={r.id} transform={`translate(${markerX} ${markerY}) scale(${1 / zoom}) translate(${-markerX} ${-markerY})`}>
-                      <RestaurantMarker restaurant={r} x={markerX} y={markerY}
-                        showLabel={showLabels} selected={r.id === selectedRestaurantId}
-                        onSelect={onSelectRestaurant} />
-                    </g>
-                  );
-                })}
-              </g>
-            {/* {onDuty.map(c => {
-              const { x, y } = project(c, bounds, width, height, PADDING);
-              return <CourierMarker key={c.id} courier={c} x={x} y={y} />;
-            })} */}
-            </svg>
-            <div style={{ position: 'absolute', top: 12, right: 12, display: 'flex', gap: 6 }}>
-              {zoom !== DEFAULT_ZOOM && (<button type="button" aria-label="Reset map view" onClick={resetView}>Reset Zoom</button>)}
-              <button type="button" aria-label="Zoom in" onClick={() => changeZoom(ZOOM_STEP)} disabled={zoom === MAX_ZOOM}>+</button>
-              <button type="button" aria-label="Zoom out" onClick={() => changeZoom(-ZOOM_STEP)} disabled={zoom === MIN_ZOOM}>−</button>
-            </div>
-          </>
-        )
+    <Marker
+      position={[restaurant.lat, restaurant.lng]}
+      icon={icon}
+      eventHandlers={{ click: () => onSelect?.(restaurant.id) }}
+      alt={`${restaurant.name}, ${restaurant.queue.length} queued`}
+    >
+      {showLabel && (
+        <Tooltip direction="top" offset={[0, -28]} permanent>
+          {restaurant.name} · {restaurant.queue.length} queued
+        </Tooltip>
+      )}
+      <Popup>
+        <strong>{restaurant.name}</strong>
+        <br />
+        {restaurant.status}
+        <br />
+        {restaurant.queue.length} queued
+      </Popup>
+    </Marker>
+  );
+}
+
+function CourierMapMarker({ courier }: { courier: MapCourier }) {
+  const icon = L.divIcon({
+    className: `map-view__courier-icon map-view__courier-icon--${courier.status.toLowerCase()}`,
+    html: "<span>C</span>",
+    iconSize: [28, 28],
+    iconAnchor: [14, 14],
+  });
+
+  return (
+    <Marker position={[courier.lat, courier.lng]} icon={icon} alt={`${courier.name}, ${courier.status}`}>
+      <Tooltip>{courier.name} · {courier.status.toLowerCase()}</Tooltip>
+    </Marker>
+  );
+}
+
+function FitMapToMarkers({ points }: { points: GeoPoint[] }) {
+  const map = useMap();
+
+  useEffect(() => {
+    if (points.length === 0) return;
+
+    if (points.length === 1) {
+      map.setView([points[0].lat, points[0].lng], MAX_AUTO_ZOOM);
+      return;
+    }
+
+    map.fitBounds(
+      L.latLngBounds(points.map(({ lat, lng }) => [lat, lng] as LatLngTuple)),
+      { padding: [36, 36], maxZoom: MAX_AUTO_ZOOM },
+    );
+  }, [map, points]);
+
+  return null;
+}
+
+export default function MapView({
+  restaurants,
+  couriers,
+  showLabels = true,
+  selectedRestaurantId,
+  onSelectRestaurant,
+}: Props) {
+  const onDutyCouriers = useMemo(
+    () => couriers.filter((courier) => courier.status !== "OFFLINE"),
+    [couriers],
+  );
+  const points = useMemo<GeoPoint[]>(
+    () => [...restaurants, ...onDutyCouriers],
+    [restaurants, onDutyCouriers],
+  );
+
+  return (
+    <div className="map-view">
+      <MapContainer
+        className="map-view__canvas"
+        center={MONTREAL_CENTER}
+        zoom={11}
+        minZoom={10}
+        maxZoom={18}
+        maxBounds={MONTREAL_ISLAND_BOUNDS}
+        maxBoundsViscosity={1}
+        scrollWheelZoom
+      >
+        <TileLayer
+          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        />
+        <FitMapToMarkers points={points} />
+        {restaurants.map((restaurant) => (
+          <RestaurantMapMarker
+            key={restaurant.id}
+            restaurant={restaurant}
+            showLabel={showLabels}
+            selected={restaurant.id === selectedRestaurantId}
+            onSelect={onSelectRestaurant}
+          />
+        ))}
+        {onDutyCouriers.map((courier) => (
+          <CourierMapMarker key={courier.id} courier={courier} />
+        ))}
+      </MapContainer>
+      {points.length === 0 && (
+        <div className="map-view__empty">
+          No restaurants or on-duty couriers to display
+        </div>
       )}
     </div>
   );
