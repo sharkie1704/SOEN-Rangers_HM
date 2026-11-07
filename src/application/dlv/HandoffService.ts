@@ -8,6 +8,7 @@ import type { OrderRepository } from "../ord/OrderRepository.ts";
 import type { AssignmentRepository } from "./AssignmentRepository.ts";
 import type { AssignmentActor } from "./AssignmentService.ts";
 import type { CourierAvailabilityRepository, CourierStatusEvent } from "./CourierAvailabilityRepository.ts";
+import type { CourierIdleSubject } from "./CourierIdleSubject.ts";
 
 export interface HandoffResult {
   readonly order: Order;
@@ -19,6 +20,7 @@ export class HandoffService {
     private readonly assignments: AssignmentRepository,
     private readonly couriers: CourierAvailabilityRepository,
     private readonly orders: OrderRepository,
+    private readonly idle?: CourierIdleSubject,
   ) {}
 
   async pickUp(actor: AssignmentActor | null, orderId: number): Promise<HandoffResult> {
@@ -41,6 +43,7 @@ export class HandoffService {
       courier,
       await this.courierEvent(courier, fromStatus, orderEvent.occurredAt),
     );
+    await this.idle?.notify(courier.courierId);
     return { order, courier };
   }
 
