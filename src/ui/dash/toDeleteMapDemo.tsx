@@ -1,6 +1,5 @@
 import { useState } from 'react';
-import MapView, { type MapRestaurant } from './MapView';
-import type { Courier } from '../../domain/reg/Courier';
+import MapView, { type MapCourier, type MapRestaurant } from './MapView';
 
 const restaurants: MapRestaurant[] = [
   { id: 'r1', name: 'Short Queue', lat: 45.42, lng: -73.70, status: 'OPEN', queue: { length: 1 } },
@@ -8,7 +7,7 @@ const restaurants: MapRestaurant[] = [
   { id: 'r3', name: 'Long Queue', lat: 45.58, lng: -73.52, status: 'OPEN', queue: { length: 7 } },
   { id: 'r4', name: 'Paused', lat: 45.46, lng: -73.55, status: 'PAUSED', queue: { length: 0 } },
 ];
-const couriers: Courier[] = [];
+const couriers: MapCourier[] = [];
 
 export default function MapDemo() {
   const [labels, setLabels] = useState(true);
