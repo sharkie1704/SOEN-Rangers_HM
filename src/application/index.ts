@@ -10,3 +10,6 @@ export { RestaurantController } from "./ord/RestaurantController.ts";
 export type { CourierAvailabilityRepository, CourierStatusEvent } from "./dlv/CourierAvailabilityRepository.ts";
 export { CourierAvailabilityService, type CourierActor } from "./dlv/CourierAvailabilityService.ts";
 export { CourierAvailabilityController } from "./dlv/CourierAvailabilityController.ts";
+export type { OrderReadyListener } from "./ord/OrderReadyListener.ts";
+export type { DispatchRepository } from "./dlv/DispatchRepository.ts";
+export { DispatchService } from "./dlv/DispatchService.ts";
