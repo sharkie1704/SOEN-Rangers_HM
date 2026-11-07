@@ -39,7 +39,7 @@ export class OrderService {
     actor: OrderActor | null,
     input: PlaceOrderDTO,
   ): Promise<OrderDTO & { readonly fare: FareBreakdown }> {
-    const { customer, restaurantId, lines, fare } = await this.prepareOrder(actor, input);
+    const { customer, restaurantId, restaurantName, lines, fare } = await this.prepareOrder(actor, input);
     if (input.expectedTotalCents !== undefined) {
       if (!Number.isSafeInteger(input.expectedTotalCents) || input.expectedTotalCents < 0) {
         throw new OrderError("INVALID_INPUT", "Expected total must be a non-negative safe integer in cents.");
@@ -53,7 +53,9 @@ export class OrderService {
       id: await this.repository.nextOrderId(),
       restaurantId,
       customerId: customer.userId,
+      restaurantName,
       lines,
+      fare,
     }, new Date(), { actorId: customer.userId, eventId: placedEventId });
     await this.repository.add(order);
     this.logEvent(order.events[0]);
@@ -189,7 +191,7 @@ export class OrderService {
     const settings = await this.pricing.getSettings();
     const fare = calculate(subtotalCents, settings);
 
-    return { customer, restaurantId, lines, fare };
+    return { customer, restaurantId, restaurantName: restaurant.name, lines, fare };
   }
 
   // Name and price always come from the menu, never from the client
