@@ -190,6 +190,27 @@ model OrderSummary {
   @@index([customerId, deliveredAt])
 }
 
+// Ledger entries are immutable; resetting advances the active epoch instead of deleting history.
+model LedgerState {
+  id        String   @id @default("default")
+  epoch     Int      @default(0)
+  updatedAt DateTime @updatedAt
+}
+
+model LedgerEntry {
+  eventId          Int        @id
+  orderId          Int
+  finalState       OrderStatus
+  epoch            Int
+  placedAt         DateTime
+  finalizedAt      DateTime
+  deliveredAt      DateTime?
+  totalChargeCents Int?
+
+  @@index([epoch, finalizedAt])
+  @@index([orderId])
+}
+
 model MenuItemEvent {
   id         Int      @id @default(autoincrement())
   menuItemId Int

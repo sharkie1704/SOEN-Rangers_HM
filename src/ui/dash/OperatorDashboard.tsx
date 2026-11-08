@@ -3,6 +3,7 @@ import OperatorRestaurantsPage, { type OperatorRestaurant } from "../ord/Operato
 import { api, ApiError } from "../reg/api/client";
 import OperatorOverview from "./OperatorOverview";
 import OrderSummaryList from "../prc/OrderSummaryList";
+import BillingLedger from "../prc/BillingLedger";
 import DashboardLayout from "./DashboardLayout";
 import DashboardSidebar, { type DashboardNavigationItem } from "./DashboardSidebar";
 
@@ -132,7 +133,12 @@ export default function OperatorDashboard({ user, onLogout }: OperatorDashboardP
           onChangeStatus={changeStatus}
         />
       )}
-      {activeSection === "history" && <OrderSummaryList />}
+      {activeSection === "history" && (
+        <>
+          <OrderSummaryList />
+          <BillingLedger />
+        </>
+      )}
     </DashboardLayout>
   );
 }
