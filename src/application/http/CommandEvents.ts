@@ -1,0 +1,11 @@
+const listeners = new Set<() => void>();
+
+export function publishCommandEvent(method: string, status: number): void {
+  if (status >= 400 || !["POST", "PATCH", "PUT", "DELETE"].includes(method)) return;
+  for (const listener of listeners) listener();
+}
+
+export function subscribeToCommandEvents(listener: () => void): () => void {
+  listeners.add(listener);
+  return () => listeners.delete(listener);
+}

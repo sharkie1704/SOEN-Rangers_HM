@@ -61,10 +61,11 @@ export default function OperatorRestaurantsPage({
 
     if (restaurants.length > 0) {
       void loadOrders();
-      const timer = setInterval(() => { void loadOrders(); }, 5000);
+      const events = new EventSource("/api/command-events");
+      events.addEventListener("command", loadOrders);
       return () => {
         cancelled = true;
-        clearInterval(timer);
+        events.close();
       };
     }
 
