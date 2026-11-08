@@ -1,4 +1,4 @@
-import type { CommandItem } from "./PanelTypes";
+import type { CommandItem } from "./PopupInfoTypes";
 
 interface Props {
   commands: CommandItem[];

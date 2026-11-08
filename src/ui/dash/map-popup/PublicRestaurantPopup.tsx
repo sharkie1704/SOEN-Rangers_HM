@@ -14,7 +14,7 @@ export default function PublicRestaurantPanel({ restaurant }: { restaurant: MapR
       <dl>
         <div>
           <dt>Queue</dt>
-          <dd>{restaurant.queue.length} orders</dd>
+          <dd>{restaurant.queue.length} order(s)</dd>
         </div>
         <div>
           <dt>Location</dt>
