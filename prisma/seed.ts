@@ -1,6 +1,7 @@
 import { prisma } from "../src/technical-services/db/PrismaClient";
 import { BcryptPasswordHasher } from "../src/technical-services/reg/BcryptPasswordHasher";
 import { restaurants, menuItems, users } from "./seed-data";
+import { loadPricingConfig, PRICING_SETTINGS_ID } from "./pricing-config";
 
 const passwordHasher = new BcryptPasswordHasher();
 
@@ -128,7 +129,6 @@ async function seedUsers() {
 
     await prisma.user.create({
       data: {
-        ...("id" in user ? { id: user.id } : {}),
         name: user.name,
         email: normalizedEmail,
         passwordHash,
@@ -160,8 +160,15 @@ async function main() {
     console.log("Initial location backfill completed (existing records only).");
     return;
   }
+  // Read and validate before any normal seed writes. Locations-only stays independent.
+  const pricing = await loadPricingConfig();
   console.log("Starting database seed");
 
+  await prisma.pricingSettings.upsert({
+    where: { id: PRICING_SETTINGS_ID },
+    update: pricing,
+    create: { id: PRICING_SETTINGS_ID, ...pricing },
+  });
   await seedRestaurants();
   await seedMenuItems();
   await seedUsers();

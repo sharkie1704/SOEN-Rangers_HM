@@ -3,9 +3,9 @@ import type { CatalogMenuItem, CatalogRestaurant, MenuCatalog } from "../../appl
 
 export class PrismaMenuCatalog implements MenuCatalog {
   async findRestaurant(restaurantId: string): Promise<CatalogRestaurant | undefined> {
-    const row = await prisma.restaurant.findUnique({ where: { id: restaurantId }, select: { id: true, status: true } });
+    const row = await prisma.restaurant.findUnique({ where: { id: restaurantId }, select: { id: true, name: true, status: true } });
     // PAUSED and CLOSED restaurants do not take orders
-    return row ? { restaurantId: row.id, isOpen: row.status === "OPEN" } : undefined;
+    return row ? { restaurantId: row.id, name: row.name, isOpen: row.status === "OPEN" } : undefined;
   }
 
   async findMenuItem(menuItemId: number): Promise<CatalogMenuItem | undefined> {

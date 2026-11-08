@@ -3,7 +3,7 @@ import { Role } from "../../../domain/reg/Role.ts";
 import type { OrderActor } from "../OrderActor.ts";
 import type { OrderReadyListener } from "../OrderReadyListener.ts";
 import { OrderService } from "../OrderService.ts";
-import { FakeMenuCatalog, InMemoryOrderRepository } from "./fakes.ts";
+import { FakeMenuCatalog, FakePricingSettingsRepository, InMemoryOrderRepository } from "./fakes.ts";
 
 const alice: OrderActor = { userId: "cust-alice", role: Role.CUSTOMER };
 const staff: OrderActor = { userId: "staff-a", role: Role.RESTAURANT, restaurantId: "rest-a" };
@@ -28,7 +28,7 @@ beforeEach(() => {
   const menu = new FakeMenuCatalog()
     .addRestaurant("rest-a")
     .addItem({ menuItemId: 1, restaurantId: "rest-a", name: "Macaron", unitPriceCents: 350 });
-  service = new OrderService(orders, menu, listener);
+  service = new OrderService(orders, menu, new FakePricingSettingsRepository(), listener);
 });
 
 async function preparingOrder() {
@@ -64,7 +64,7 @@ describe("OrderService ready listener", () => {
     const menu = new FakeMenuCatalog()
       .addRestaurant("rest-a")
       .addItem({ menuItemId: 1, restaurantId: "rest-a", name: "Macaron", unitPriceCents: 350 });
-    const plain = new OrderService(orders, menu);
+    const plain = new OrderService(orders, menu, new FakePricingSettingsRepository());
     const order = await plain.place(alice, { restaurantId: "rest-a", lines: [{ menuItemId: 1, quantity: 1 }] });
     await plain.accept(staff, order.id);
     expect((await plain.markReady(staff, order.id)).order.status).toBe("Ready");

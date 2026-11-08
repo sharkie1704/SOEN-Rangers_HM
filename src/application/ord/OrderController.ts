@@ -15,6 +15,10 @@ export class OrderController {
     return this.service.place(actor, input);
   }
 
+  quote(actor: OrderActor | null, input: PlaceOrderDTO): ReturnType<OrderService["quote"]> {
+    return this.service.quote(actor, input);
+  }
+
   get(actor: OrderActor | null, orderId: number): Promise<OrderDTO> {
     return this.service.get(actor, orderId);
   }
