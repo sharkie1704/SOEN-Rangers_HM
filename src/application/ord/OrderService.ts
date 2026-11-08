@@ -7,6 +7,7 @@ import { SYSTEM_ACTOR_ID, type PreparationQueue } from "../../domain/ord/Prepara
 import type { StateChangeEvent } from "../../domain/ord/StateChangeEvent.ts";
 import type { MenuCatalog } from "./MenuCatalog.ts";
 import type { OrderActor } from "./OrderActor.ts";
+import type { OrderReadyListener } from "./OrderReadyListener.ts";
 import type { OrderRepository } from "./OrderRepository.ts";
 import { toOrderDTO, type OrderDTO } from "./OrderDTO.ts";
 import type { PlaceOrderDTO, PlaceOrderLineDTO } from "./PlaceOrderDTO.ts";
@@ -24,15 +25,18 @@ export class OrderService {
   private readonly repository: OrderRepository;
   private readonly menu: MenuCatalog;
   private readonly pricing?: PricingSettingsRepository;
+  private readonly readyListener?: OrderReadyListener;
 
   constructor(
     repository: OrderRepository,
     menu: MenuCatalog,
     pricing?: PricingSettingsRepository,
+    readyListener?: OrderReadyListener,
   ) {
     this.repository = repository;
     this.menu = menu;
     this.pricing = pricing;
+    this.readyListener = readyListener;
   }
 
   async place(
@@ -151,7 +155,7 @@ export class OrderService {
 
   async markReady(actor: OrderActor | null, orderId: number): Promise<OrderTransitionDTO> {
     const { order, restaurantActor } = await this.restaurantOrder(actor, orderId);
-    return this.repository.withQueueLock(order.restaurantId, async (orders) => {
+    const transition = await this.repository.withQueueLock(order.restaurantId, async (orders) => {
       const queue = await orders.getPreparationQueue(order.restaurantId);
       const queued = this.queuedOrder(queue, order);
       const event = queue.markReady(queued, restaurantActor.userId, await orders.nextEventId());
@@ -162,6 +166,9 @@ export class OrderService {
       if (startEvent) this.logEvent(startEvent);
       return toTransition(queued, event);
     });
+    // After the queue lock's transaction commits, so DLV sees the order as ready
+    await this.readyListener?.orderReady(transition.order.id);
+    return transition;
   }
 
   // The front of the queue is always being prepared, so the system starts it as soon as it gets there

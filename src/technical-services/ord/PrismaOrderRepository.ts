@@ -5,6 +5,7 @@ import { OrderError } from "../../domain/ord/OrderError.ts";
 import { PreparationQueue } from "../../domain/ord/PreparationQueue.ts";
 import type { OrderAction, OrderStatus, StateChangeEvent } from "../../domain/ord/StateChangeEvent.ts";
 import type { OrderRepository } from "../../application/ord/OrderRepository.ts";
+import { PrismaLedgerEntryStore } from "../prc/PrismaLedgerEntryStore.ts";
 
 const toDbStatus: Record<OrderStatus, DbOrderStatus> = {
   Placed: "PLACED",
@@ -99,6 +100,11 @@ export class PrismaOrderRepository implements OrderRepository {
       await tx.orderEvent.createMany({
         data: pending.map((event) => ({ ...this.toEventRow(event), orderId: order.id })),
       });
+      const ledger = new PrismaLedgerEntryStore(tx);
+      for (const event of pending) {
+        if (event.to !== "Delivered" && event.to !== "Rejected" && event.to !== "Cancelled") continue;
+        await ledger.add(order, event);
+      }
     });
   }
 

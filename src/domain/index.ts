@@ -20,3 +20,4 @@ export { OfflineState } from "./dlv/states/OfflineState.ts";
 export { IdleState } from "./dlv/states/IdleState.ts";
 export { AssignedState } from "./dlv/states/AssignedState.ts";
 export { CarryingState } from "./dlv/states/CarryingState.ts";
+export { distance, rankCouriers, type CourierCandidate, type Position } from "./dlv/DispatchRule.ts";
