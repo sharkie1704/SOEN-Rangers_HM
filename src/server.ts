@@ -16,6 +16,7 @@ import { PrismaDispatchRepository } from "./technical-services/dlv/PrismaDispatc
 import { PrismaDispatchQueueRepository } from "./technical-services/dlv/PrismaDispatchQueueRepository";
 import { PrismaOrderSummaryRepository } from "./technical-services/prc/PrismaOrderSummaryRepository";
 import { PrismaLedgerRepository } from "./technical-services/prc/PrismaLedgerRepository";
+import { resetDatabase } from "./technical-services/db/ResetDatabase";
 
 const app = createApp({
   users: new PrismaUserRepository(),
@@ -33,6 +34,7 @@ const app = createApp({
   assignments: new PrismaAssignmentRepository(),
   dispatch: new PrismaDispatchRepository(),
   dispatchQueue: new PrismaDispatchQueueRepository(),
+  resetDatabase,
 });
 
 const PORT = Number(process.env.PORT ?? 3000);

@@ -22,9 +22,6 @@ type RestaurantConsolePageInputs = {
 
 type RestaurantStatus = "OPEN" | "PAUSED" | "CLOSED";
 
-// New orders show up without a manual refresh
-export const REFRESH_MS = 5000;
-
 export function formatPrice(priceCents: number): string {
   return `$${(priceCents / 100).toFixed(2)}`;
 }
@@ -66,8 +63,9 @@ export default function RestaurantConsolePage({ restaurantId }: RestaurantConsol
 
   useEffect(() => {
     loadOrders();
-    const timer = setInterval(loadOrders, REFRESH_MS);
-    return () => clearInterval(timer);
+    const events = new EventSource("/api/command-events");
+    events.addEventListener("command", loadOrders);
+    return () => events.close();
   }, [loadOrders]);
 
   async function act(order: Order, action: keyof typeof doneMessage, body?: unknown) {

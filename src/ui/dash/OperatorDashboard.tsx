@@ -104,6 +104,17 @@ export default function OperatorDashboard({ user, onLogout }: OperatorDashboardP
     }
   }
 
+  async function resetApp() {
+    if (!window.confirm("Reset the application? This permanently deletes all database data.")) return;
+    try {
+      await api<void>("/api/admin/reset", { method: "POST" });
+      window.alert("Application data was reset.");
+      await onLogout();
+    } catch (e) {
+      setMessage(e instanceof ApiError ? `Error: ${e.message}` : "Error: reset failed");
+    }
+  }
+
   function selectSection(id: string) {
     const item = items.find((item) => item.id === id);
     if (item) setActiveSection(item.id);
@@ -138,6 +149,15 @@ export default function OperatorDashboard({ user, onLogout }: OperatorDashboardP
           <OrderSummaryList />
           <BillingLedger />
         </>
+      )}
+      {activeSection === "simulator" && (
+        <section style={{ padding: "24px", color: "#4B3028" }}>
+          <h1>Simulator Controls</h1>
+          <p>Reset removes all users, restaurants, orders, events, assignments, and billing data.</p>
+          <button type="button" onClick={resetApp} style={{ background: "#923C32", color: "#fff", border: 0, borderRadius: 8, padding: "10px 16px", cursor: "pointer" }}>
+            Reset app
+          </button>
+        </section>
       )}
     </DashboardLayout>
   );
