@@ -40,6 +40,9 @@ import { HandoffController } from "./application/dlv/HandoffController";
 import { OrderSummaryRoutes } from "./application/prc/OrderSummaryRoutes";
 import { OrderSummaryService } from "./application/prc/OrderSummaryService";
 import type { OrderSummaryRepository } from "./application/prc/OrderSummaryRepository";
+import { LedgerRoutes } from "./application/prc/LedgerRoutes";
+import { LedgerService } from "./application/prc/LedgerService";
+import type { LedgerRepository } from "./application/prc/LedgerRepository";
 import { toUserDto } from "./technical-services/http/UserDTO";
 
 export interface AppDeps {
@@ -53,6 +56,7 @@ export interface AppDeps {
   orderMenu?: MenuCatalog;
   pricing?: PricingSettingsRepository;
   orderSummaries?: OrderSummaryRepository;
+  ledger?: LedgerRepository;
   couriers?: CourierAvailabilityRepository;
   assignments?: AssignmentRepository;
 }
@@ -69,7 +73,7 @@ function requirePermission(command: PermissionCommand): RequestHandler {
 }
 
 export function createApp({
-  users, hasher, tokens, restaurants, menu, restaurantStatus, orders, orderMenu, pricing, orderSummaries, couriers, assignments,
+  users, hasher, tokens, restaurants, menu, restaurantStatus, orders, orderMenu, pricing, orderSummaries, ledger, couriers, assignments,
 }: AppDeps) {
   
   const app = express();
@@ -103,6 +107,11 @@ export function createApp({
   if (orderSummaries) {
     const summaryRoutes = new OrderSummaryRoutes(new OrderSummaryService(orderSummaries));
     app.get("/api/order-summaries", summaryRoutes.list);
+  }
+  if (ledger) {
+    const ledgerRoutes = new LedgerRoutes(new LedgerService(ledger));
+    app.get("/api/ledger", ledgerRoutes.read);
+    app.post("/api/ledger/reset", ledgerRoutes.reset);
   }
   if (orders && orderMenu) {
     const orderRoutes = new OrderRoutes(
