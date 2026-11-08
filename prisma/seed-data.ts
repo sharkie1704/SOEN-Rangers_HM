@@ -31,7 +31,7 @@ export const restaurants = [
     name: "Maple Sweets",
     category: "Desserts",
     description: "A maple-themed dessert counter, currently paused.",
-    imageUrl: "", // TODO: replace with a real image
+    imageUrl: "https://img.delicious.com.au/BVnXxQQR/w759-h506-cfill/del/2019/11/maple-syrup-tart-119653-2.jpg",
     status: "PAUSED",
     lat: 45.5230,
     lng: -73.5990,

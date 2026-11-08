@@ -1,5 +1,6 @@
 import type { ComponentProps } from "react";
 import OperatorRestaurantsPage from "../ord/OperatorRestaurantsPage";
+import OrderSummaryList from "../prc/OrderSummaryList";
 import DashboardLayout from "./DashboardLayout";
 import DashboardSidebar, { type DashboardNavigationItem } from "./DashboardSidebar";
 
@@ -24,6 +25,7 @@ export default function OperatorDashboard({ user, onLogout }: OperatorDashboardP
       }
     >
       <OperatorRestaurantsPage />
+      <OrderSummaryList />
     </DashboardLayout>
   );
 }

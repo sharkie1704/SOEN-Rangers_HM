@@ -12,6 +12,7 @@ import { PrismaMenuCatalog } from "./technical-services/ord/PrismaMenuCatalog";
 import { PrismaPricingSettingsRepository } from "./technical-services/prc/PrismaPricingSettingsRepository";
 import { PrismaCourierAvailabilityRepository } from "./technical-services/dlv/PrismaCourierAvailabilityRepository";
 import { PrismaAssignmentRepository } from "./technical-services/dlv/PrismaAssignmentRepository";
+import { PrismaOrderSummaryRepository } from "./technical-services/prc/PrismaOrderSummaryRepository";
 
 const app = createApp({
   users: new PrismaUserRepository(),
@@ -23,6 +24,7 @@ const app = createApp({
   orders: new PrismaOrderRepository(),
   orderMenu: new PrismaMenuCatalog(),
   pricing: new PrismaPricingSettingsRepository(),
+  orderSummaries: new PrismaOrderSummaryRepository(),
   couriers: new PrismaCourierAvailabilityRepository(),
   assignments: new PrismaAssignmentRepository(),
 });
