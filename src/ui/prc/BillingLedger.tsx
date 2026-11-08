@@ -54,7 +54,7 @@ export default function BillingLedger() {
       const { epoch } = await api<{ epoch: number }>("/api/ledger/reset", { method: "POST" });
       setSnapshot(await api<LedgerSnapshot>("/api/ledger"));
       setShowHistory(false);
-      setMessage(`Ledger reset. New entries will be recorded in epoch ${epoch}; prior entries remain in audit history.`);
+      setMessage(`Ledger reset. New entries will appear in ledger period ${epoch}; earlier entries are still available in all history.`);
     } catch (cause) {
       setError(cause instanceof ApiError ? cause.message : "Could not reset the billing ledger.");
     } finally {
@@ -86,15 +86,15 @@ export default function BillingLedger() {
       </header>
 
       <p className="billing-ledger__note">
-        Reset starts a new visible epoch; it does not delete archived financial history.
-        {snapshot && <> Current epoch: <strong>{snapshot.currentEpoch}</strong>.</>}
+        Reset starts a new ledger period. Earlier records stay saved and are available in all history.
+        {snapshot && <> Current period: <strong>{snapshot.currentEpoch}</strong>.</>}
       </p>
       {message && <p className="billing-ledger__message" role="status">{message}</p>}
       {error && <p className="billing-ledger__error" role="alert">{error}</p>}
       {loading && <p role="status">Loading billing ledger…</p>}
       {!loading && !error && entries.length === 0 && (
         <p className="billing-ledger__empty">
-          {showHistory ? "No ledger entries yet." : "No entries in the current ledger epoch."}
+          {showHistory ? "No ledger entries yet." : "No entries in the current ledger period."}
         </p>
       )}
       {!loading && !error && entries.length > 0 && (
@@ -106,7 +106,7 @@ export default function BillingLedger() {
                 <th scope="col">Final state</th>
                 <th scope="col">Placed</th>
                 <th scope="col">Finalized</th>
-                {showHistory && <th scope="col">Epoch</th>}
+                {showHistory && <th scope="col">Ledger period</th>}
                 <th scope="col">Total charge</th>
               </tr>
             </thead>
