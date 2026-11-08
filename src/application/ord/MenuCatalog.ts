@@ -1,5 +1,6 @@
 export interface CatalogRestaurant {
   readonly restaurantId: string;
+  readonly name: string;
   readonly isOpen: boolean;
 }
 

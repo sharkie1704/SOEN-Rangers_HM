@@ -7,12 +7,15 @@ import type { OrderAction, OrderStatus, StateChangeEvent } from "./StateChangeEv
 import { OrderState } from "./states/OrderState.ts";
 import { PlacedState } from "./states/PlacedState.ts";
 import { stateFor } from "./states/stateFor.ts";
+import type { FareBreakdown } from "../prc/FareBreakdown.ts";
 
 export class Order {
   readonly id: number;
   readonly restaurantId: string;
   readonly customerId: string;
+  readonly restaurantName: string;
   readonly lines: readonly OrderLine[];
+  readonly fare: FareBreakdown | null;
   readonly #placedAt: Date;
   #state: OrderState = new PlacedState();
   #events: StateChangeEvent[] = [];
@@ -21,11 +24,16 @@ export class Order {
     this.id = requireId(input.id, "Order ID");
     this.restaurantId = requireStringId(input.restaurantId, "Restaurant ID");
     this.customerId = requireStringId(input.customerId, "Customer ID");
+    this.restaurantName = input.restaurantName?.trim() || this.restaurantId;
     if (!Array.isArray(input.lines) || input.lines.length === 0) {
       throw new OrderError("INVALID_INPUT", "An order must contain at least one item.");
     }
     this.lines = Object.freeze(input.lines.map((line) => new OrderLine(line)));
-    calculateSubtotalCents(this.lines);
+    const subtotalCents = calculateSubtotalCents(this.lines);
+    if (input.fare && input.fare.subtotalCents !== subtotalCents) {
+      throw new OrderError("INVALID_INPUT", "Fare subtotal must match the order lines.");
+    }
+    this.fare = input.fare ? Object.freeze({ ...input.fare }) : null;
     this.#placedAt = new Date(placedAt);
     if (placedEvent) {
       this.#events.push(Object.freeze({
