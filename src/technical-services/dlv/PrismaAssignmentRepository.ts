@@ -16,6 +16,7 @@ const toDbStatus: Record<AssignmentStatus, DbAssignmentStatus> = {
   Accepted: "ACCEPTED",
   Declined: "DECLINED",
   Completed: "COMPLETED",
+  Released: "RELEASED",
 };
 
 const fromDbStatus = Object.fromEntries(
@@ -72,6 +73,10 @@ export class PrismaAssignmentRepository implements AssignmentRepository {
 
   async saveDeclined(assignment: Assignment, event: AssignmentChangeEvent): Promise<void> {
     await prisma.$transaction((tx) => this.changeStatus(tx, assignment, event, "OFFERED", "DECLINE"));
+  }
+
+  async saveReleased(assignment: Assignment, event: AssignmentChangeEvent): Promise<void> {
+    await prisma.$transaction((tx) => this.changeStatus(tx, assignment, event, "ACCEPTED", "RELEASE"));
   }
 
   async savePickup(order: Order, courier: CourierAvailability, courierEvent: CourierStatusEvent): Promise<void> {

@@ -39,6 +39,11 @@ import { HandoffService } from "./application/dlv/HandoffService";
 import { HandoffController } from "./application/dlv/HandoffController";
 import type { DispatchRepository } from "./application/dlv/DispatchRepository";
 import { DispatchService } from "./application/dlv/DispatchService";
+import type { DispatchQueueRepository } from "./application/dlv/DispatchQueueRepository";
+import { DispatchQueueService } from "./application/dlv/DispatchQueueService";
+import { DispatchQueueController } from "./application/dlv/DispatchQueueController";
+import { CourierIdleSubject } from "./application/dlv/CourierIdleSubject";
+import { DispatchQueueObserver } from "./application/dlv/DispatchQueueObserver";
 import { OrderSummaryRoutes } from "./application/prc/OrderSummaryRoutes";
 import { OrderSummaryService } from "./application/prc/OrderSummaryService";
 import type { OrderSummaryRepository } from "./application/prc/OrderSummaryRepository";
@@ -62,6 +67,7 @@ export interface AppDeps {
   couriers?: CourierAvailabilityRepository;
   assignments?: AssignmentRepository;
   dispatch?: DispatchRepository;
+  dispatchQueue?: DispatchQueueRepository;
 }
 
 // Session authentication runs before these permission gates.
@@ -76,7 +82,7 @@ function requirePermission(command: PermissionCommand): RequestHandler {
 }
 
 export function createApp({
-  users, hasher, tokens, restaurants, menu, restaurantStatus, orders, orderMenu, pricing, orderSummaries, ledger, couriers, assignments, dispatch,
+  users, hasher, tokens, restaurants, menu, restaurantStatus, orders, orderMenu, pricing, orderSummaries, ledger, couriers, assignments, dispatchQueue, dispatch,
 }: AppDeps) {
   
   const app = express();
@@ -109,6 +115,10 @@ export function createApp({
   app.use("/api", authenticate(tokens));
   // Offers an order to a courier when it becomes ready, and again when a courier declines it
   const dispatcher = orders && assignments && dispatch ? new DispatchService(orders, assignments, dispatch) : undefined;
+  const courierIdle = new CourierIdleSubject();
+  if (dispatchQueue && assignments && couriers) {
+    courierIdle.subscribe(new DispatchQueueObserver(new DispatchQueueService(dispatchQueue), assignments, couriers));
+  }
   if (orderSummaries) {
     const summaryRoutes = new OrderSummaryRoutes(new OrderSummaryService(orderSummaries));
     app.get("/api/order-summaries", summaryRoutes.list);
@@ -134,7 +144,7 @@ export function createApp({
     app.get("/api/restaurants/:restaurantId/orders/queue", orderRoutes.queue);
   }
   if (couriers) {
-    const courierController = new CourierAvailabilityController(new CourierAvailabilityService(couriers));
+    const courierController = new CourierAvailabilityController(new CourierAvailabilityService(couriers, courierIdle));
     app.get("/api/couriers/me/availability", courierController.get);
     app.patch("/api/couriers/me/availability", courierController.update);
   }
@@ -144,9 +154,13 @@ export function createApp({
     app.post("/api/orders/:orderId/offer/decline", assignmentController.decline);
   }
   if (assignments && couriers && orders) {
-    const handoffController = new HandoffController(new HandoffService(assignments, couriers, orders));
+    const handoffController = new HandoffController(new HandoffService(assignments, couriers, orders, courierIdle));
     app.post("/api/orders/:orderId/pickup", handoffController.pickUp);
     app.post("/api/orders/:orderId/deliver", handoffController.deliver);
+  }
+  if (dispatchQueue) {
+    const dispatchQueueController = new DispatchQueueController(new DispatchQueueService(dispatchQueue));
+    app.get("/api/dispatch/queue", dispatchQueueController.view);
   }
   app.get("/api/restaurants", requirePermission({ name: "browseRestaurants" }), restaurantController.listRestaurants);
   app.get("/api/restaurants/:restaurantId", requirePermission({ name: "browseRestaurants" }), restaurantController.getRestaurant);
