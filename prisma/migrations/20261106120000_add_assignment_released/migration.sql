@@ -1,0 +1,2 @@
+ALTER TYPE "AssignmentStatus" ADD VALUE 'RELEASED';
+ALTER TYPE "AssignmentAction" ADD VALUE 'RELEASE';

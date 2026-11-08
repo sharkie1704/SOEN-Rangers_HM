@@ -14,8 +14,12 @@ export interface AssignmentChangeEvent {
 export interface AssignmentRepository {
   nextEventId(): Promise<number>;
   findActiveByOrderId(orderId: number): Promise<Assignment | undefined>;
+  findActiveByCourierId(courierId: string): Promise<Assignment | undefined>;
+  findDeclinedOrderIds(courierId: string): Promise<number[]>;
+  saveOffer(assignment: Assignment, event: AssignmentChangeEvent): Promise<void>;
   saveAccepted(assignment: Assignment, event: AssignmentChangeEvent, courier: CourierAvailability, courierEvent: CourierStatusEvent): Promise<void>;
   saveDeclined(assignment: Assignment, event: AssignmentChangeEvent): Promise<void>;
+  saveReleased(assignment: Assignment, event: AssignmentChangeEvent): Promise<void>;
   savePickup(order: Order, courier: CourierAvailability, courierEvent: CourierStatusEvent): Promise<void>;
   saveDelivery(
     order: Order,
