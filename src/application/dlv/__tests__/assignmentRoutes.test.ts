@@ -104,8 +104,16 @@ describe("Handoff routes", () => {
     await orders.add(Order.restore({
       id: 7,
       restaurantId: "rest-a",
+      restaurantName: "Dessert Shop",
       customerId: "customer-1",
       lines: [{ menuItemId: 1, name: "Brownie", quantity: 1, unitPriceCents: 450 }],
+      fare: {
+        subtotalCents: 450,
+        deliveryFeeCents: 300,
+        serviceFeeCents: 150,
+        smallOrderSurchargeCents: 200,
+        totalCents: 1100,
+      },
       placedAt: new Date("2026-11-05T12:00:00Z"),
       status: "Ready",
       events: [],

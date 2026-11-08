@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="480" viewBox="0 0 800 480" role="img" aria-labelledby="title description">
+  <title id="title">Restaurant image placeholder</title>
+  <desc id="description">Warm cream background with a decorative maple leaf</desc>
+  <defs>
+    <linearGradient id="background" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#f7ead8"/>
+      <stop offset="1" stop-color="#eadbc8"/>
+    </linearGradient>
+  </defs>
+  <rect width="800" height="480" fill="url(#background)"/>
+  <circle cx="400" cy="210" r="118" fill="#c66b32" opacity=".12"/>
+  <path d="M400 102l20 48 45-27-15 51 55 6-43 34 39 38-54-5 2 56-49-33-28 48-5-55-54 15 29-47-48-28 55-12-18-52 45 29z" fill="#c66b32"/>
+  <path d="M400 176v164m0-96-48-34m48 64 48-35" fill="none" stroke="#fff9f2" stroke-linecap="round" stroke-width="8"/>
+  <text x="400" y="410" fill="#4b3028" font-family="Poppins, Arial, sans-serif" font-size="24" font-weight="600" text-anchor="middle">DessertDash</text>
+</svg>
