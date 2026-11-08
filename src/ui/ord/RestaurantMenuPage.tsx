@@ -97,10 +97,11 @@ export default function RestaurantMenuPage({
     }
 
     loadQueueCount();
-    const timer = setInterval(loadQueueCount, 5000);
+    const events = new EventSource("/api/command-events");
+    events.addEventListener("command", loadQueueCount);
     return () => {
       cancelled = true;
-      clearInterval(timer);
+      events.close();
     };
   }, [restaurantId]);
   const [addedItemName, setAddedItemName] = useState<string | null>(null);

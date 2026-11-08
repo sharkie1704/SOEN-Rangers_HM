@@ -51,6 +51,8 @@ import { LedgerRoutes } from "./application/prc/LedgerRoutes";
 import { LedgerService } from "./application/prc/LedgerService";
 import type { LedgerRepository } from "./application/prc/LedgerRepository";
 import { toUserDto } from "./technical-services/http/UserDTO";
+import { subscribeToCommandEvents } from "./application/http/CommandEvents";
+import { Role } from "./domain/reg/Role";
 
 export interface AppDeps {
   users: UserRepository;
@@ -68,6 +70,7 @@ export interface AppDeps {
   assignments?: AssignmentRepository;
   dispatch?: DispatchRepository;
   dispatchQueue?: DispatchQueueRepository;
+  resetDatabase?: () => Promise<void>;
 }
 
 // Session authentication runs before these permission gates.
@@ -82,7 +85,7 @@ function requirePermission(command: PermissionCommand): RequestHandler {
 }
 
 export function createApp({
-  users, hasher, tokens, restaurants, menu, restaurantStatus, orders, orderMenu, pricing, orderSummaries, ledger, couriers, assignments, dispatchQueue, dispatch,
+  users, hasher, tokens, restaurants, menu, restaurantStatus, orders, orderMenu, pricing, orderSummaries, ledger, couriers, assignments, dispatchQueue, dispatch, resetDatabase,
 }: AppDeps) {
   
   const app = express();
@@ -113,6 +116,33 @@ export function createApp({
   // Please put your own routes after this line !
   
   app.use("/api", authenticate(tokens));
+  app.post("/api/admin/reset", async (req, res) => {
+    if (req.user?.role !== Role.OPERATOR) {
+      res.status(403).json({ error: "Only operators can reset the application." });
+      return;
+    }
+    if (!resetDatabase) {
+      res.status(503).json({ error: "Application reset is unavailable." });
+      return;
+    }
+    try {
+      await resetDatabase();
+      res.status(204).send();
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ error: "Could not reset the application." });
+    }
+  });
+  app.get("/api/command-events", (req, res) => {
+    res.setHeader("Content-Type", "text/event-stream");
+    res.setHeader("Cache-Control", "no-cache");
+    res.setHeader("Connection", "keep-alive");
+    res.flushHeaders();
+    const unsubscribe = subscribeToCommandEvents(() => {
+      res.write("event: command\ndata: {\"changed\":true}\n\n");
+    });
+    req.on("close", unsubscribe);
+  });
   // Offers an order to a courier when it becomes ready, and again when a courier declines it
   const dispatcher = orders && assignments && dispatch ? new DispatchService(orders, assignments, dispatch) : undefined;
   const courierIdle = new CourierIdleSubject();

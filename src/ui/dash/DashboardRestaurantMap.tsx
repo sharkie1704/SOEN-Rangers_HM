@@ -66,13 +66,13 @@ export default function DashboardRestaurantMap({ user, onViewMenu }: Props) {
     }
 
     loadMap();
-    // this allows the map to refresh every 5 seconds for customers 
-    const timer = user.role === "CUSTOMER" || user.role === "RESTAURANT" || user.role === "OPERATOR"
-      ? setInterval(loadMap, 5000)
+    const events = user.role === "CUSTOMER" || user.role === "RESTAURANT" || user.role === "OPERATOR"
+      ? new EventSource("/api/command-events")
       : undefined;
+    events?.addEventListener("command", loadMap);
     return () => {
       cancelled = true;
-      if (timer !== undefined) clearInterval(timer);
+      events?.close();
     };
   }, [user.role, user.restaurantId]);
 
