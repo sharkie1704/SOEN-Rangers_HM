@@ -17,7 +17,7 @@ let dispatch: InMemoryDispatchRepository;
 
 beforeEach(() => {
   vi.spyOn(console, "info").mockImplementation(() => {});
-  const restaurant = { id: RESTAURANT_ID, name: "Sweet Spot", category: "Desserts", description: "", imageUrl: "", status: "OPEN" as const };
+  const restaurant = { id: RESTAURANT_ID, name: "Sweet Spot", category: "Desserts", description: "", imageUrl: "", status: "OPEN" as const, lat: null, lng: null };
   const restaurants: RestaurantReadRepository = {
     listRestaurants: async () => [restaurant],
     findRestaurantById: async (id) => (id === RESTAURANT_ID ? restaurant : undefined),
