@@ -129,10 +129,16 @@ model Order {
   customerId   String
   status       OrderStatus
   placedAt     DateTime
+  restaurantName            String?
+  deliveryFeeCents          Int?
+  serviceFeeCents           Int?
+  smallOrderSurchargeCents  Int?
+  fareTotalCents            Int?
 
   lines       OrderLine[]
   events      OrderEvent[]
   assignments Assignment[]
+  summary     OrderSummary?
 
   @@index([restaurantId, status])
   @@index([customerId])
@@ -164,6 +170,24 @@ model OrderEvent {
   occurredAt DateTime
 
   @@index([orderId])
+}
+
+model OrderSummary {
+  orderId                   Int      @id
+  order                     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  customerId                String
+  restaurantId              String
+  restaurantName            String
+  subtotalCents             Int
+  deliveryFeeCents          Int
+  serviceFeeCents           Int
+  smallOrderSurchargeCents  Int
+  totalCents                Int
+  placedAt                  DateTime
+  deliveredAt               DateTime
+  generatedAt               DateTime @default(now())
+
+  @@index([customerId, deliveredAt])
 }
 
 model MenuItemEvent {
