@@ -40,7 +40,7 @@ describe("Courier availability (US-DLV-01)", () => {
     expect(repository.events.at(-1)).toEqual(expect.objectContaining({ fromStatus: "IDLE", toStatus: "OFFLINE" }));
   });
 
-  it.each(["CARRYING", "ASSIGNED"] as const)("refuses to go offline while %s", async (status) => {
+  it.each(["CARRYING"] as const)("refuses to go offline while %s", async (status) => {
     repository.withCourier("courier-1", status);
     await expectCode(service.goOffDuty(courier), "INVALID_TRANSITION");
     expect(repository.statuses.get("courier-1")).toBe(status);

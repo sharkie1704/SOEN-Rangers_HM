@@ -19,6 +19,11 @@ export class PrismaCourierAvailabilityRepository implements CourierAvailabilityR
     return new CourierAvailability(row.id, row.courierStatus);
   }
 
+  async listIdleCourierIds(): Promise<string[]> {
+    const rows = await prisma.user.findMany({ where: { role: "COURIER", courierStatus: "IDLE" }, select: { id: true }, orderBy: { id: "asc" } });
+    return rows.map((row) => row.id);
+  }
+
   async save(courier: CourierAvailability, event: CourierStatusEvent): Promise<void> {
     await prisma.$transaction(async (tx) => {
       // Only apply the change if nothing moved the courier since it was loaded,
