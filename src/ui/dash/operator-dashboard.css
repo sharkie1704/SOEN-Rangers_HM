@@ -1,0 +1,118 @@
+.operator-overview {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 32px 24px;
+  color: var(--chocolate, #4B3028);
+  font-family: Poppins, sans-serif;
+}
+
+.operator-overview h1 {
+  margin: 0 0 24px;
+}
+
+.operator-overview h2 {
+  margin: 24px 0 16px;
+  font-size: 1.25rem;
+}
+
+.operator-overview__cards {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  margin: 0;
+}
+
+.operator-overview__card {
+  padding: 20px;
+  border: 1px solid var(--caramel, #C89F7A);
+  border-radius: 12px;
+  background: var(--beige, #EADBC8);
+  overflow-wrap: anywhere;
+}
+
+.operator-overview__card dt {
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.operator-overview__card dd {
+  margin: 8px 0 0;
+}
+
+.operator-overview__value {
+  display: block;
+  font-size: 2rem;
+  font-weight: 700;
+}
+
+.operator-overview__value--text {
+  font-size: 1.25rem;
+}
+
+.operator-overview__note {
+  display: block;
+  margin-top: 8px;
+  font-size: 0.8rem;
+  line-height: 1.5;
+}
+
+.operator-restaurants__summary {
+  margin: 24px 0;
+  padding: 16px 20px;
+  border: 1px solid var(--caramel, #C89F7A);
+  border-radius: 12px;
+  background: var(--cream, #FFF9F2);
+}
+
+.operator-restaurants__summary h3 {
+  margin: 0 0 16px;
+  font-size: 1rem;
+}
+
+.operator-restaurants__statuses {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px 24px;
+  margin: 0;
+}
+
+.operator-restaurants__statuses > div {
+  flex: 1 1 140px;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.operator-restaurants__statuses dt {
+  font-size: 0.8rem;
+}
+
+.operator-restaurants__statuses dd {
+  margin: 4px 0 0;
+  font-weight: 700;
+}
+
+.operator-overview__map {
+  height: 420px;
+  margin-bottom: 24px;
+  border: 1px solid var(--beige, #EADBC8);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+@media (max-width: 1000px) {
+  .operator-overview__cards {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 480px) {
+  .operator-overview {
+    padding: 24px 16px;
+  }
+
+  .operator-overview__cards {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
