@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { api, ApiError } from "../reg/api/client";
-import { BAND_COLOURS, queueBand, type Band } from "../dash/queueBand";
+import { BAND_COLOURS, queueBand, type Band } from "../dash/QueueBand";
 import { page, row, input, primary, secondary } from "./MenuEditorPage";
 import "./button-interactions.css";
 

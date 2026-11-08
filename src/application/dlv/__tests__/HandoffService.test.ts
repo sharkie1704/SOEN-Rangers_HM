@@ -15,14 +15,27 @@ let assignments: InMemoryAssignmentRepository;
 let orders: InMemoryOrderRepository;
 let service: HandoffService;
 
-async function setUp(orderStatus: OrderStatus, courierStatus: CourierStatus, assignmentStatus: AssignmentStatus = "Accepted") {
+async function setUp(
+  orderStatus: OrderStatus,
+  courierStatus: CourierStatus,
+  assignmentStatus: AssignmentStatus = "Accepted",
+  includeFare = true,
+) {
   couriers.withCourier("courier-1", courierStatus);
   assignments.withAssignment(7, "courier-1", assignmentStatus);
   await orders.add(Order.restore({
     id: 7,
     restaurantId: "rest-a",
+    restaurantName: "Dessert Shop",
     customerId: "customer-1",
     lines: [{ menuItemId: 1, name: "Brownie", quantity: 1, unitPriceCents: 450 }],
+    ...(includeFare ? { fare: {
+      subtotalCents: 450,
+      deliveryFeeCents: 300,
+      serviceFeeCents: 150,
+      smallOrderSurchargeCents: 200,
+      totalCents: 1100,
+    } } : {}),
     placedAt: new Date("2026-11-05T12:00:00Z"),
     status: orderStatus,
     events: [],
@@ -99,6 +112,11 @@ describe("HandoffService.deliver", () => {
     expect(couriers.events).toEqual([expect.objectContaining({ fromStatus: "CARRYING", toStatus: "IDLE" })]);
     expect(assignments.assignments.get(7)?.status).toBe("Completed");
     expect(assignments.completed).toEqual([expect.objectContaining({ orderId: 7, courierId: "courier-1" })]);
+    expect(assignments.summaries).toEqual([expect.objectContaining({
+      orderId: 7,
+      restaurantName: "Dessert Shop",
+      fare: { subtotalCents: 450, deliveryFeeCents: 300, serviceFeeCents: 150, smallOrderSurchargeCents: 200, totalCents: 1100 },
+    })]);
     expect(await assignments.findActiveByOrderId(7)).toBeUndefined();
   });
 
@@ -109,6 +127,7 @@ describe("HandoffService.deliver", () => {
     expect(couriers.statuses.get("courier-1")).toBe("ASSIGNED");
     expect(assignments.assignments.get(7)?.status).toBe("Accepted");
     expect(assignments.completed).toHaveLength(0);
+    expect(assignments.summaries).toHaveLength(0);
   });
 
   it("refuses another courier", async () => {
@@ -126,5 +145,15 @@ describe("HandoffService.deliver", () => {
 
     expect(order.events.map((event) => event.action)).toEqual(["pick-up", "deliver"]);
     expect(freed.status).toBe("IDLE");
+  });
+
+  it("allows a legacy delivery without fabricating a summary fare", async () => {
+    await setUp("PickedUp", "CARRYING", "Accepted", false);
+
+    const { order } = await service.deliver(courier, 7);
+
+    expect(order.status).toBe("Delivered");
+    expect(assignments.completed).toHaveLength(1);
+    expect(assignments.summaries).toHaveLength(0);
   });
 });

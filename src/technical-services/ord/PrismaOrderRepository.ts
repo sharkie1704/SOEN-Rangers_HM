@@ -5,6 +5,7 @@ import { OrderError } from "../../domain/ord/OrderError.ts";
 import { PreparationQueue } from "../../domain/ord/PreparationQueue.ts";
 import type { OrderAction, OrderStatus, StateChangeEvent } from "../../domain/ord/StateChangeEvent.ts";
 import type { OrderRepository } from "../../application/ord/OrderRepository.ts";
+import { PrismaLedgerEntryStore } from "../prc/PrismaLedgerEntryStore.ts";
 
 const toDbStatus: Record<OrderStatus, DbOrderStatus> = {
   Placed: "PLACED",
@@ -62,6 +63,11 @@ export class PrismaOrderRepository implements OrderRepository {
         customerId: order.customerId,
         status: toDbStatus[order.status],
         placedAt: order.placedAt,
+        restaurantName: order.restaurantName,
+        deliveryFeeCents: order.fare?.deliveryFeeCents ?? null,
+        serviceFeeCents: order.fare?.serviceFeeCents ?? null,
+        smallOrderSurchargeCents: order.fare?.smallOrderSurchargeCents ?? null,
+        fareTotalCents: order.fare?.totalCents ?? null,
         lines: {
           create: order.lines.map((line, position) => ({
             position,
@@ -94,6 +100,11 @@ export class PrismaOrderRepository implements OrderRepository {
       await tx.orderEvent.createMany({
         data: pending.map((event) => ({ ...this.toEventRow(event), orderId: order.id })),
       });
+      const ledger = new PrismaLedgerEntryStore(tx);
+      for (const event of pending) {
+        if (event.to !== "Delivered" && event.to !== "Rejected" && event.to !== "Cancelled") continue;
+        await ledger.add(order, event);
+      }
     });
   }
 
@@ -141,6 +152,7 @@ export class PrismaOrderRepository implements OrderRepository {
       id: row.id,
       restaurantId: row.restaurantId,
       customerId: row.customerId,
+      restaurantName: row.restaurantName ?? row.restaurantId,
       lines: row.lines.map((line) => ({
         menuItemId: line.menuItemId,
         name: line.name,
@@ -149,8 +161,29 @@ export class PrismaOrderRepository implements OrderRepository {
       })),
       placedAt: row.placedAt,
       status: fromDbStatus[row.status],
+      fare: this.toFare(row),
       events: row.events.map((event) => this.toDomainEvent(event)),
     });
+  }
+
+  private toFare(row: OrderRow): Order["fare"] {
+    const snapshot = [
+      row.deliveryFeeCents,
+      row.serviceFeeCents,
+      row.smallOrderSurchargeCents,
+      row.fareTotalCents,
+    ];
+    if (snapshot.every((amount) => amount === null)) return null;
+    if (snapshot.some((amount) => amount === null)) {
+      throw new Error(`Order ${row.id} has an incomplete persisted fare snapshot.`);
+    }
+    return {
+      subtotalCents: row.lines.reduce((sum, line) => sum + line.quantity * line.unitPriceCents, 0),
+      deliveryFeeCents: row.deliveryFeeCents!,
+      serviceFeeCents: row.serviceFeeCents!,
+      smallOrderSurchargeCents: row.smallOrderSurchargeCents!,
+      totalCents: row.fareTotalCents!,
+    };
   }
 
   private toDomainEvent(row: EventRow): StateChangeEvent {

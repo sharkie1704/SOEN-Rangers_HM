@@ -17,6 +17,11 @@ const detailsByRestaurantId: Record<string, RestaurantDemoDetails> = {
     specialty: "Cheesecake & classic Italian desserts",
     rating: 4.6,
   },
+  "33333333-3333-4333-8333-333333333333": {
+    address: "75 Rue du Sirop d'Érable, Montréal, QC",
+    specialty: "Maple pastries, fudge & cream-filled treats",
+    rating: 4.7,
+  },
 };
 
 export function getRestaurantDemoDetails(restaurantId: string): RestaurantDemoDetails | undefined {
