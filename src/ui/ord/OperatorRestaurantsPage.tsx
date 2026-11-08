@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { api, ApiError } from "../reg/api/client";
 import MapView, { type MapRestaurant } from "../dash/MapView";
+import OperatorRestaurantPanel from "../dash/panels/OperatorRestaurantPanel";
+import type { CommandItem } from "../dash/panels/PanelTypes";
 import { page, row, primary, secondary, statusLabel, type RestaurantStatus } from "./MenuEditorPage";
 import "./button-interactions.css";
 
@@ -17,6 +19,7 @@ export default function OperatorRestaurantsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
+  const [selectedId, setSelectedId] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -26,7 +29,9 @@ export default function OperatorRestaurantsPage() {
         const res = await api<{ restaurants: OperatorRestaurant[] }>("/api/restaurants");
         if (!cancelled) setRestaurants(res.restaurants);
       } catch {
-        if (!cancelled) setError("Could not load restaurants. Please try again.");
+        if (!cancelled) {
+          setError("Could not load restaurants. Please try again.");
+        }
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -45,13 +50,20 @@ export default function OperatorRestaurantsPage() {
       setRestaurants((current) =>
         current.map((r) => (r.id === res.restaurant.id ? { ...r, status: res.restaurant.status } : r)),
       );
-      setMessage(`${restaurant.name} ${status === "PAUSED" ? "paused" : "reopened"} (event #${res.eventId})`);
+      const text = `${restaurant.name} ${status === "PAUSED" ? "paused" : "reopened"} (event #${res.eventId})`;
+      setMessage(text);
     } catch (e) {
-      setMessage(e instanceof ApiError ? `Error: ${e.message}` : "Error: request failed");
+      const text = e instanceof ApiError ? `Error: ${e.message}` : "Error: request failed";
+      setMessage(text);
     }
   }
 
-  // temporary map view
+  function commandsFor(r: OperatorRestaurant): CommandItem[] {
+    if (r.status === "OPEN")   return [{ name: "pause",  label: "Pause restaurant",  enabled: true }];
+    if (r.status === "PAUSED") return [{ name: "reopen", label: "Reopen restaurant", enabled: true }];
+    return [];
+  }
+
   const mapRestaurants: MapRestaurant[] = restaurants.flatMap((restaurant) => (
     restaurant.lat === null || restaurant.lng === null ? [] : [{
       id: restaurant.id,
@@ -59,7 +71,7 @@ export default function OperatorRestaurantsPage() {
       lat: restaurant.lat,
       lng: restaurant.lng,
       status: restaurant.status,
-      queue: { length: 0 },
+      queue: { length: 0 }, // TODO: real queue count (see below)
     }]
   ));
 
@@ -73,10 +85,27 @@ export default function OperatorRestaurantsPage() {
         {message && <p role="status" style={{ fontWeight: 600 }}>{message}</p>}
         {!loading && !error && restaurants.length === 0 && <p>No restaurants yet.</p>}
 
-        {/* temporary map view */}
-        {mapRestaurants.length > 0 && (
-          <div style={{ height: "420px", marginBottom: "24px", border: "1px solid #EADBC8", borderRadius: "12px", overflow: "hidden" }}>
-            <MapView restaurants={mapRestaurants} couriers={[]} showLabels />
+        {!loading && !error && (
+          <div style={{ height: "420px", marginBottom: "24px", border: "1px solid #EADBC8", borderRadius: "12px", overflow: "hidden", position: "relative" }}>
+            <MapView
+              restaurants={mapRestaurants}
+              couriers={[]}
+              showLabels
+              selectedRestaurantId={selectedId}
+              onSelectRestaurant={setSelectedId}
+              renderDetails={(mapRestaurant) => {
+                const full = restaurants.find((r) => r.id === mapRestaurant.id);
+                if (!full) return null;
+                return (
+                  <OperatorRestaurantPanel
+                    restaurant={mapRestaurant}
+                    orders={[]} // TODO: all orders for this restaurant
+                    commands={commandsFor(full)}
+                    onCommand={(name) => changeStatus(full, name === "pause" ? "PAUSED" : "OPEN")}
+                  />
+                );
+              }}
+            />
           </div>
         )}
 

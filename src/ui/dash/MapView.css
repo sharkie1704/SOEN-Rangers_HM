@@ -76,6 +76,86 @@
   pointer-events: none;
 }
 
+.map-view__drawer {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  bottom: 12px;
+  z-index: 600;
+  width: min(300px, calc(100% - 24px));
+  box-sizing: border-box;
+  border: 1px solid #c89f7a;
+  border-radius: 12px;
+  padding: 24px 20px;
+  background: #fff9f2;
+  color: #4b3028;
+  box-shadow: 0 8px 24px rgb(34 34 34 / 20%);
+}
+
+.map-view__drawer-close {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 30px;
+  height: 30px;
+  border: 1px solid #c89f7a;
+  border-radius: 50%;
+  background: #fff;
+  color: #4b3028;
+  cursor: pointer;
+  font-size: 20px;
+  line-height: 1;
+}
+
+.map-view__drawer-eyebrow {
+  margin: 0 0 6px;
+  color: #a95123;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.13em;
+}
+
+.map-view__drawer h2 {
+  margin: 0 32px 18px 0;
+  font-size: 1.35rem;
+}
+
+.map-view__drawer-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 20px;
+  font-weight: 700;
+}
+
+.map-view__drawer-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+}
+
+.map-view__drawer dl {
+  display: grid;
+  gap: 14px;
+  margin: 0;
+}
+
+.map-view__drawer dl div {
+  border-top: 1px solid #eadbc8;
+  padding-top: 10px;
+}
+
+.map-view__drawer dt {
+  color: #765f53;
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.map-view__drawer dd {
+  margin: 4px 0 0;
+}
+
 .map-view .leaflet-tooltip {
   border: 1px solid #c89f7a;
   border-radius: 6px;

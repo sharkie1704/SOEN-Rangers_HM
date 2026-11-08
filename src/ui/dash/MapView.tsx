@@ -1,26 +1,12 @@
-import { useEffect, useMemo } from "react";
-import {
-  MapContainer,
-  Marker,
-  Popup,
-  TileLayer,
-  Tooltip,
-  useMap,
-} from "react-leaflet";
+import { useEffect, useMemo, useRef, type ReactNode } from "react";
+import { MapContainer, Marker, TileLayer, Tooltip, useMap } from "react-leaflet";
 import L, { type LatLngTuple } from "leaflet";
 import type { RestaurantStatus } from "../../domain/ord/Restaurant";
 import { BAND_COLOURS, queueBand } from "./QueueBand";
 import type { GeoPoint } from "./MapProjection";
+import PublicRestaurantPanel from "./panels/PublicRestaurantPanel";
 import "leaflet/dist/leaflet.css";
 import "./MapView.css";
-
-interface Props {
-  restaurants: MapRestaurant[];
-  couriers: MapCourier[];
-  showLabels?: boolean;
-  selectedRestaurantId?: string | null;
-  onSelectRestaurant?: (id: string) => void;
-}
 
 export type MapRestaurant = GeoPoint & {
   id: string;
@@ -35,6 +21,20 @@ export type MapCourier = GeoPoint & {
   status: "OFFLINE" | "IDLE" | "ASSIGNED" | "CARRYING";
 };
 
+interface Props {
+  restaurants: MapRestaurant[];
+  couriers: MapCourier[];
+  showLabels?: boolean;
+  selectedRestaurantId: string | null; // null means nothing is selected
+  onSelectRestaurant: (id: string | null) => void;
+  // these are role specific extras, so that the same map can be used for different roles (public, operator, courier)
+  highlightedRestaurantId?: string;
+  highlightedCourierId?: string;
+  deliveryPin?: GeoPoint;
+  // role-specific drawer content. it falls back to the public panel 
+  renderDetails?: (restaurant: MapRestaurant) => ReactNode;
+}
+
 const MONTREAL_ISLAND_BOUNDS: [[number, number], [number, number]] = [
   [45.38, -74.02],
   [45.72, -73.43],
@@ -43,33 +43,36 @@ const MONTREAL_CENTER: LatLngTuple = [45.52, -73.62];
 const MAX_AUTO_ZOOM = 14;
 
 function RestaurantMapMarker({
-  restaurant,
-  showLabel,
-  selected,
-  onSelect,
+  restaurant, showLabel, selected, highlighted, onSelect,
 }: {
   restaurant: MapRestaurant;
   showLabel: boolean;
   selected: boolean;
-  onSelect?: (id: string) => void;
+  highlighted: boolean;
+  onSelect: (id: string) => void;
 }) {
-  const band = queueBand(restaurant);
-  const icon = L.divIcon({
-    className: [
-      "map-view__restaurant-icon",
-      `map-view__restaurant-icon--${band}`,
-      selected ? "map-view__restaurant-icon--selected" : "",
-    ].filter(Boolean).join(" "),
-    html: `<span class="map-view__restaurant-pin" style="background-color:${BAND_COLOURS[band]}"></span>`,
-    iconSize: [28, 36],
-    iconAnchor: [14, 34],
-  });
+  const band = queueBand({ status: restaurant.status, queue: restaurant.queue });
+  const icon = useMemo(
+    () =>
+      L.divIcon({
+        className: [
+          "map-view__restaurant-icon",
+          `map-view__restaurant-icon--${band}`,
+          selected ? "map-view__restaurant-icon--selected" : "",
+          highlighted ? "map-view__restaurant-icon--own" : "",
+        ].filter(Boolean).join(" "),
+        html: `<span class="map-view__restaurant-pin" style="background-color:${BAND_COLOURS[band]}"></span>`,
+        iconSize: [28, 36],
+        iconAnchor: [14, 34],
+      }),
+    [band, selected, highlighted],
+  );
 
   return (
     <Marker
       position={[restaurant.lat, restaurant.lng]}
       icon={icon}
-      eventHandlers={{ click: () => onSelect?.(restaurant.id) }}
+      eventHandlers={{ click: () => onSelect(restaurant.id) }}
       alt={`${restaurant.name}, ${restaurant.queue.length} queued`}
     >
       {showLabel && (
@@ -77,50 +80,68 @@ function RestaurantMapMarker({
           {restaurant.name} · {restaurant.queue.length} queued
         </Tooltip>
       )}
-      
-      {/* to be changed to a mroe informative and user friendly popup */}
-      <Popup>
-        <strong>{restaurant.name}</strong>
-        <br />
-        {restaurant.status}
-        <br />
-        {restaurant.queue.length} queued
-      </Popup>
     </Marker>
   );
 }
 
-function CourierMapMarker({ courier }: { courier: MapCourier }) {
-  const icon = L.divIcon({
-    className: `map-view__courier-icon map-view__courier-icon--${courier.status.toLowerCase()}`,
-    html: "<span>C</span>",
-    iconSize: [28, 28],
-    iconAnchor: [14, 14],
-  });
+function CourierMapMarker({ courier, highlighted }: { courier: MapCourier; highlighted: boolean }) {
+  const icon = useMemo(
+    () =>
+      L.divIcon({
+        className: [
+          "map-view__courier-icon",
+          `map-view__courier-icon--${courier.status.toLowerCase()}`,
+          highlighted ? "map-view__courier-icon--own" : "",
+        ].filter(Boolean).join(" "),
+        html: "<span>C</span>",
+        iconSize: [28, 28],
+        iconAnchor: [14, 14],
+      }),
+    [courier.status, highlighted],
+  );
 
   return (
     <Marker position={[courier.lat, courier.lng]} icon={icon} alt={`${courier.name}, ${courier.status}`}>
-      <Tooltip>{courier.name} · {courier.status.toLowerCase()}</Tooltip>
+      <Tooltip>{highlighted ? "You" : courier.name} · {courier.status.toLowerCase()}</Tooltip>
     </Marker>
   );
 }
 
-function FitMapToMarkers({ points }: { points: GeoPoint[] }) {
+function DeliveryPinMarker({ point }: { point: GeoPoint }) {
+  const icon = useMemo(
+    () =>
+      L.divIcon({
+        className: "map-view__delivery-icon",
+        html: "<span>🏠</span>",
+        iconSize: [28, 28],
+        iconAnchor: [14, 14],
+      }),
+    [],
+  );
+  return (
+    <Marker position={[point.lat, point.lng]} icon={icon} alt="Your delivery address">
+      <Tooltip>Your delivery address</Tooltip>
+    </Marker>
+  );
+}
+
+function FitMapToMarkers({ points, fitKey }: { points: GeoPoint[]; fitKey: string }) {
   const map = useMap();
+  const pointsRef = useRef(points);
+  pointsRef.current = points;
 
   useEffect(() => {
-    if (points.length === 0) return;
-
-    if (points.length === 1) {
-      map.setView([points[0].lat, points[0].lng], MAX_AUTO_ZOOM);
+    const pts = pointsRef.current;
+    if (pts.length === 0) return;
+    if (pts.length === 1) {
+      map.setView([pts[0].lat, pts[0].lng], MAX_AUTO_ZOOM);
       return;
     }
-
     map.fitBounds(
-      L.latLngBounds(points.map(({ lat, lng }) => [lat, lng] as LatLngTuple)),
+      L.latLngBounds(pts.map(({ lat, lng }) => [lat, lng] as LatLngTuple)),
       { padding: [36, 36], maxZoom: MAX_AUTO_ZOOM },
     );
-  }, [map, points]);
+  }, [map, fitKey]);
 
   return null;
 }
@@ -131,15 +152,36 @@ export default function MapView({
   showLabels = true,
   selectedRestaurantId,
   onSelectRestaurant,
+  highlightedRestaurantId,
+  highlightedCourierId,
+  deliveryPin,
+  renderDetails,
 }: Props) {
+  // R-DASH-02: only on-duty couriers are drawn
   const onDutyCouriers = useMemo(
-    () => couriers.filter((courier) => courier.status !== "OFFLINE"),
+    () => couriers.filter((c) => c.status !== "OFFLINE"),
     [couriers],
   );
+
   const points = useMemo<GeoPoint[]>(
-    () => [...restaurants, ...onDutyCouriers],
-    [restaurants, onDutyCouriers],
+    () => [...restaurants, ...onDutyCouriers, ...(deliveryPin ? [deliveryPin] : [])],
+    [restaurants, onDutyCouriers, deliveryPin],
   );
+
+  const fitKey = useMemo(
+    () =>
+      [
+        ...restaurants.map((r) => `${r.id}:${r.lat},${r.lng}`),
+        ...onDutyCouriers.map((c) => c.id),
+        deliveryPin ? `pin:${deliveryPin.lat},${deliveryPin.lng}` : "",
+      ].join("|"),
+    [restaurants, onDutyCouriers, deliveryPin],
+  );
+
+  const isEmpty = points.length === 0;
+  // later commit, should implement R-DASH-06: log the empty-map situation
+
+  const selectedRestaurant = restaurants.find((r) => r.id === selectedRestaurantId);
 
   return (
     <div className="map-view">
@@ -157,24 +199,41 @@ export default function MapView({
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         />
-        <FitMapToMarkers points={points} />
-        {restaurants.map((restaurant) => (
+        <FitMapToMarkers points={points} fitKey={fitKey} />
+        {restaurants.map((r) => (
           <RestaurantMapMarker
-            key={restaurant.id}
-            restaurant={restaurant}
+            key={r.id}
+            restaurant={r}
             showLabel={showLabels}
-            selected={restaurant.id === selectedRestaurantId}
+            selected={r.id === selectedRestaurantId}
+            highlighted={r.id === highlightedRestaurantId}
             onSelect={onSelectRestaurant}
           />
         ))}
-        {onDutyCouriers.map((courier) => (
-          <CourierMapMarker key={courier.id} courier={courier} />
+        {onDutyCouriers.map((c) => (
+          <CourierMapMarker key={c.id} courier={c} highlighted={c.id === highlightedCourierId} />
         ))}
+        {deliveryPin && <DeliveryPinMarker point={deliveryPin} />}
       </MapContainer>
-      {points.length === 0 && (
-        <div className="map-view__empty">
-          No restaurants or on-duty couriers to display
-        </div>
+
+      {isEmpty && (
+        <div className="map-view__empty">No restaurants or on-duty couriers to display</div>
+      )}
+
+      {selectedRestaurant && (
+        <aside className="map-view__drawer" aria-label={`${selectedRestaurant.name} details`}>
+          <button
+            className="map-view__drawer-close"
+            type="button"
+            aria-label="Close restaurant details"
+            onClick={() => onSelectRestaurant(null)}
+          >
+            ×
+          </button>
+          {renderDetails
+            ? renderDetails(selectedRestaurant)
+            : <PublicRestaurantPanel restaurant={selectedRestaurant} />}
+        </aside>
       )}
     </div>
   );
