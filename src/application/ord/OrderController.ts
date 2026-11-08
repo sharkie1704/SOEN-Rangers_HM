@@ -35,6 +35,14 @@ export class OrderController {
     return this.service.queue(actor, restaurantId);
   }
 
+  queueCount(actor: OrderActor | null, restaurantId: string): Promise<number> {
+    return this.service.queueCount(actor, restaurantId);
+  }
+
+  allForRestaurant(actor: OrderActor | null, restaurantId: string): Promise<readonly OrderDTO[]> {
+    return this.service.allForRestaurant(actor, restaurantId);
+  }
+
   accept(actor: OrderActor | null, orderId: number): Promise<OrderTransitionDTO> {
     return this.service.accept(actor, orderId);
   }

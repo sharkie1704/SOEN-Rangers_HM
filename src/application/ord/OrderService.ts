@@ -97,8 +97,24 @@ export class OrderService {
   }
 
   async queue(actor: OrderActor | null, restaurantId: string): Promise<readonly OrderDTO[]> {
-    this.requireRestaurantActor(actor, restaurantId);
+    this.requireQueueViewer(actor, restaurantId);
     return (await this.repository.getPreparationQueue(restaurantId)).orders.map(toOrderDTO);
+  }
+
+  async queueCount(actor: OrderActor | null, restaurantId: string): Promise<number> {
+    if (!actor || (actor.role !== Role.CUSTOMER && actor.role !== Role.RESTAURANT && actor.role !== Role.OPERATOR)) {
+      throw new OrderError("FORBIDDEN", "An authenticated user is required to view queue status.");
+    }
+    requireStringId(restaurantId, "Restaurant ID");
+    return (await this.repository.getPreparationQueue(restaurantId)).length;
+  }
+
+  async allForRestaurant(actor: OrderActor | null, restaurantId: string): Promise<readonly OrderDTO[]> {
+    if (actor?.role !== Role.OPERATOR) {
+      throw new OrderError("FORBIDDEN", "Only operators can view all restaurant orders.");
+    }
+    requireStringId(restaurantId, "Restaurant ID");
+    return (await this.repository.findByRestaurant(restaurantId)).map(toOrderDTO);
   }
 
   // Works while the restaurant is paused, so orders placed before the pause can still be handled
@@ -251,6 +267,12 @@ export class OrderService {
       throw new OrderError("FORBIDDEN", "Restaurant accounts can only manage orders for their own restaurant.");
     }
     return authenticated as Extract<OrderActor, { role: Role.RESTAURANT }>;
+  }
+
+  private requireQueueViewer(actor: OrderActor | null, restaurantId: string): void {
+    requireStringId(restaurantId, "Restaurant ID");
+    if (actor?.role === Role.OPERATOR) return;
+    this.requireRestaurantActor(actor, restaurantId);
   }
 
   private async restaurantOrder(actor: OrderActor | null, orderId: number) {

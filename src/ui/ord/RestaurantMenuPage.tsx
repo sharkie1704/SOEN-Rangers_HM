@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import MenuItemCard from "./MenuItemCard";
 import { api } from "../reg/api/client";
+import { BAND_COLOURS, queueBand, type Band } from "../dash/QueueBand";
 import { getRestaurantDemoDetails } from "./restaurantDemoDetails";
 import "./button-interactions.css";
 
@@ -16,6 +17,7 @@ type MenuItem = {
 };
 
 type Restaurant = {
+  id: string;
   name: string;
   category: string;
   description: string;
@@ -40,6 +42,7 @@ export default function RestaurantMenuPage({
 }: RestaurantMenuPageInputs) {
   const [restaurant, setRestaurant] = useState<Restaurant | null>(null);
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
+  const [queuedCount, setQueuedCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const demoDetails = getRestaurantDemoDetails(restaurantId);
@@ -78,6 +81,28 @@ export default function RestaurantMenuPage({
     loadMenu();
     return () => { cancelled = true; };
   }, [restaurantId]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadQueueCount() {
+      try {
+        const result = await api<{ queuedCount: number }>(
+          `/api/restaurants/${encodeURIComponent(restaurantId)}/orders/queue-count`,
+        );
+        if (!cancelled) setQueuedCount(result.queuedCount);
+      } catch {
+        if (!cancelled) setQueuedCount(0);
+      }
+    }
+
+    loadQueueCount();
+    const timer = setInterval(loadQueueCount, 5000);
+    return () => {
+      cancelled = true;
+      clearInterval(timer);
+    };
+  }, [restaurantId]);
   const [addedItemName, setAddedItemName] = useState<string | null>(null);
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => () => {
@@ -90,6 +115,10 @@ export default function RestaurantMenuPage({
     if (toastTimer.current !== null) clearTimeout(toastTimer.current);
     toastTimer.current = setTimeout(() => setAddedItemName(null), 2200);
   }
+
+  const band: Band = restaurant
+    ? queueBand({ status: restaurant.status, queue: { length: queuedCount } })
+    : "short";
 
   return (
     <main
@@ -193,11 +222,30 @@ export default function RestaurantMenuPage({
           </span>
         )}
 
+          {restaurant && (
+            <div
+              aria-label={`${band} queue band, ${queuedCount} orders preparing`}
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "8px",
+                marginTop: "12px",
+                marginLeft: "8px",
+                color: "#4B3028",
+                fontSize: "13px",
+                fontWeight: 600,
+              }}
+            >
+              <span style={{ width: "12px", height: "12px", borderRadius: "50%", backgroundColor: BAND_COLOURS[band] }} />
+              {band} queue · {queuedCount} preparing
+            </div>
+          )}
+
           {/* Inform customers when ordering is unavailable */}
           {restaurant &&
             (restaurant.status === "PAUSED" ||
               restaurant.status === "CLOSED") && (
-              <p
+                <p
                 role="status"
                 style={{
                   color: "#923C32",
@@ -207,7 +255,7 @@ export default function RestaurantMenuPage({
                   borderRadius: "8px",
                   marginTop: "12px",
                 }}
-              >
+                >
                 This restaurant is currently {restaurant.status.toLowerCase()}.
                 Its menu and ordering will be back once it reopens.
               </p>
@@ -216,20 +264,22 @@ export default function RestaurantMenuPage({
 
         {demoDetails && (
           <section
-            aria-label={`${restaurant?.name ?? "Restaurant"} details`}
-            style={{
-              maxWidth: "900px",
-              margin: "-20px auto 40px",
-              padding: "18px 22px",
-              border: "1px solid #C89F7A",
-              borderRadius: "12px",
-              backgroundColor: "#EADBC8",
-              color: "#4B3028",
-              lineHeight: 1.6,
-            }}
+          aria-label={`${restaurant?.name ?? "Restaurant"} details`}
+          style={{
+            maxWidth: "900px",
+            margin: "-20px auto 40px",
+            padding: "18px 22px",
+            border: "1px solid #C89F7A",
+            borderRadius: "12px",
+            backgroundColor: "#EADBC8",
+            color: "#4B3028",
+            lineHeight: 1.6,
+          }}
           >
             <p style={{ margin: "0 0 6px", fontWeight: 600 }}>{demoDetails.specialty}</p>
             <p style={{ margin: "0 0 6px" }}>{demoDetails.address}</p>
+            <span style={{ width: "12px", height: "12px", borderRadius: "50%", backgroundColor: BAND_COLOURS[band] }} />
+            {band} queue · {queuedCount} preparing
             <p aria-label={`Rated ${demoDetails.rating} out of 5`} style={{ margin: 0, color: "#835900", fontWeight: 600 }}>
               <span aria-hidden="true">★</span> {demoDetails.rating.toFixed(1)}
             </p>

@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
 import { api, ApiError } from "../reg/api/client";
 import MapView, { type MapRestaurant } from "../dash/MapView";
-import OperatorRestaurantPanel from "../dash/panels/OperatorRestaurantPanel";
-import type { CommandItem } from "../dash/panels/PanelTypes";
+import RestaurantDetails from "../dash/map-popup/RestaurantDetails";
+import { buildRoleMapView } from "../dash/roles";
+import type { PanelOrder } from "../dash/map-popup/PopupInfoTypes";
 import { page, row, primary, secondary, statusLabel, type RestaurantStatus } from "./MenuEditorPage";
 import "./button-interactions.css";
 
@@ -12,6 +13,7 @@ type OperatorRestaurant = {
   status: RestaurantStatus;
   lat: number | null;
   lng: number | null;
+  queueLength?: number;
 };
 
 export default function OperatorRestaurantsPage() {
@@ -20,6 +22,7 @@ export default function OperatorRestaurantsPage() {
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [ordersByRestaurant, setOrdersByRestaurant] = useState<Record<string, PanelOrder[]>>({});
 
   useEffect(() => {
     let cancelled = false;
@@ -27,7 +30,22 @@ export default function OperatorRestaurantsPage() {
     async function loadRestaurants() {
       try {
         const res = await api<{ restaurants: OperatorRestaurant[] }>("/api/restaurants");
-        if (!cancelled) setRestaurants(res.restaurants);
+        const withOrders = await Promise.all(res.restaurants.map(async (restaurant) => {
+          const response = await api<{ orders: { id: number; status: string }[] }>(
+            `/api/restaurants/${encodeURIComponent(restaurant.id)}/orders/all`,
+          );
+          return { restaurant, orders: response.orders };
+        }));
+        if (!cancelled) {
+          setRestaurants(withOrders.map(({ restaurant, orders }) => ({
+            ...restaurant,
+            queueLength: orders.filter((order) => order.status === "Accepted" || order.status === "Preparing").length,
+          })));
+          setOrdersByRestaurant(Object.fromEntries(withOrders.map(({ restaurant, orders }) => [
+            restaurant.id,
+            orders.map((order) => ({ id: String(order.id), state: order.status })),
+          ])));
+        }
       } catch {
         if (!cancelled) {
           setError("Could not load restaurants. Please try again.");
@@ -38,7 +56,11 @@ export default function OperatorRestaurantsPage() {
     }
 
     loadRestaurants();
-    return () => { cancelled = true; };
+    const timer = setInterval(loadRestaurants, 5000);
+    return () => {
+      cancelled = true;
+      clearInterval(timer);
+    };
   }, []);
 
   async function changeStatus(restaurant: OperatorRestaurant, status: "PAUSED" | "OPEN") {
@@ -58,12 +80,6 @@ export default function OperatorRestaurantsPage() {
     }
   }
 
-  function commandsFor(r: OperatorRestaurant): CommandItem[] {
-    if (r.status === "OPEN")   return [{ name: "pause",  label: "Pause restaurant",  enabled: true }];
-    if (r.status === "PAUSED") return [{ name: "reopen", label: "Reopen restaurant", enabled: true }];
-    return [];
-  }
-
   const mapRestaurants: MapRestaurant[] = restaurants.flatMap((restaurant) => (
     restaurant.lat === null || restaurant.lng === null ? [] : [{
       id: restaurant.id,
@@ -71,9 +87,15 @@ export default function OperatorRestaurantsPage() {
       lat: restaurant.lat,
       lng: restaurant.lng,
       status: restaurant.status,
-      queue: { length: 0 }, // TODO: real queue count (see below)
+      queue: { length: restaurant.queueLength ?? 0 },
     }]
   ));
+
+  const mapView = buildRoleMapView("OPERATOR")({
+    user: { id: "operator", name: "Operator", role: "OPERATOR" },
+    restaurants: mapRestaurants,
+    couriers: [],
+  });
 
   return (
     <section style={page}>
@@ -89,19 +111,22 @@ export default function OperatorRestaurantsPage() {
           <div style={{ height: "420px", marginBottom: "24px", border: "1px solid #EADBC8", borderRadius: "12px", overflow: "hidden", position: "relative" }}>
             <MapView
               restaurants={mapRestaurants}
-              couriers={[]}
+              couriers={mapView.couriers}
               showLabels
               selectedRestaurantId={selectedId}
               onSelectRestaurant={setSelectedId}
+              highlightedRestaurantId={mapView.highlightedRestaurantId}
+              highlightedCourierId={mapView.highlightedCourierId}
+              deliveryPin={mapView.deliveryPin}
               renderDetails={(mapRestaurant) => {
                 const full = restaurants.find((r) => r.id === mapRestaurant.id);
                 if (!full) return null;
                 return (
-                  <OperatorRestaurantPanel
+                  <RestaurantDetails
                     restaurant={mapRestaurant}
-                    orders={[]} // TODO: all orders for this restaurant
-                    commands={commandsFor(full)}
-                    onCommand={(name) => changeStatus(full, name === "pause" ? "PAUSED" : "OPEN")}
+                    view={mapView}
+                    onViewMenu={() => undefined}
+                    orders={ordersByRestaurant[mapRestaurant.id] ?? []}
                   />
                 );
               }}

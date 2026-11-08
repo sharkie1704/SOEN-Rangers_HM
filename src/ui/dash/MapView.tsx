@@ -4,7 +4,7 @@ import L, { type LatLngTuple } from "leaflet";
 import type { RestaurantStatus } from "../../domain/ord/Restaurant";
 import { BAND_COLOURS, queueBand } from "./QueueBand";
 import type { GeoPoint } from "./MapProjection";
-import PublicRestaurantPanel from "./panels/PublicRestaurantPanel";
+import PublicRestaurantPanel from "./map-popup/PublicRestaurantPopup";
 import "leaflet/dist/leaflet.css";
 import "./MapView.css";
 
@@ -159,7 +159,7 @@ export default function MapView({
 }: Props) {
   // R-DASH-02: only on-duty couriers are drawn
   const onDutyCouriers = useMemo(
-    () => couriers.filter((c) => c.status !== "OFFLINE"),
+    () => couriers.filter((courier) => courier.status !== "OFFLINE"),
     [couriers],
   );
 
@@ -172,14 +172,13 @@ export default function MapView({
     () =>
       [
         ...restaurants.map((r) => `${r.id}:${r.lat},${r.lng}`),
-        ...onDutyCouriers.map((c) => c.id),
+        ...onDutyCouriers.map((courier) => courier.id),
         deliveryPin ? `pin:${deliveryPin.lat},${deliveryPin.lng}` : "",
       ].join("|"),
     [restaurants, onDutyCouriers, deliveryPin],
   );
 
   const isEmpty = points.length === 0;
-  // later commit, should implement R-DASH-06: log the empty-map situation
 
   const selectedRestaurant = restaurants.find((r) => r.id === selectedRestaurantId);
 
@@ -210,8 +209,8 @@ export default function MapView({
             onSelect={onSelectRestaurant}
           />
         ))}
-        {onDutyCouriers.map((c) => (
-          <CourierMapMarker key={c.id} courier={c} highlighted={c.id === highlightedCourierId} />
+        {onDutyCouriers.map((courier) => (
+          <CourierMapMarker key={courier.id} courier={courier} highlighted={courier.id === highlightedCourierId} />
         ))}
         {deliveryPin && <DeliveryPinMarker point={deliveryPin} />}
       </MapContainer>
