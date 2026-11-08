@@ -1,16 +1,18 @@
-import { useEffect, useState, type ComponentProps } from "react";
+import { useEffect, useId, useState, type ComponentProps } from "react";
 import OperatorRestaurantsPage, { type OperatorRestaurant } from "../ord/OperatorRestaurantsPage";
 import { api, ApiError } from "../reg/api/client";
 import OperatorOverview from "./OperatorOverview";
 import OrderSummaryList from "../prc/OrderSummaryList";
 import BillingLedger from "../prc/BillingLedger";
 import DashboardLayout from "./DashboardLayout";
-import DashboardSidebar, { type DashboardNavigationItem } from "./DashboardSidebar";
+import type { DashboardNavigationItem } from "./DashboardSidebar";
+import "./dashboard-sidebar.css";
+import "./operator-dashboard.css";
 
 type OperatorDashboardProps = Pick<ComponentProps<typeof DashboardLayout>, "user" | "onLogout">;
-type OperatorSection = "overview" | "restaurants" | "orders" | "history" | "simulator";
+type OperatorSection = "overview" | "restaurants" | "orders" | "history" | "ledger" | "simulator";
 
-const items: readonly (DashboardNavigationItem & { readonly id: OperatorSection })[] = [
+const items: readonly (DashboardNavigationItem & { readonly id: OperatorSection | "billing" })[] = [
   {
     id: "overview",
     label: "Overview",
@@ -43,7 +45,7 @@ const items: readonly (DashboardNavigationItem & { readonly id: OperatorSection 
     ),
   },
   {
-    id: "history",
+    id: "billing",
     label: "Order History & Billing",
     icon: (
       <svg aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75">
@@ -63,8 +65,34 @@ const items: readonly (DashboardNavigationItem & { readonly id: OperatorSection 
   },
 ];
 
+const billingItems: readonly (DashboardNavigationItem & { readonly id: "history" | "ledger" })[] = [
+  {
+    id: "history",
+    label: "Order History",
+    icon: (
+      <svg aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75">
+        <circle cx="12" cy="12" r="8" />
+        <path d="M12 7v5l3 2" />
+      </svg>
+    ),
+  },
+  {
+    id: "ledger",
+    label: "Billing Ledger",
+    icon: (
+      <svg aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75">
+        <rect x="4" y="3" width="16" height="18" rx="2" />
+        <path d="M9 3v18M12 8h5M12 12h5M12 16h5" />
+      </svg>
+    ),
+  },
+];
+
 export default function OperatorDashboard({ user, onLogout }: OperatorDashboardProps) {
   const [activeSection, setActiveSection] = useState<OperatorSection>("overview");
+  const [billingExpanded, setBillingExpanded] = useState(false);
+  const billingNavigationId = useId();
+  const billingSelected = activeSection === "history" || activeSection === "ledger";
 
   const [restaurants, setRestaurants] = useState<OperatorRestaurant[]>([]);
   const [loading, setLoading] = useState(true);
@@ -105,8 +133,12 @@ export default function OperatorDashboard({ user, onLogout }: OperatorDashboardP
   }
 
   function selectSection(id: string) {
+    if (id === "billing") {
+      setBillingExpanded((expanded) => !expanded);
+      return;
+    }
     const item = items.find((item) => item.id === id);
-    if (item) setActiveSection(item.id);
+    if (item && item.id !== "billing") setActiveSection(item.id);
   }
 
   return (
@@ -114,11 +146,50 @@ export default function OperatorDashboard({ user, onLogout }: OperatorDashboardP
       user={user}
       onLogout={onLogout}
       sidebar={
-        <DashboardSidebar
-          items={items}
-          activeId={activeSection}
-          onSelect={selectSection}
-        />
+        <nav className="dashboard-sidebar operator-navigation" aria-label="Dashboard navigation">
+          <ul className="dashboard-sidebar__items">
+            {items.map((item) => (
+              <li key={item.id} className={item.id === "billing" ? "operator-navigation__group" : undefined}>
+                <button
+                  type="button"
+                  className="dashboard-sidebar__button"
+                  aria-current={item.id === activeSection ? "page" : undefined}
+                  aria-expanded={item.id === "billing" ? billingExpanded : undefined}
+                  aria-controls={item.id === "billing" ? billingNavigationId : undefined}
+                  data-child-selected={item.id === "billing" && billingSelected ? "true" : undefined}
+                  title={item.label}
+                  onClick={() => selectSection(item.id)}
+                >
+                  <span className="dashboard-sidebar__icon" aria-hidden="true">{item.icon}</span>
+                  <span className="dashboard-sidebar__label">{item.label}</span>
+                  {item.id === "billing" && (
+                    <svg className="operator-navigation__chevron" aria-hidden="true" focusable="false" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d={billingExpanded ? "m6 15 6-6 6 6" : "m6 9 6 6 6-6"} />
+                    </svg>
+                  )}
+                </button>
+                {item.id === "billing" && (
+                  <ul id={billingNavigationId} className="operator-navigation__children" hidden={!billingExpanded}>
+                    {billingItems.map((child) => (
+                      <li key={child.id}>
+                        <button
+                          type="button"
+                          className="dashboard-sidebar__button"
+                          aria-current={child.id === activeSection ? "page" : undefined}
+                          title={child.label}
+                          onClick={() => setActiveSection(child.id)}
+                        >
+                          <span className="dashboard-sidebar__icon" aria-hidden="true">{child.icon}</span>
+                          <span className="dashboard-sidebar__label">{child.label}</span>
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </li>
+            ))}
+          </ul>
+        </nav>
       }
     >
       {activeSection === "overview" && (
@@ -133,12 +204,8 @@ export default function OperatorDashboard({ user, onLogout }: OperatorDashboardP
           onChangeStatus={changeStatus}
         />
       )}
-      {activeSection === "history" && (
-        <>
-          <OrderSummaryList />
-          <BillingLedger />
-        </>
-      )}
+      {activeSection === "history" && <OrderSummaryList />}
+      {activeSection === "ledger" && <BillingLedger />}
     </DashboardLayout>
   );
 }
