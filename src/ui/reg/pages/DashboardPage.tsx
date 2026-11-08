@@ -7,6 +7,7 @@ import OperatorRestaurantsPage from "../../ord/OperatorRestaurantsPage";
 import CourierAvailabilityPage from "../../dlv/CourierAvailabilityPage";
 import Header from "../../components/Header";
 import OrderSummaryList from "../../prc/OrderSummaryList";
+import BillingLedger from "../../prc/BillingLedger";
 
 export default function DashboardPage() {
   const { user, logout } = useAuth();
@@ -33,6 +34,7 @@ export default function DashboardPage() {
         <>
           <OperatorRestaurantsPage />
           <OrderSummaryList />
+          <BillingLedger />
         </>
       )}
       {user.role === "COURIER" && <CourierAvailabilityPage />}
