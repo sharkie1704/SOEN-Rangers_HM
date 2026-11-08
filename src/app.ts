@@ -28,6 +28,7 @@ import { OrderRoutes } from "./application/ord/OrderRoutes";
 import type { OrderRepository } from "./application/ord/OrderRepository";
 import type { MenuCatalog } from "./application/ord/MenuCatalog";
 import { OrderService } from "./application/ord/OrderService";
+import type { PricingSettingsRepository } from "./application/prc/PricingSettingsRepository";
 import type { CourierAvailabilityRepository } from "./application/dlv/CourierAvailabilityRepository";
 import { CourierAvailabilityService } from "./application/dlv/CourierAvailabilityService";
 import { CourierAvailabilityController } from "./application/dlv/CourierAvailabilityController";
@@ -41,6 +42,12 @@ import { DispatchQueueService } from "./application/dlv/DispatchQueueService";
 import { DispatchQueueController } from "./application/dlv/DispatchQueueController";
 import { CourierIdleSubject } from "./application/dlv/CourierIdleSubject";
 import { DispatchQueueObserver } from "./application/dlv/DispatchQueueObserver";
+import { OrderSummaryRoutes } from "./application/prc/OrderSummaryRoutes";
+import { OrderSummaryService } from "./application/prc/OrderSummaryService";
+import type { OrderSummaryRepository } from "./application/prc/OrderSummaryRepository";
+import { LedgerRoutes } from "./application/prc/LedgerRoutes";
+import { LedgerService } from "./application/prc/LedgerService";
+import type { LedgerRepository } from "./application/prc/LedgerRepository";
 import { toUserDto } from "./technical-services/http/UserDTO";
 
 export interface AppDeps {
@@ -52,6 +59,9 @@ export interface AppDeps {
   restaurantStatus: RestaurantStatusRepository;
   orders?: OrderRepository;
   orderMenu?: MenuCatalog;
+  pricing?: PricingSettingsRepository;
+  orderSummaries?: OrderSummaryRepository;
+  ledger?: LedgerRepository;
   couriers?: CourierAvailabilityRepository;
   assignments?: AssignmentRepository;
   dispatchQueue?: DispatchQueueRepository;
@@ -68,7 +78,9 @@ function requirePermission(command: PermissionCommand): RequestHandler {
   };
 }
 
-export function createApp({ users, hasher, tokens, restaurants, menu, restaurantStatus, orders, orderMenu, couriers, assignments, dispatchQueue }: AppDeps) {
+export function createApp({
+  users, hasher, tokens, restaurants, menu, restaurantStatus, orders, orderMenu, pricing, orderSummaries, ledger, couriers, assignments, dispatchQueue,
+}: AppDeps) {
   
   const app = express();
   app.use("/api", apiCommandLogger);
@@ -102,8 +114,20 @@ export function createApp({ users, hasher, tokens, restaurants, menu, restaurant
   if (dispatchQueue && assignments && couriers) {
     courierIdle.subscribe(new DispatchQueueObserver(new DispatchQueueService(dispatchQueue), assignments, couriers));
   }
+  if (orderSummaries) {
+    const summaryRoutes = new OrderSummaryRoutes(new OrderSummaryService(orderSummaries));
+    app.get("/api/order-summaries", summaryRoutes.list);
+  }
+  if (ledger) {
+    const ledgerRoutes = new LedgerRoutes(new LedgerService(ledger));
+    app.get("/api/ledger", ledgerRoutes.read);
+    app.post("/api/ledger/reset", ledgerRoutes.reset);
+  }
   if (orders && orderMenu) {
-    const orderRoutes = new OrderRoutes(new OrderController(new OrderService(orders, orderMenu)));
+    const orderRoutes = new OrderRoutes(
+      new OrderController(new OrderService(orders, orderMenu, pricing)),
+    );
+    app.post("/api/orders/quote", orderRoutes.quote);
     app.post("/api/orders", orderRoutes.place);
     app.get("/api/orders", orderRoutes.listMine);
     app.get("/api/orders/:orderId", orderRoutes.getOne);

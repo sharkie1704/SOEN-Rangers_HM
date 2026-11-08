@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { queueBand } from "./queueBand.ts";
+import { queueBand } from "../QueueBand.ts";
 
 function restaurant(status: "OPEN" | "PAUSED") {
   return (queueLength: number) => ({ status, queue: { length: queueLength } });

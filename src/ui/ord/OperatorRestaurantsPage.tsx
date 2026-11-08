@@ -1,52 +1,39 @@
-import { useEffect, useState } from "react";
-import { api, ApiError } from "../reg/api/client";
 import { page, row, primary, secondary, statusLabel, type RestaurantStatus } from "./MenuEditorPage";
 import "./button-interactions.css";
+import "../dash/operator-dashboard.css";
 
-type OperatorRestaurant = {
+export type OperatorRestaurant = {
   id: string;
   name: string;
   status: RestaurantStatus;
+  lat: number | null;
+  lng: number | null;
 };
 
-export default function OperatorRestaurantsPage() {
-  const [restaurants, setRestaurants] = useState<OperatorRestaurant[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-  const [message, setMessage] = useState("");
+interface OperatorRestaurantsPageProps {
+  restaurants: readonly OperatorRestaurant[];
+  loading: boolean;
+  error: string;
+  message: string;
+  onChangeStatus: (restaurant: OperatorRestaurant, status: "PAUSED" | "OPEN") => Promise<void>;
+}
 
-  useEffect(() => {
-    let cancelled = false;
-
-    async function loadRestaurants() {
-      try {
-        const res = await api<{ restaurants: OperatorRestaurant[] }>("/api/restaurants");
-        if (!cancelled) setRestaurants(res.restaurants);
-      } catch {
-        if (!cancelled) setError("Could not load restaurants. Please try again.");
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    }
-
-    loadRestaurants();
-    return () => { cancelled = true; };
-  }, []);
-
-  async function changeStatus(restaurant: OperatorRestaurant, status: "PAUSED" | "OPEN") {
-    try {
-      const res = await api<{ restaurant: { id: string; status: RestaurantStatus }; eventId: number }>(
-        `/api/restaurants/${encodeURIComponent(restaurant.id)}/status`,
-        { method: "PATCH", body: { status } },
-      );
-      setRestaurants((current) =>
-        current.map((r) => (r.id === res.restaurant.id ? { ...r, status: res.restaurant.status } : r)),
-      );
-      setMessage(`${restaurant.name} ${status === "PAUSED" ? "paused" : "reopened"} (event #${res.eventId})`);
-    } catch (e) {
-      setMessage(e instanceof ApiError ? `Error: ${e.message}` : "Error: request failed");
-    }
-  }
+export default function OperatorRestaurantsPage({
+  restaurants, loading, error, message, onChangeStatus,
+}: OperatorRestaurantsPageProps) {
+  const counts = {
+    total: restaurants.length,
+    open: restaurants.filter((restaurant) => restaurant.status === "OPEN").length,
+    paused: restaurants.filter((restaurant) => restaurant.status === "PAUSED").length,
+    closed: restaurants.filter((restaurant) => restaurant.status === "CLOSED").length,
+  };
+  const restaurantValue = (count: number) => loading ? "Loading…" : error ? "Unable to load" : count;
+  const restaurantStatuses = [
+    { label: "Total restaurants", count: counts.total },
+    { label: "Open restaurants", count: counts.open },
+    { label: "Paused restaurants", count: counts.paused },
+    { label: "Closed restaurants", count: counts.closed },
+  ];
 
   return (
     <section style={page}>
@@ -58,6 +45,18 @@ export default function OperatorRestaurantsPage() {
         {message && <p role="status" style={{ fontWeight: 600 }}>{message}</p>}
         {!loading && !error && restaurants.length === 0 && <p>No restaurants yet.</p>}
 
+      <section className="operator-restaurants__summary" aria-label="Restaurant status summary">
+        <h3>Restaurant status</h3>
+        <dl className="operator-restaurants__statuses">
+          {restaurantStatuses.map(({ label, count }) => (
+            <div key={label}>
+              <dt>{label}</dt>
+              <dd>{restaurantValue(count)}</dd>
+            </div>
+          ))}
+        </dl>
+      </section>
+
         <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "grid", gap: "8px" }}>
           {restaurants.map((restaurant) => (
             <li key={restaurant.id} style={row}>
@@ -65,12 +64,12 @@ export default function OperatorRestaurantsPage() {
               <span>{statusLabel(restaurant.status)}</span>
               <span style={{ marginLeft: "auto" }}>
                 {restaurant.status === "OPEN" && (
-                  <button className="interactive-button" style={primary} onClick={() => changeStatus(restaurant, "PAUSED")}>
+                  <button className="interactive-button" style={primary} onClick={() => onChangeStatus(restaurant, "PAUSED")}>
                     Pause
                   </button>
                 )}
                 {restaurant.status === "PAUSED" && (
-                  <button className="interactive-button" style={secondary} onClick={() => changeStatus(restaurant, "OPEN")}>
+                  <button className="interactive-button" style={secondary} onClick={() => onChangeStatus(restaurant, "OPEN")}>
                     Reopen
                   </button>
                 )}
