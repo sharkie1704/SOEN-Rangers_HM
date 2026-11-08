@@ -5,16 +5,17 @@
   flex-wrap: wrap;
   gap: 16px;
   padding: 18px 32px;
-  background-color: #E6CDB7;
-  background-image: linear-gradient(90deg, #E6CDB7, #DFC0A7);
-  border-bottom: 2px solid #B98F70;
-  box-shadow: 0 2px 8px rgba(86, 53, 33, 0.07);
+  background-color: #EADBC8;
+  border-bottom: 1px solid #C89F7A;
+  box-shadow: 0 2px 8px rgb(75 48 40 / 7%);
+  color: #4B3028;
+  font-family: Poppins, sans-serif;
 }
 
 .app-header__brand {
   font-size: 26px;
   font-weight: 700;
-  color: #563521;
+  letter-spacing: -0.035em;
 }
 
 .app-header__right {
@@ -31,32 +32,33 @@
 }
 
 .app-header__name {
-  font-size: 14px;
+  font-size: 16px;
   font-weight: 600;
-  color: #563521;
 }
 
 .app-header__role {
-  font-size: 12px;
-  color: #916f55;
+  font-size: 13px;
+  color: #765F53;
 }
 
 .app-header__logout {
   padding: 10px 18px;
-  background-color: #e99045;
-  color: white;
+  background-color: #C66B32;
+  color: #FFFFFF;
   border: none;
   border-radius: 8px;
   cursor: pointer;
+  font: inherit;
   font-weight: 600;
+  transition: background-color 150ms ease;
 }
 
 .app-header__logout:hover {
-  background-color: #cf772c;
+  background-color: #A95123;
 }
 
 .app-header__logout:focus-visible {
-  outline: 3px solid #563521;
+  outline: 3px solid #4B3028;
   outline-offset: 3px;
 }
 
@@ -67,5 +69,11 @@
 
   .app-header__right {
     gap: 12px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app-header__logout {
+    transition: none;
   }
 }

@@ -7,4 +7,6 @@ export interface PlaceOrderLineDTO {
 export interface PlaceOrderDTO {
   restaurantId: string;
   lines: readonly PlaceOrderLineDTO[];
+  // Checkout sends the displayed total so placement can reject changed prices.
+  expectedTotalCents?: number;
 }

@@ -1,0 +1,101 @@
+.dashboard-layout {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  min-height: 100dvh;
+  background: var(--cream, #FFF9F2);
+  color: var(--chocolate, #4B3028);
+  font-family: Poppins, sans-serif;
+}
+
+.dashboard-layout__body {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+}
+
+.dashboard-layout__sidebar {
+  box-sizing: border-box;
+  flex: 0 0 240px;
+  min-width: 0;
+  padding: 16px 12px;
+  border-right: 1px solid var(--caramel, #C89F7A);
+  border-top: 3px solid var(--orange, #C66B32);
+  background: var(--beige, #EADBC8);
+  overflow-wrap: anywhere;
+}
+
+.dashboard-layout--collapsed .dashboard-layout__sidebar {
+  flex-basis: 72px;
+}
+
+.dashboard-layout__toggle {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 44px;
+  margin-bottom: 12px;
+  padding: 10px 12px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--chocolate, #4B3028);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.875rem;
+  text-align: left;
+}
+
+.dashboard-layout__toggle svg {
+  flex-shrink: 0;
+}
+
+.dashboard-layout__toggle:hover {
+  background: var(--cream, #FFF9F2);
+}
+
+.dashboard-layout__toggle:focus-visible {
+  outline: 3px solid var(--chocolate, #4B3028);
+  outline-offset: 2px;
+}
+
+.dashboard-layout--collapsed .dashboard-layout__toggle-label {
+  display: none;
+}
+
+.dashboard-layout__content {
+  display: flow-root;
+  flex: 1;
+  min-width: 0;
+}
+
+@media (max-width: 768px) {
+  .dashboard-layout__body {
+    flex-direction: column;
+  }
+
+  .dashboard-layout__sidebar,
+  .dashboard-layout--collapsed .dashboard-layout__sidebar {
+    flex: 0 0 auto;
+    padding: 16px;
+    border-right: 0;
+    border-bottom: 1px solid var(--caramel, #C89F7A);
+  }
+
+  .dashboard-layout__toggle {
+    margin-bottom: 8px;
+  }
+
+  .dashboard-layout--collapsed .dashboard-layout__toggle {
+    margin-bottom: 0;
+  }
+
+  .dashboard-layout--collapsed .dashboard-layout__toggle-label {
+    display: inline;
+  }
+
+  .dashboard-layout--collapsed .dashboard-layout__navigation {
+    display: none;
+  }
+}

@@ -1,6 +1,7 @@
 export const RESTAURANT_IDS = {
   DEMO_BAKERY: "11111111-1111-4111-8111-111111111111",
   SWEET_SPOT: "22222222-2222-4222-8222-222222222222",
+  MAPLE_SWEETS: "33333333-3333-4333-8333-333333333333", // ADDED: paused-restaurant scenario
 } as const;
 
 export const restaurants = [
@@ -23,6 +24,17 @@ export const restaurants = [
     status: "OPEN",
     lat: 45.5131,
     lng: -73.5683,
+  },
+  
+  {
+    id: RESTAURANT_IDS.MAPLE_SWEETS,
+    name: "Maple Sweets",
+    category: "Desserts",
+    description: "A maple-themed dessert counter, currently paused.",
+    imageUrl: "https://img.delicious.com.au/BVnXxQQR/w759-h506-cfill/del/2019/11/maple-syrup-tart-119653-2.jpg",
+    status: "PAUSED",
+    lat: 45.5230,
+    lng: -73.5990,
   },
 ] as const;
 
@@ -59,6 +71,50 @@ export const menuItems = [
     priceCents: 750,
     available: true,
   },
+  // ADDED: sold-out item (R-DASH-04: Place Order disabled when every selected item is sold out)
+  {
+    restaurantId: RESTAURANT_IDS.DEMO_BAKERY,
+    name: "Lemon Tart",
+    description: "Tangy lemon tart. Currently sold out.",
+    imageUrl: "", // TODO: replace
+    priceCents: 500,
+    available: false,
+  },
+  // ADDED: cheap item to trigger the small-order surcharge (PRC pricing check)
+  {
+    restaurantId: RESTAURANT_IDS.DEMO_BAKERY,
+    name: "Vanilla Macaron",
+    description: "Light vanilla macaron.",
+    imageUrl: "", // TODO: replace
+    priceCents: 250,
+    available: true,
+  },
+  // ADDED: a larger item so an order can land above the surcharge threshold
+  {
+    restaurantId: RESTAURANT_IDS.SWEET_SPOT,
+    name: "Cannoli",
+    description: "Crisp shell filled with sweet ricotta cream.",
+    imageUrl: "", // TODO: replace
+    priceCents: 400,
+    available: true,
+  },
+  // ADDED: menu for the paused restaurant (items are available, the restaurant is not)
+  {
+    restaurantId: RESTAURANT_IDS.MAPLE_SWEETS,
+    name: "Maple Fudge",
+    description: "Soft maple fudge squares.",
+    imageUrl: "", // TODO: replace
+    priceCents: 350,
+    available: true,
+  },
+  {
+    restaurantId: RESTAURANT_IDS.MAPLE_SWEETS,
+    name: "Maple Cream Donut",
+    description: "Donut filled with maple cream.",
+    imageUrl: "", // TODO: replace
+    priceCents: 400,
+    available: true,
+  },
 ] as const;
 
 export const users = [
@@ -91,5 +147,86 @@ export const users = [
     email: "operator@dessertdash.test",
     password: "Demo123!",
     role: "OPERATOR",
+  },
+  {
+    name: "Sweet Spot Staff",
+    email: "staff2@dessertdash.test",
+    password: "Demo123!",
+    role: "RESTAURANT",
+    restaurantId: RESTAURANT_IDS.SWEET_SPOT,
+  },
+  {
+    name: "Maple Sweets Staff",
+    email: "staff3@dessertdash.test",
+    password: "Demo123!",
+    role: "RESTAURANT",
+    restaurantId: RESTAURANT_IDS.MAPLE_SWEETS,
+  },
+  {
+    name: "Demo Courier 2",
+    email: "courier2@dessertdash.test",
+    password: "Demo123!",
+    role: "COURIER",
+    courierLat: 45.4990, // close to Demo Bakery
+    courierLng: -73.5760,
+    courierStatus: "OFFLINE",
+  },
+  {
+    name: "Demo Courier 3",
+    email: "courier3@dessertdash.test",
+    password: "Demo123!",
+    role: "COURIER",
+    courierLat: 45.5017, // same spot as Demo Courier: exact distance tie, lowest id wins
+    courierLng: -73.5673,
+    courierStatus: "OFFLINE",
+  },
+  {
+    name: "Demo Courier 4",
+    email: "courier4@dessertdash.test",
+    password: "Demo123!",
+    role: "COURIER",
+    courierLat: 45.5125, // close to Sweet Spot
+    courierLng: -73.5690,
+    courierStatus: "OFFLINE",
+  },
+  {
+    name: "Demo Customer 2",
+    email: "customer2@dessertdash.test",
+    password: "Demo123!",
+    role: "CUSTOMER",
+    deliveryLat: 45.5050,
+    deliveryLng: -73.5700,
+  },
+  {
+    name: "Demo Customer 3",
+    email: "customer3@dessertdash.test",
+    password: "Demo123!",
+    role: "CUSTOMER",
+    deliveryLat: 45.4950,
+    deliveryLng: -73.5750,
+  },
+  {
+    name: "Demo Customer 4",
+    email: "customer4@dessertdash.test",
+    password: "Demo123!",
+    role: "CUSTOMER",
+    deliveryLat: 45.5100,
+    deliveryLng: -73.5600,
+  },
+  {
+    name: "Demo Customer 5",
+    email: "customer5@dessertdash.test",
+    password: "Demo123!",
+    role: "CUSTOMER",
+    deliveryLat: 45.5000,
+    deliveryLng: -73.5850,
+  },
+  {
+    name: "Demo Customer 6",
+    email: "customer6@dessertdash.test",
+    password: "Demo123!",
+    role: "CUSTOMER",
+    deliveryLat: 45.5180,
+    deliveryLng: -73.5720,
   },
 ] as const;

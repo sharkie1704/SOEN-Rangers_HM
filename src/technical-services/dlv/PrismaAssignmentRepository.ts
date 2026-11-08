@@ -6,6 +6,7 @@ import type { CourierAvailability } from "../../domain/dlv/CourierAvailability.t
 import type { Order } from "../../domain/ord/Order.ts";
 import type { AssignmentRepository, AssignmentChangeEvent } from "../../application/dlv/AssignmentRepository.ts";
 import type { CourierStatusEvent } from "../../application/dlv/CourierAvailabilityRepository.ts";
+import type { OrderSummary } from "../../domain/prc/OrderSummary.ts";
 import { PrismaOrderRepository } from "../ord/PrismaOrderRepository.ts";
 
 type Tx = Parameters<Parameters<typeof prisma.$transaction>[0]>[0];
@@ -52,11 +53,36 @@ export class PrismaAssignmentRepository implements AssignmentRepository {
     });
   }
 
-  async saveDelivery(order: Order, assignment: Assignment, event: AssignmentChangeEvent, courier: CourierAvailability, courierEvent: CourierStatusEvent): Promise<void> {
+  async saveDelivery(
+    order: Order,
+    assignment: Assignment,
+    event: AssignmentChangeEvent,
+    courier: CourierAvailability,
+    courierEvent: CourierStatusEvent,
+    summary: OrderSummary | null,
+  ): Promise<void> {
     await prisma.$transaction(async (tx) => {
       await new PrismaOrderRepository(tx).save(order);
       await this.moveCourier(tx, courier, courierEvent);
       await this.changeStatus(tx, assignment, event, "ACCEPTED", "COMPLETE");
+      if (summary) {
+        await tx.orderSummary.create({
+          data: {
+            orderId: summary.orderId,
+            customerId: summary.customerId,
+            restaurantId: summary.restaurantId,
+            restaurantName: summary.restaurantName,
+            subtotalCents: summary.fare.subtotalCents,
+            deliveryFeeCents: summary.fare.deliveryFeeCents,
+            serviceFeeCents: summary.fare.serviceFeeCents,
+            smallOrderSurchargeCents: summary.fare.smallOrderSurchargeCents,
+            totalCents: summary.fare.totalCents,
+            placedAt: summary.placedAt,
+            deliveredAt: summary.deliveredAt,
+            generatedAt: summary.generatedAt,
+          },
+        });
+      }
     });
   }
 
