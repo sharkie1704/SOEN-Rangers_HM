@@ -204,7 +204,7 @@ export default function OperatorDashboard({ user, onLogout }: OperatorDashboardP
           onChangeStatus={changeStatus}
         />
       )}
-      {activeSection === "history" && <OrderSummaryList />}
+      {activeSection === "history" && <OrderSummaryList operatorView />}
       {activeSection === "ledger" && <BillingLedger />}
     </DashboardLayout>
   );
