@@ -3,7 +3,7 @@ import { Role } from "../../../domain/reg/Role.ts";
 import { OrderService } from "../OrderService.ts";
 import type { OrderActor } from "../OrderActor.ts";
 import type { OrderDTO } from "../OrderDTO.ts";
-import { FakeMenuCatalog, InMemoryOrderRepository } from "./fakes.ts";
+import { FakeMenuCatalog, FakePricingSettingsRepository, InMemoryOrderRepository } from "./fakes.ts";
 
 const alice: OrderActor = { userId: "cust-alice", role: Role.CUSTOMER };
 const bob: OrderActor = { userId: "cust-bob", role: Role.CUSTOMER };
@@ -17,7 +17,7 @@ beforeEach(async () => {
   const menu = new FakeMenuCatalog()
     .addRestaurant("rest-a")
     .addItem({ menuItemId: 1, restaurantId: "rest-a", name: "Macaron", unitPriceCents: 350 });
-  service = new OrderService(new InMemoryOrderRepository(), menu);
+  service = new OrderService(new InMemoryOrderRepository(), menu, new FakePricingSettingsRepository());
   order = await service.place(alice, { restaurantId: "rest-a", lines: [{ menuItemId: 1, quantity: 2 }] });
 });
 

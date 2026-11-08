@@ -25,6 +25,11 @@ function toActor(user: AuthenticatedUser | undefined): OrderActor | null {
 export class OrderRoutes {
   constructor(private readonly orders: OrderController) {}
 
+  quote = (req: Request, res: Response) => this.respond(res, async () => {
+    const quote = await this.orders.quote(toActor(req.user), req.body ?? {});
+    res.json({ quote });
+  });
+
   place = (req: Request, res: Response) => this.respond(res, async () => {
     const order = await this.orders.place(toActor(req.user), req.body ?? {});
     res.status(201).json({ order });

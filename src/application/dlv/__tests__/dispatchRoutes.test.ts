@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createApp } from "../../../app";
 import { FakePasswordHasher, InMemoryUserRepository } from "../../../domain/reg/__tests__/fakes";
 import { JwtSessionTokenService } from "../../../technical-services/reg/JwtSessionTokenService";
-import { FakeMenuCatalog, InMemoryMenuRepository, InMemoryOrderRepository, InMemoryRestaurantStatusRepository } from "../../ord/__tests__/fakes";
+import { FakeMenuCatalog, FakePricingSettingsRepository, InMemoryMenuRepository, InMemoryOrderRepository, InMemoryRestaurantStatusRepository } from "../../ord/__tests__/fakes";
 import type { RestaurantReadRepository } from "../../ord/RestaurantReadRepository";
 import { InMemoryDispatchRepository } from "./dispatchFakes";
 import { InMemoryAssignmentRepository, InMemoryCourierAvailabilityRepository } from "./fakes";
@@ -37,6 +37,7 @@ beforeEach(() => {
     orderMenu: new FakeMenuCatalog()
       .addRestaurant(RESTAURANT_ID)
       .addItem({ menuItemId: 1, restaurantId: RESTAURANT_ID, name: "Macaron", unitPriceCents: 350 }),
+    pricing: new FakePricingSettingsRepository(),
     couriers,
     assignments,
     dispatch,

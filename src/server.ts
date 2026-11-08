@@ -9,9 +9,12 @@ import { PrismaMenuRepository } from "./technical-services/ord/PrismaMenuReposit
 import { PrismaRestaurantStatusRepository } from "./technical-services/ord/PrismaRestaurantStatusRepository";
 import { PrismaOrderRepository } from "./technical-services/ord/PrismaOrderRepository";
 import { PrismaMenuCatalog } from "./technical-services/ord/PrismaMenuCatalog";
+import { PrismaPricingSettingsRepository } from "./technical-services/prc/PrismaPricingSettingsRepository";
 import { PrismaCourierAvailabilityRepository } from "./technical-services/dlv/PrismaCourierAvailabilityRepository";
 import { PrismaAssignmentRepository } from "./technical-services/dlv/PrismaAssignmentRepository";
 import { PrismaDispatchRepository } from "./technical-services/dlv/PrismaDispatchRepository";
+import { PrismaOrderSummaryRepository } from "./technical-services/prc/PrismaOrderSummaryRepository";
+import { PrismaLedgerRepository } from "./technical-services/prc/PrismaLedgerRepository";
 
 const app = createApp({
   users: new PrismaUserRepository(),
@@ -22,6 +25,9 @@ const app = createApp({
   restaurantStatus: new PrismaRestaurantStatusRepository(),
   orders: new PrismaOrderRepository(),
   orderMenu: new PrismaMenuCatalog(),
+  pricing: new PrismaPricingSettingsRepository(),
+  orderSummaries: new PrismaOrderSummaryRepository(),
+  ledger: new PrismaLedgerRepository(),
   couriers: new PrismaCourierAvailabilityRepository(),
   assignments: new PrismaAssignmentRepository(),
   dispatch: new PrismaDispatchRepository(),
