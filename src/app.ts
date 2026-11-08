@@ -37,6 +37,8 @@ import { AssignmentService } from "./application/dlv/AssignmentService";
 import { AssignmentController } from "./application/dlv/AssignmentController";
 import { HandoffService } from "./application/dlv/HandoffService";
 import { HandoffController } from "./application/dlv/HandoffController";
+import type { DispatchRepository } from "./application/dlv/DispatchRepository";
+import { DispatchService } from "./application/dlv/DispatchService";
 import type { DispatchQueueRepository } from "./application/dlv/DispatchQueueRepository";
 import { DispatchQueueService } from "./application/dlv/DispatchQueueService";
 import { DispatchQueueController } from "./application/dlv/DispatchQueueController";
@@ -64,6 +66,7 @@ export interface AppDeps {
   ledger?: LedgerRepository;
   couriers?: CourierAvailabilityRepository;
   assignments?: AssignmentRepository;
+  dispatch?: DispatchRepository;
   dispatchQueue?: DispatchQueueRepository;
 }
 
@@ -79,7 +82,7 @@ function requirePermission(command: PermissionCommand): RequestHandler {
 }
 
 export function createApp({
-  users, hasher, tokens, restaurants, menu, restaurantStatus, orders, orderMenu, pricing, orderSummaries, ledger, couriers, assignments, dispatchQueue,
+  users, hasher, tokens, restaurants, menu, restaurantStatus, orders, orderMenu, pricing, orderSummaries, ledger, couriers, assignments, dispatchQueue, dispatch,
 }: AppDeps) {
   
   const app = express();
@@ -110,6 +113,8 @@ export function createApp({
   // Please put your own routes after this line !
   
   app.use("/api", authenticate(tokens));
+  // Offers an order to a courier when it becomes ready, and again when a courier declines it
+  const dispatcher = orders && assignments && dispatch ? new DispatchService(orders, assignments, dispatch) : undefined;
   const courierIdle = new CourierIdleSubject();
   if (dispatchQueue && assignments && couriers) {
     courierIdle.subscribe(new DispatchQueueObserver(new DispatchQueueService(dispatchQueue), assignments, couriers));
@@ -125,7 +130,7 @@ export function createApp({
   }
   if (orders && orderMenu) {
     const orderRoutes = new OrderRoutes(
-      new OrderController(new OrderService(orders, orderMenu, pricing)),
+      new OrderController(new OrderService(orders, orderMenu, pricing, dispatcher)),
     );
     app.post("/api/orders/quote", orderRoutes.quote);
     app.post("/api/orders", orderRoutes.place);
@@ -144,7 +149,7 @@ export function createApp({
     app.patch("/api/couriers/me/availability", courierController.update);
   }
   if (assignments && couriers) {
-    const assignmentController = new AssignmentController(new AssignmentService(assignments, couriers));
+    const assignmentController = new AssignmentController(new AssignmentService(assignments, couriers, dispatcher));
     app.post("/api/orders/:orderId/offer/accept", assignmentController.accept);
     app.post("/api/orders/:orderId/offer/decline", assignmentController.decline);
   }

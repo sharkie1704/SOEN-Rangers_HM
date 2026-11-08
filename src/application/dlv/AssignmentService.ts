@@ -2,6 +2,7 @@ import type { Assignment } from "../../domain/dlv/Assignment.ts";
 import { AssignmentError } from "../../domain/dlv/AssignmentError.ts";
 import { hasPermission } from "../../domain/reg/permissions";
 import type { Role } from "../../domain/reg/Role.ts";
+import type { OrderReadyListener } from "../ord/OrderReadyListener.ts";
 import type { AssignmentRepository, AssignmentChangeEvent } from "./AssignmentRepository.ts";
 import type { CourierAvailabilityRepository } from "./CourierAvailabilityRepository.ts";
 
@@ -13,10 +14,13 @@ export interface AssignmentActor {
 export class AssignmentService {
   private readonly assignments: AssignmentRepository;
   private readonly couriers: CourierAvailabilityRepository;
+  private readonly declinedListener?: OrderReadyListener;
 
-  constructor(assignments: AssignmentRepository, couriers: CourierAvailabilityRepository) {
+  // declinedListener gets a declined order back, since it is ready for another courier again
+  constructor(assignments: AssignmentRepository, couriers: CourierAvailabilityRepository, declinedListener?: OrderReadyListener) {
     this.assignments = assignments;
     this.couriers = couriers;
+    this.declinedListener = declinedListener;
   }
 
   async accept(actor: AssignmentActor | null, orderId: number): Promise<{ assignment: Assignment; eventId: number }> {
@@ -44,6 +48,7 @@ export class AssignmentService {
     assignment.decline();
     const event = await this.answeredEvent(assignment);
     await this.assignments.saveDeclined(assignment, event);
+    await this.declinedListener?.orderReady(orderId);
     return { assignment, eventId: event.eventId };
   }
 
