@@ -3,23 +3,25 @@ import { Role } from "../../../domain/reg/Role.ts";
 import { MAX_LINE_QUANTITY, OrderService } from "../OrderService.ts";
 import type { OrderActor } from "../OrderActor.ts";
 import type { PlaceOrderDTO } from "../PlaceOrderDTO.ts";
-import { FakeMenuCatalog, InMemoryOrderRepository } from "./fakes.ts";
+import { FakeMenuCatalog, FakePricingSettingsRepository, InMemoryOrderRepository } from "./fakes.ts";
 
 const alice: OrderActor = { userId: "cust-alice", role: Role.CUSTOMER };
 
 let menu: FakeMenuCatalog;
+let pricing: FakePricingSettingsRepository;
 let service: OrderService;
 
 beforeEach(() => {
   menu = new FakeMenuCatalog()
-    .addRestaurant("rest-a")
+    .addRestaurant("rest-a", true, "Demo Bakery")
     .addRestaurant("rest-b")
     .addRestaurant("rest-closed", false)
     .addItem({ menuItemId: 1, restaurantId: "rest-a", name: "Macaron", unitPriceCents: 350 })
     .addItem({ menuItemId: 2, restaurantId: "rest-a", name: "Eclair", unitPriceCents: 500 })
     .addItem({ menuItemId: 3, restaurantId: "rest-a", name: "Mille-feuille", unitPriceCents: 800, available: false })
     .addItem({ menuItemId: 9, restaurantId: "rest-b", name: "Cheap tart", unitPriceCents: 1 });
-  service = new OrderService(new InMemoryOrderRepository(), menu);
+  pricing = new FakePricingSettingsRepository();
+  service = new OrderService(new InMemoryOrderRepository(), menu, pricing);
 });
 
 async function expectCode(code: string, input: PlaceOrderDTO) {
@@ -37,6 +39,14 @@ describe("OrderService prices orders from the menu", () => {
       { menuItemId: 2, name: "Eclair", quantity: 1, unitPriceCents: 500 },
     ]);
     expect(order.totalCents).toBe(1200);
+    expect(order.fare).toEqual({
+      subtotalCents: 1200,
+      deliveryFeeCents: 300,
+      serviceFeeCents: 150,
+      smallOrderSurchargeCents: 200,
+      totalCents: 1850,
+    });
+    expect(order.restaurantName).toBe("Demo Bakery");
   });
 
   it("ignores a name and price smuggled in by the client", async () => {
@@ -46,10 +56,13 @@ describe("OrderService prices orders from the menu", () => {
     expect(order.totalCents).toBe(350);
   });
 
-  it("keeps the price snapshot when the menu changes later", async () => {
+  it("keeps the item and fare snapshots when menu prices and settings change later", async () => {
     const order = await service.place(alice, { restaurantId: "rest-a", lines: [{ menuItemId: 1, quantity: 1 }] });
     menu.addItem({ menuItemId: 1, restaurantId: "rest-a", name: "Macaron", unitPriceCents: 999 });
-    expect((await service.get(alice, order.id)).totalCents).toBe(350);
+    pricing.settings.deliveryFeeCents = 700;
+    const restored = await service.get(alice, order.id);
+    expect(restored.totalCents).toBe(350);
+    expect(restored.fare).toEqual(order.fare);
   });
 });
 

@@ -59,7 +59,7 @@ export default function CustomerFlow() {
     <>
       <nav className="customer-tabs" aria-label="Customer pages">
         <button className="customer-tab" type="button" onClick={() => setShowHistory(false)} aria-current={!showHistory ? "page" : undefined}>Browse restaurants</button>
-        <button className="customer-tab" type="button" onClick={() => setShowHistory(true)} aria-current={showHistory ? "page" : undefined}>My Orders</button>
+        <button className="customer-tab" type="button" onClick={() => setShowHistory(true)} aria-current={showHistory ? "page" : undefined}>Pricing &amp; History</button>
       </nav>
       {showHistory ? <CustomerOrderHistory /> : <>
         {cartNotice && <p role="status" style={{ textAlign: "center", color: "#923C32" }}>{cartNotice}</p>}

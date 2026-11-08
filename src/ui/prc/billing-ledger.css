@@ -1,0 +1,108 @@
+.billing-ledger {
+  box-sizing: border-box;
+  max-width: 1200px;
+  margin: 32px auto;
+  padding: 28px;
+  color: #4b3028;
+  background: #fff9f2;
+  border: 1px solid #eadbc8;
+  border-radius: 14px;
+  font-family: "Poppins", sans-serif;
+}
+
+.billing-ledger__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.billing-ledger__header h2 {
+  margin: 0 0 8px;
+}
+
+.billing-ledger__header p {
+  margin: 0 0 12px;
+}
+
+.billing-ledger__eyebrow {
+  color: #a9572e;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+}
+
+.billing-ledger__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.billing-ledger__actions button {
+  padding: 9px 12px;
+  color: #4b3028;
+  background: #eadbc8;
+  border: 1px solid #c89f7a;
+  border-radius: 8px;
+  font: inherit;
+  cursor: pointer;
+}
+
+.billing-ledger__actions button:last-child {
+  color: #fff;
+  background: #a94c3e;
+  border-color: #a94c3e;
+}
+
+.billing-ledger__actions button:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.billing-ledger__note,
+.billing-ledger__empty {
+  padding: 12px 14px;
+  background: #f5eadc;
+  border-radius: 8px;
+}
+
+.billing-ledger__message {
+  color: #28633a;
+}
+
+.billing-ledger__error {
+  color: #923c32;
+}
+
+.billing-ledger__table-wrap {
+  overflow-x: auto;
+}
+
+.billing-ledger table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.billing-ledger th,
+.billing-ledger td {
+  padding: 12px 10px;
+  border-bottom: 1px solid #eadbc8;
+  white-space: nowrap;
+}
+
+.billing-ledger th {
+  color: #684536;
+  font-size: 13px;
+}
+
+@media (max-width: 760px) {
+  .billing-ledger {
+    margin: 20px 12px;
+    padding: 18px;
+  }
+
+  .billing-ledger__header {
+    flex-direction: column;
+  }
+}

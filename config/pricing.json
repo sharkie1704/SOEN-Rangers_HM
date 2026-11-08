@@ -1,0 +1,6 @@
+{
+  "deliveryFeeCents": 300,
+  "serviceFeeCents": 150,
+  "smallOrderThresholdCents": 2000,
+  "smallOrderSurchargeCents": 200
+}

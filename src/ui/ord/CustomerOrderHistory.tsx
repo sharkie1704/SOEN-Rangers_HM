@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { api, ApiError } from "../reg/api/client";
+import OrderSummaryList from "../prc/OrderSummaryList";
 import "./customer-orders.css";
 
 type Order = {
@@ -8,6 +9,7 @@ type Order = {
   status: string;
   placedAt: string;
   totalCents: number;
+  fare?: { totalCents: number };
   lines: { name: string; quantity: number }[];
   events: { eventId: number; action: string; from: string; to: string; occurredAt: string }[];
   rejectionReason: string;
@@ -64,6 +66,8 @@ export default function CustomerOrderHistory() {
   }, []);
 
   return (
+    <>
+    <OrderSummaryList />
     <main className="my-orders-page" aria-label="My orders">
       <header className="my-orders-heading">
         <div>
@@ -99,7 +103,10 @@ export default function CustomerOrderHistory() {
             <ul className="order-lines">
               {order.lines.map((line, index) => <li key={`${line.name}-${index}`}><span>{line.quantity} × {line.name}</span></li>)}
             </ul>
-            <div className="order-card-total"><span>Order total</span><strong>${(order.totalCents / 100).toFixed(2)}</strong></div>
+            <div className="order-card-total">
+              <span>{order.fare ? "Total charged" : "Item subtotal"}</span>
+              <strong>${((order.fare?.totalCents ?? order.totalCents) / 100).toFixed(2)}</strong>
+            </div>
             <div className="order-events" aria-label="Order event IDs">
               {order.events.map((event) => <span key={event.eventId}>{event.action} <strong>#{event.eventId}</strong></span>)}
             </div>
@@ -122,5 +129,6 @@ export default function CustomerOrderHistory() {
         ))}
       </div>
     </main>
+    </>
   );
 }

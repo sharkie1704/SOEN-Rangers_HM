@@ -51,6 +51,17 @@ model User {
   @@index([role])
 }
 
+// ---------- PRC ----------
+
+// The seed always upserts the same ID rather than creating new settings rows.
+model PricingSettings {
+  id                       String @id @default("default")
+  deliveryFeeCents          Int
+  serviceFeeCents           Int
+  smallOrderThresholdCents  Int
+  smallOrderSurchargeCents  Int
+}
+
 // ---------- ORD ----------
 
 enum RestaurantStatus {
@@ -118,10 +129,16 @@ model Order {
   customerId   String
   status       OrderStatus
   placedAt     DateTime
+  restaurantName            String?
+  deliveryFeeCents          Int?
+  serviceFeeCents           Int?
+  smallOrderSurchargeCents  Int?
+  fareTotalCents            Int?
 
   lines       OrderLine[]
   events      OrderEvent[]
   assignments Assignment[]
+  summary     OrderSummary?
 
   @@index([restaurantId, status])
   @@index([customerId])
@@ -152,6 +169,45 @@ model OrderEvent {
   reason     String?
   occurredAt DateTime
 
+  @@index([orderId])
+}
+
+model OrderSummary {
+  orderId                   Int      @id
+  order                     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  customerId                String
+  restaurantId              String
+  restaurantName            String
+  subtotalCents             Int
+  deliveryFeeCents          Int
+  serviceFeeCents           Int
+  smallOrderSurchargeCents  Int
+  totalCents                Int
+  placedAt                  DateTime
+  deliveredAt               DateTime
+  generatedAt               DateTime @default(now())
+
+  @@index([customerId, deliveredAt])
+}
+
+// Ledger entries are immutable; resetting advances the active epoch instead of deleting history.
+model LedgerState {
+  id        String   @id @default("default")
+  epoch     Int      @default(0)
+  updatedAt DateTime @updatedAt
+}
+
+model LedgerEntry {
+  eventId          Int        @id
+  orderId          Int
+  finalState       OrderStatus
+  epoch            Int
+  placedAt         DateTime
+  finalizedAt      DateTime
+  deliveredAt      DateTime?
+  totalChargeCents Int?
+
+  @@index([epoch, finalizedAt])
   @@index([orderId])
 }
 

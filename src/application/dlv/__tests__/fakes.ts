@@ -5,6 +5,7 @@ import type { AssignmentChangeEvent, AssignmentRepository } from "../AssignmentR
 import { CourierError } from "../../../domain/dlv/CourierError.ts";
 import type { CourierStatus } from "../../../domain/dlv/states/CourierState.ts";
 import type { CourierAvailabilityRepository, CourierStatusEvent } from "../CourierAvailabilityRepository.ts";
+import type { OrderSummary } from "../../../domain/prc/OrderSummary.ts";
 
 // Stores statuses rather than live objects, so save() can refuse stale changes like the real repository
 export class InMemoryCourierAvailabilityRepository implements CourierAvailabilityRepository {
@@ -38,6 +39,7 @@ export class InMemoryAssignmentRepository implements AssignmentRepository {
   readonly accepted: AssignmentChangeEvent[] = [];
   readonly declined: AssignmentChangeEvent[] = [];
   readonly completed: AssignmentChangeEvent[] = [];
+  readonly summaries: OrderSummary[] = [];
   private eventSeq = 0;
 
   constructor(private readonly couriers: InMemoryCourierAvailabilityRepository) {}
@@ -67,8 +69,16 @@ export class InMemoryAssignmentRepository implements AssignmentRepository {
     await this.couriers.save(courier, courierEvent);
   }
 
-  async saveDelivery(_order: Order, _assignment: Assignment, event: AssignmentChangeEvent, courier: CourierAvailability, courierEvent: CourierStatusEvent): Promise<void> {
+  async saveDelivery(
+    _order: Order,
+    _assignment: Assignment,
+    event: AssignmentChangeEvent,
+    courier: CourierAvailability,
+    courierEvent: CourierStatusEvent,
+    summary: OrderSummary | null,
+  ): Promise<void> {
     await this.couriers.save(courier, courierEvent);
     this.completed.push(event);
+    if (summary) this.summaries.push(summary);
   }
 }

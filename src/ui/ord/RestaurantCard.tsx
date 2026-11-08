@@ -1,6 +1,8 @@
 
 import "./button-interactions.css";
 
+const restaurantImageFallback = "/restaurant-placeholder.svg";
+
 type RestaurantCardData = {
   name: string;
   category: string;
@@ -18,6 +20,10 @@ export default function RestaurantCard({ name, category, address, specialty, rat
 
     <article
       style={{
+        display: "flex",
+        flexDirection: "column",
+        height: "100%",
+        boxSizing: "border-box",
         backgroundColor: "#EADBC8",
         border: "1px solid #C89F7A",
         borderRadius: "12px",
@@ -27,16 +33,21 @@ export default function RestaurantCard({ name, category, address, specialty, rat
 
       {/* Show the restaurant image */}
       <img
-        src={image}
+        src={image.trim() ? image : restaurantImageFallback}
         alt={name}
+        onError={(event) => {
+          event.currentTarget.onerror = null;
+          event.currentTarget.src = restaurantImageFallback;
+        }}
         style={{
           width: "100%",
           height: "180px",
+          flexShrink: 0,
           objectFit: "cover",
         }}
       />
       {/* Restaurant name */}
-      <div style={{ padding: "20px" }}>
+      <div style={{ display: "flex", flex: 1, flexDirection: "column", padding: "20px" }}>
         <h2
           style={{
             color: "#4B3028",
@@ -69,8 +80,10 @@ export default function RestaurantCard({ name, category, address, specialty, rat
         {/* Status  */}
          <span
         style={{
+            alignSelf: "flex-start",
             display: "inline-block",
             marginTop: "12px",
+            marginBottom: "12px",
             padding: "6px 12px",
             borderRadius: "20px",
             fontSize: "13px",
@@ -99,8 +112,9 @@ export default function RestaurantCard({ name, category, address, specialty, rat
         onClick={onViewMenu}
         disabled={status !== "open"}
         style={{
+            alignSelf: "flex-start",
             display: "block",
-            marginTop: "16px",
+            marginTop: "auto",
             padding: "10px 18px",
             backgroundColor: status === "open" ? "#C66B32" : "#BCA99B",
             color: "#FFFFFF",
