@@ -26,6 +26,10 @@ export class InMemoryCourierAvailabilityRepository implements CourierAvailabilit
     return status ? new CourierAvailability(courierId, status) : undefined;
   }
 
+  async listIdleCourierIds(): Promise<string[]> {
+    return [...this.statuses].filter(([, status]) => status === "IDLE").map(([id]) => id);
+  }
+
   async save(courier: CourierAvailability, event: CourierStatusEvent): Promise<void> {
     if (this.statuses.get(courier.courierId) !== event.fromStatus) {
       throw new CourierError("CONFLICT", "Courier status just changed. Reload it and try again.");
@@ -41,6 +45,7 @@ export class InMemoryAssignmentRepository implements AssignmentRepository {
   readonly declined: AssignmentChangeEvent[] = [];
   readonly completed: AssignmentChangeEvent[] = [];
   readonly offered: AssignmentChangeEvent[] = [];
+  readonly released: AssignmentChangeEvent[] = [];
   private readonly declinedPairs = new Set<string>();
   readonly summaries: OrderSummary[] = [];
   private eventSeq = 0;
@@ -84,6 +89,10 @@ export class InMemoryAssignmentRepository implements AssignmentRepository {
   async saveDeclined(assignment: Assignment, event: AssignmentChangeEvent): Promise<void> {
     this.declinedPairs.add(`${assignment.orderId}:${assignment.courierId}`);
     this.declined.push(event);
+  }
+
+  async saveReleased(_assignment: Assignment, event: AssignmentChangeEvent): Promise<void> {
+    this.released.push(event);
   }
 
   async savePickup(_order: Order, courier: CourierAvailability, courierEvent: CourierStatusEvent): Promise<void> {

@@ -90,11 +90,11 @@ describe("Courier availability routes", () => {
     expect(couriers.statuses.get(id)).toBe("CARRYING");
   });
 
-  it("refuse going offline while assigned to an order", async () => {
+  it("let an assigned courier go offline so the order can be reassigned", async () => {
     const { agent, id } = await courierAgent();
     couriers.withCourier(id, "ASSIGNED");
-    expect((await agent.patch(AVAILABILITY).send({ status: "OFFLINE" })).status).toBe(409);
-    expect(couriers.statuses.get(id)).toBe("ASSIGNED");
+    expect((await agent.patch(AVAILABILITY).send({ status: "OFFLINE" })).status).toBe(200);
+    expect(couriers.statuses.get(id)).toBe("OFFLINE");
   });
 
   it("ignore any courier ID in the request body", async () => {
