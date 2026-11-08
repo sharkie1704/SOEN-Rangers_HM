@@ -1,3 +1,4 @@
+import { useState } from "react";
 import type { OperatorRestaurant } from "../ord/OperatorRestaurantsPage";
 import MapView, { type MapRestaurant } from "./MapView";
 import "./operator-dashboard.css";
@@ -9,6 +10,7 @@ interface OperatorOverviewProps {
 }
 
 export default function OperatorOverview({ restaurants, loading, error }: OperatorOverviewProps) {
+  const [selectedRestaurantId, setSelectedRestaurantId] = useState<string | null>(null);
   const counts = {
     open: restaurants.filter((restaurant) => restaurant.status === "OPEN").length,
     paused: restaurants.filter((restaurant) => restaurant.status === "PAUSED").length,
@@ -60,7 +62,13 @@ export default function OperatorOverview({ restaurants, loading, error }: Operat
       <h2>City map</h2>
       {!loading && !error && (
           <div className="operator-overview__map">
-            <MapView restaurants={mapRestaurants} couriers={[]} showLabels />
+            <MapView
+              restaurants={mapRestaurants}
+              couriers={[]}
+              showLabels
+              selectedRestaurantId={selectedRestaurantId}
+              onSelectRestaurant={setSelectedRestaurantId}
+            />
           </div>
       )}
     </section>

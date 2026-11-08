@@ -16,6 +16,8 @@ const restaurant = {
   category: "Bakery",
   description: "Fresh cakes and desserts",
   imageUrl: "https://example.com/cake.jpg",
+  lat: 45.5,
+  lng: -73.57,
   status: "OPEN" as const,
 };
 

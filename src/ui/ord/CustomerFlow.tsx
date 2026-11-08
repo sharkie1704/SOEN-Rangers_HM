@@ -1,11 +1,16 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import RestaurantListPage from "./RestaurantListPage";
 import RestaurantMenuPage from "./RestaurantMenuPage";
 import PlaceOrderPage, { type CartItem } from "./PlaceOrderPage";
 import CustomerOrderHistory from "./CustomerOrderHistory";
 import "./customer-flow.css";
 
-export default function CustomerFlow() {
+interface Props {
+  openRestaurantId?: string | null;
+  onRestaurantOpened?: () => void;
+}
+
+export default function CustomerFlow({ openRestaurantId, onRestaurantOpened }: Props) {
   const [selectedRestaurantId, setSelectedRestaurantId] = useState<string | null>(null);
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [cartRestaurantId, setCartRestaurantId] = useState<string | null>(null);
@@ -17,6 +22,22 @@ export default function CustomerFlow() {
     setCartItems(items);
     if (items.length === 0) setCartRestaurantId(null);
   }
+
+  function selectRestaurant(restaurantId: string) {
+    if (cartItems.length > 0 && cartRestaurantId && cartRestaurantId !== restaurantId) {
+      setCartNotice("Your cart contains items from another restaurant. Finish or clear that cart first.");
+      return;
+    }
+    setCartNotice("");
+    if (cartItems.length === 0) setCartRestaurantId(restaurantId);
+    setSelectedRestaurantId(restaurantId);
+  }
+
+  useEffect(() => {
+    if (!openRestaurantId) return;
+    selectRestaurant(openRestaurantId);
+    onRestaurantOpened?.();
+  }, [openRestaurantId]);
 
   // navigate to the cart page (opened from the menu page)
   if (showCart) {
@@ -63,16 +84,7 @@ export default function CustomerFlow() {
       </nav>
       {showHistory ? <CustomerOrderHistory /> : <>
         {cartNotice && <p role="status" style={{ textAlign: "center", color: "#923C32" }}>{cartNotice}</p>}
-        <RestaurantListPage onSelectRestaurant={(restaurantId) => {
-          if (cartItems.length > 0 && cartRestaurantId && cartRestaurantId !== restaurantId) {
-            const message = "Your cart contains items from another restaurant. Finish or clear that cart first.";
-            setCartNotice(message);
-            return;
-          }
-          setCartNotice("");
-          if (cartItems.length === 0) setCartRestaurantId(restaurantId);
-          setSelectedRestaurantId(restaurantId);
-        }} />
+        <RestaurantListPage onSelectRestaurant={selectRestaurant} />
       </>}
     </>
   );

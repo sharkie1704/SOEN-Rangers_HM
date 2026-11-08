@@ -16,6 +16,7 @@ function toActor(user: AuthenticatedUser | undefined): OrderActor | null {
   if (!user || typeof user.id !== "string" || user.id.trim() === "") return null;
   const role = String(user.role).toUpperCase();
   if (role === "CUSTOMER") return { userId: user.id, role: Role.CUSTOMER };
+  if (role === "OPERATOR") return { userId: user.id, role: Role.OPERATOR };
   if (role === "RESTAURANT" && user.restaurantId) {
     return { userId: user.id, role: Role.RESTAURANT, restaurantId: user.restaurantId };
   }
@@ -54,6 +55,14 @@ export class OrderRoutes {
 
   queue = (req: Request, res: Response) => this.respond(res, async () => {
     res.json({ orders: await this.orders.queue(toActor(req.user), String(req.params.restaurantId)) });
+  });
+
+  queueCount = (req: Request, res: Response) => this.respond(res, async () => {
+    res.json({ queuedCount: await this.orders.queueCount(toActor(req.user), String(req.params.restaurantId)) });
+  });
+
+  allForRestaurant = (req: Request, res: Response) => this.respond(res, async () => {
+    res.json({ orders: await this.orders.allForRestaurant(toActor(req.user), String(req.params.restaurantId)) });
   });
 
   accept = (req: Request, res: Response) => this.respond(res, async () => {

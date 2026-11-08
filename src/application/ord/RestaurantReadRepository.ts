@@ -7,6 +7,8 @@ export interface RestaurantDTO {
   description: string;
   imageUrl: string;
   status: "OPEN" | "PAUSED" | "CLOSED";
+  lat: number | null;
+  lng: number | null;
 }
 
 //one dessert returned 

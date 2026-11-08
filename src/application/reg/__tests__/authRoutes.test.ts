@@ -38,6 +38,8 @@ const fakeRestaurants: RestaurantReadRepository = {
     description: "Test restaurant",
     imageUrl: "",
     status: "OPEN",
+    lat: 45.5,
+    lng: -73.57,
   } : undefined,
   findMenuByRestaurantId: async () => [],
 };
