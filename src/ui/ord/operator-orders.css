@@ -21,7 +21,7 @@
   margin: 4px 0;
 }
 
-.operator-orders__heading button {
+.operator-orders button {
   min-height: 44px;
   padding: 8px 12px;
   border: 1px solid #c89f7a;
@@ -33,7 +33,7 @@
   cursor: pointer;
 }
 
-.operator-orders__heading button:not(:disabled):hover {
+.operator-orders button:not(:disabled):hover {
   background: #eadbc8;
 }
 
@@ -42,7 +42,7 @@
   cursor: wait;
 }
 
-.operator-orders__heading button:focus-visible,
+.operator-orders button:focus-visible,
 .operator-orders__table-wrap:focus-visible {
   outline: 3px solid #4b3028;
   outline-offset: 3px;
@@ -79,4 +79,56 @@
 
 .operator-orders__error {
   color: #923c32;
+}
+
+.operator-orders__filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.operator-orders__filters button[aria-pressed="true"] {
+  background: #eadbc8;
+  font-weight: 700;
+}
+
+.operator-orders__filters button:focus-visible {
+  outline: 2px solid #4b3028;
+  outline-offset: 2px;
+}
+
+.operator-orders__details {
+  padding: 8px;
+  background: #fff9f2;
+  overflow-wrap: anywhere;
+}
+
+.operator-orders__details h2 {
+  margin-top: 0;
+  font-size: 1.1rem;
+}
+
+.operator-orders__details h3 {
+  font-size: 1rem;
+}
+
+.operator-orders__details dl {
+  max-width: 480px;
+}
+
+.operator-orders__details dl > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 8px;
+}
+
+.operator-orders__details dd {
+  margin: 0;
+  white-space: nowrap;
+}
+
+.operator-orders__details li {
+  margin-bottom: 8px;
 }
