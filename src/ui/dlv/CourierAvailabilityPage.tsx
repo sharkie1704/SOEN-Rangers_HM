@@ -1,15 +1,31 @@
 import { useEffect, useState } from "react";
 import { api, ApiError } from "../reg/api/client";
-import { page, row, primary, secondary } from "../ord/MenuEditorPage";
-import "../ord/button-interactions.css";
+import "./courier-availability.css";
 
 type CourierStatus = "OFFLINE" | "IDLE" | "ASSIGNED" | "CARRYING";
+type ToggleStatus = "OFFLINE" | "IDLE";
 
-const statusLabels: Record<CourierStatus, string> = {
-  OFFLINE: "Off duty",
-  IDLE: "On duty, waiting for an order",
-  ASSIGNED: "Assigned to an order",
-  CARRYING: "Carrying an order",
+const statusContent: Record<CourierStatus, { label: string; detail: string; tone: string }> = {
+  OFFLINE: {
+    label: "Off duty",
+    detail: "You’re not receiving delivery offers. Go on duty when you’re ready to work.",
+    tone: "offline",
+  },
+  IDLE: {
+    label: "Available for deliveries",
+    detail: "You’re on duty and ready. New delivery offers can be assigned to you.",
+    tone: "available",
+  },
+  ASSIGNED: {
+    label: "Delivery assigned",
+    detail: "You have an accepted delivery. Finish it before going off duty.",
+    tone: "assigned",
+  },
+  CARRYING: {
+    label: "Out for delivery",
+    detail: "You’re carrying an order to its destination. You can go off duty after delivery.",
+    tone: "carrying",
+  },
 };
 
 async function fetchStatus(): Promise<CourierStatus> {
@@ -22,26 +38,31 @@ export default function CourierAvailabilityPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [loadAttempt, setLoadAttempt] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
 
     async function loadStatus() {
+      setLoading(true);
+      setError("");
       try {
         const current = await fetchStatus();
         if (!cancelled) setStatus(current);
-      } catch {
-        if (!cancelled) setError("Could not load your status. Please try again.");
+      } catch (cause) {
+        if (!cancelled) {
+          setError(cause instanceof ApiError ? cause.message : "Could not load your availability. Please try again.");
+        }
       } finally {
         if (!cancelled) setLoading(false);
       }
     }
 
-    loadStatus();
+    void loadStatus();
     return () => { cancelled = true; };
-  }, []);
+  }, [loadAttempt]);
 
-  async function changeStatus(next: "IDLE" | "OFFLINE") {
+  async function changeStatus(next: ToggleStatus) {
     setSaving(true);
     setError("");
     try {
@@ -50,44 +71,115 @@ export default function CourierAvailabilityPage() {
         body: { status: next },
       });
       setStatus(res.courier.status);
-    } catch (e) {
-      setError(e instanceof ApiError ? e.message : "Could not update your status. Please try again.");
-      // A refused change means the status shown here is out of date
-      if (e instanceof ApiError && e.status === 409) setStatus(await fetchStatus().catch(() => status));
+    } catch (cause) {
+      setError(cause instanceof ApiError ? cause.message : "Could not update your availability. Please try again.");
+      if (cause instanceof ApiError && cause.status === 409) {
+        try {
+          setStatus(await fetchStatus());
+        } catch (refreshCause) {
+          setError(
+            `${cause.message} We also couldn't refresh your status: ${
+              refreshCause instanceof ApiError ? refreshCause.message : "Please try loading again."
+            }`,
+          );
+        }
+      }
     } finally {
       setSaving(false);
     }
   }
 
+  const content = status ? statusContent[status] : null;
+  const canToggleDuty = status === "OFFLINE" || status === "IDLE";
+
   return (
-    <section style={page}>
-      <div style={{ maxWidth: "800px", margin: "0 auto" }}>
-        <h2 style={{ fontSize: "28px", margin: "0 0 16px" }}>Availability</h2>
-
-        {loading && <p>Loading your status...</p>}
-        {error && <p className="error" role="alert">{error}</p>}
-
-        {status && (
-          <div style={row}>
-            <strong>{statusLabels[status]}</strong>
-            <span style={{ marginLeft: "auto" }}>
-              {status === "OFFLINE" && (
-                <button className="interactive-button" style={primary} disabled={saving} onClick={() => changeStatus("IDLE")}>
-                  Go on duty
-                </button>
-              )}
-              {status === "IDLE" && (
-                <button className="interactive-button" style={secondary} disabled={saving} onClick={() => changeStatus("OFFLINE")}>
-                  Go off duty
-                </button>
-              )}
-            </span>
-          </div>
+    <section className="courier-availability" aria-label="Courier availability" aria-busy={loading || saving}>
+      <header className="courier-availability__header">
+        <div>
+          <p className="courier-availability__eyebrow">YOUR WORK STATUS</p>
+          <h1>Availability</h1>
+        </div>
+        {content && (
+          <span className={`courier-availability__badge courier-availability__badge--${content.tone}`}>
+            <span aria-hidden="true" />
+            {content.label}
+          </span>
         )}
-        {(status === "ASSIGNED" || status === "CARRYING") && (
-          <p>You can go off duty once this delivery is finished.</p>
-        )}
-      </div>
+      </header>
+
+      {error && (
+        <div className="courier-availability__error" role="alert">
+          <p>{error}</p>
+          {!loading && (
+            <button type="button" onClick={() => setLoadAttempt((attempt) => attempt + 1)}>
+              Refresh status
+            </button>
+          )}
+        </div>
+      )}
+
+      {loading && !status && (
+        <div className="courier-availability__loading" role="status" aria-live="polite">
+          <span className="courier-availability__spinner" aria-hidden="true" />
+          <span>Checking your availability…</span>
+        </div>
+      )}
+
+      {content && (
+        <>
+          <article className={`courier-availability__status-card courier-availability__status-card--${content.tone}`}>
+            <div className="courier-availability__status-summary">
+              <div className="courier-availability__status-icon" aria-hidden="true">
+                <svg viewBox="0 0 48 48" fill="none">
+                  <circle cx="24" cy="24" r="20" />
+                  <path d="M24 13v11l7 4" />
+                </svg>
+              </div>
+              <div className="courier-availability__status-copy">
+                <p className="courier-availability__status-label">Current status</p>
+                <h2>{content.label}</h2>
+                <p>{content.detail}</p>
+              </div>
+              <div className="courier-availability__control" aria-label="Availability controls">
+                {canToggleDuty ? (
+                  <button
+                    type="button"
+                    className={`courier-availability__action${status === "IDLE" ? " courier-availability__action--secondary" : ""}`}
+                    disabled={saving || loading}
+                    onClick={() => void changeStatus(status === "OFFLINE" ? "IDLE" : "OFFLINE")}
+                  >
+                    {saving
+                      ? "Updating status…"
+                      : status === "OFFLINE"
+                        ? "Go on duty"
+                        : "Go off duty"}
+                  </button>
+                ) : (
+                  <span className="courier-availability__locked">
+                    <svg aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+                      <rect x="5" y="10" width="14" height="11" rx="2" />
+                      <path d="M8 10V7a4 4 0 0 1 8 0v3M12 14v3" />
+                    </svg>
+                    Duty controls locked
+                  </span>
+                )}
+              </div>
+            </div>
+          </article>
+
+          <p className="courier-availability__footnote">
+            {(status === "ASSIGNED" || status === "CARRYING")
+              && "To protect active deliveries, you can’t change your duty status while an order is assigned."}
+          </p>
+        </>
+      )}
+
+      {!loading && !status && !error && (
+        <div className="courier-availability__empty">
+          <strong>Your availability couldn’t be displayed.</strong>
+          <button type="button" onClick={() => setLoadAttempt((attempt) => attempt + 1)}>Try again</button>
+        </div>
+      )}
     </section>
   );
 }

@@ -132,3 +132,112 @@
 .operator-orders__details li {
   margin-bottom: 8px;
 }
+
+.operator-orders__search {
+  display: grid;
+  gap: 6px;
+  max-width: 480px;
+  margin-bottom: 16px;
+  font-weight: 600;
+}
+
+.operator-orders__search input {
+  box-sizing: border-box;
+  min-height: 42px;
+  padding: 8px 12px;
+  border: 1px solid #c89f7a;
+  border-radius: 8px;
+  background: #fff9f2;
+  color: #4b3028;
+  font: inherit;
+}
+
+.operator-orders__search input:focus-visible {
+  outline: 3px solid #4b3028;
+  outline-offset: 2px;
+}
+
+.operator-dispatch {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  padding: 32px 24px;
+  color: #4b3028;
+  font-family: Poppins, sans-serif;
+}
+
+.operator-dispatch__heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.operator-dispatch__heading h1,
+.operator-dispatch__heading p {
+  margin: 4px 0;
+}
+
+.operator-dispatch__heading button {
+  min-height: 42px;
+  padding: 8px 14px;
+  border: 1px solid #c89f7a;
+  border-radius: 8px;
+  background: #fff9f2;
+  color: #4b3028;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.operator-dispatch__heading button:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+.operator-dispatch__heading button:focus-visible {
+  outline: 3px solid #4b3028;
+  outline-offset: 2px;
+}
+
+.operator-dispatch__error {
+  color: #923c32;
+}
+
+.operator-dispatch__empty {
+  padding: 24px;
+  border: 1px dashed #c89f7a;
+  border-radius: 10px;
+  background: #fff9f2;
+}
+
+.operator-dispatch__list {
+  display: grid;
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.operator-dispatch__entry {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid #c89f7a;
+  border-radius: 10px;
+  background: #fff9f2;
+}
+
+.operator-dispatch__entry > span:first-child {
+  font-weight: 700;
+}
+
+@media (max-width: 700px) {
+  .operator-dispatch__entry {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

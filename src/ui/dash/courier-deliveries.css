@@ -1,0 +1,103 @@
+.courier-deliveries {
+  box-sizing: border-box;
+  width: min(100% - 32px, 960px);
+  margin: 24px auto;
+  color: #4B3028;
+  font-family: Poppins, sans-serif;
+}
+
+.courier-deliveries__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.courier-deliveries__header h1,
+.courier-deliveries__card h2 {
+  margin: 0 0 8px;
+}
+
+.courier-deliveries__header p,
+.courier-deliveries__card p {
+  margin: 4px 0;
+}
+
+.courier-deliveries__demo {
+  flex: 0 0 auto;
+  border-radius: 999px;
+  padding: 6px 12px;
+  background: #FFF0CD;
+  color: #835900;
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.courier-deliveries__notice {
+  border-left: 3px solid #C66B32;
+  padding: 8px 12px;
+  background: #FFF3E7;
+  font-size: 0.9rem;
+}
+
+.courier-deliveries__list {
+  display: grid;
+  gap: 16px;
+  margin-top: 20px;
+}
+
+.courier-deliveries__card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 20px;
+  border: 1px solid #C89F7A;
+  border-radius: 12px;
+  background: #EADBC8;
+}
+
+.courier-deliveries__status {
+  color: #70574C;
+  font-weight: 700;
+}
+
+.courier-deliveries__actions {
+  display: grid;
+  flex: 0 0 180px;
+  gap: 8px;
+}
+
+.courier-deliveries__actions button {
+  min-height: 40px;
+  border: 0;
+  border-radius: 7px;
+  padding: 8px 12px;
+  background: #C66B32;
+  color: #fff;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 600;
+}
+
+.courier-deliveries__actions button:disabled {
+  background: #BCA99B;
+  cursor: not-allowed;
+}
+
+.courier-deliveries__actions button:focus-visible {
+  outline: 3px solid #4B3028;
+  outline-offset: 2px;
+}
+
+@media (max-width: 600px) {
+  .courier-deliveries__card {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .courier-deliveries__actions {
+    flex-basis: auto;
+  }
+}

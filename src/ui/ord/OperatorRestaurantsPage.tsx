@@ -4,7 +4,7 @@ import MapView, { type MapRestaurant } from "../dash/MapView";
 import RestaurantDetails from "../dash/map-popup/RestaurantDetails";
 import type { PanelOrder } from "../dash/map-popup/PopupInfoTypes";
 import { buildRoleMapView } from "../dash/roles";
-import { page, row, primary, secondary, statusLabel, type RestaurantStatus } from "./MenuEditorPage";
+import { statusLabel, type RestaurantStatus } from "./MenuEditorPage";
 import "./button-interactions.css";
 import "../dash/operator-dashboard.css";
 
@@ -22,20 +22,26 @@ interface OperatorRestaurantsPageProps {
   error: string;
   message: string;
   onChangeStatus: (restaurant: OperatorRestaurant, status: "PAUSED" | "OPEN") => Promise<void>;
+  onRefresh: () => void;
 }
 
 type RestaurantOrder = PanelOrder;
 type OrdersByRestaurant = Record<string, RestaurantOrder[]>;
 
 export default function OperatorRestaurantsPage({
-  restaurants, loading, error, message, onChangeStatus,
+  restaurants, loading, error, message, onChangeStatus, onRefresh,
 }: OperatorRestaurantsPageProps) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [ordersByRestaurant, setOrdersByRestaurant] = useState<OrdersByRestaurant>({});
   const [ordersError, setOrdersError] = useState("");
+  const [ordersLoading, setOrdersLoading] = useState(false);
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState<RestaurantStatus | "ALL">("ALL");
+  const [pendingRestaurantId, setPendingRestaurantId] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
+    setOrdersLoading(restaurants.length > 0);
 
     async function loadOrders() {
       try {
@@ -56,6 +62,8 @@ export default function OperatorRestaurantsPage({
         if (!cancelled) {
           setOrdersError(cause instanceof ApiError ? cause.message : "Could not load restaurant orders for the map.");
         }
+      } finally {
+        if (!cancelled) setOrdersLoading(false);
       }
     }
 
@@ -80,7 +88,7 @@ export default function OperatorRestaurantsPage({
     paused: restaurants.filter((restaurant) => restaurant.status === "PAUSED").length,
     closed: restaurants.filter((restaurant) => restaurant.status === "CLOSED").length,
   };
-  const restaurantValue = (count: number) => loading ? "Loading…" : error ? "Unable to load" : count;
+  const restaurantValue = (count: number) => loading ? "Loading..." : error ? "Unable to load" : count;
   const restaurantStatuses = [
     { label: "Total restaurants", count: counts.total },
     { label: "Open restaurants", count: counts.open },
@@ -106,74 +114,186 @@ export default function OperatorRestaurantsPage({
     restaurants: mapRestaurants,
     couriers: [],
   });
+  const filteredRestaurants = restaurants.filter((restaurant) => (
+    (statusFilter === "ALL" || restaurant.status === statusFilter)
+    && restaurant.name.toLocaleLowerCase().includes(search.trim().toLocaleLowerCase())
+  ));
 
   return (
-    <section style={page}>
-      <div style={{ maxWidth: "1000px", margin: "0 auto" }}>
-        <h2 style={{ fontSize: "28px", margin: "0 0 16px" }}>Restaurants</h2>
+    <section className="operator-restaurants" aria-label="Restaurant management">
+      <header className="operator-restaurants__header">
+        <div>
+          <p className="operator-restaurants__eyebrow">PLATFORM MANAGEMENT</p>
+          <h1>Restaurants</h1>
+          <p>Review restaurant activity and pause or reopen ordering when needed.</p>
+        </div>
+        <div className="operator-restaurants__header-actions">
+          <span className="operator-restaurants__total">{restaurantValue(counts.total)} restaurants</span>
+          <button type="button" className="operator-restaurants__refresh" onClick={onRefresh} disabled={loading}>
+            {loading ? "Loading..." : "Refresh"}
+          </button>
+        </div>
+      </header>
 
-        {loading && <p>Loading restaurants...</p>}
-        {error && <p className="error" role="alert">{error}</p>}
-        {message && <p role="status" style={{ fontWeight: 600 }}>{message}</p>}
-        {!loading && !error && restaurants.length === 0 && <p>No restaurants yet.</p>}
+      {loading && <p role="status">Loading restaurants...</p>}
+      {error && (
+        <div className="operator-restaurants__error" role="alert">
+          <span>{error}</span>
+          <button type="button" onClick={onRefresh} disabled={loading}>Try again</button>
+        </div>
+      )}
+      {message && (
+        message.startsWith("Error:")
+          ? <p className="operator-restaurants__error" role="alert">{message}</p>
+          : <p className="operator-restaurants__message" role="status">{message}</p>
+      )}
+      {!loading && !error && restaurants.length === 0 && (
+        <div className="operator-restaurants__empty">
+          <strong>No restaurants yet</strong>
+          <p>Restaurants will appear here when added to the platform.</p>
+        </div>
+      )}
 
-        <section className="operator-restaurants__summary" aria-label="Restaurant status summary">
-          <h3>Restaurant status</h3>
-          <dl className="operator-restaurants__statuses">
-            {restaurantStatuses.map(({ label, count }) => (
-              <div key={label}>
-                <dt>{label}</dt>
-                <dd>{restaurantValue(count)}</dd>
-              </div>
-            ))}
-          </dl>
-        </section>
+      <section className="operator-restaurants__summary" aria-label="Restaurant status summary">
+        <h2>Restaurant status</h2>
+        <dl className="operator-restaurants__statuses">
+          {restaurantStatuses.map(({ label, count }) => (
+            <div key={label}>
+              <dt>{label}</dt>
+              <dd>{restaurantValue(count)}</dd>
+            </div>
+          ))}
+        </dl>
+      </section>
 
-        {ordersError && <p className="error" role="alert">Map order details: {ordersError}</p>}
-        {!loading && !error && restaurants.length > 0 && (
-          <div style={{ height: "420px", marginBottom: "24px", border: "1px solid #EADBC8", borderRadius: "12px", overflow: "hidden", position: "relative" }}>
-            <MapView
-              restaurants={mapRestaurants}
-              couriers={mapView.couriers}
-              showLabels
-              selectedRestaurantId={selectedId}
-              onSelectRestaurant={setSelectedId}
-              highlightedRestaurantId={mapView.highlightedRestaurantId}
-              highlightedCourierId={mapView.highlightedCourierId}
-              deliveryPin={mapView.deliveryPin}
-              renderDetails={(restaurant) => (
-                <RestaurantDetails
-                  restaurant={restaurant}
-                  view={mapView}
-                  onViewMenu={() => undefined}
-                  orders={ordersByRestaurant[restaurant.id] ?? []}
-                />
-              )}
-            />
+      {ordersError && <p className="operator-restaurants__error" role="alert">Order details for map markers: {ordersError}</p>}
+      {!loading && !error && restaurants.length > 0 && (
+        <section className="operator-restaurants__map-section" aria-label="Restaurant map">
+          <div className="operator-restaurants__section-heading">
+            <div>
+              <h2>Restaurant map</h2>
+              <p>Select a marker to review its location, status, and order queue.</p>
+            </div>
+            <span>{mapRestaurants.length} mapped</span>
           </div>
-        )}
+          {ordersLoading && <p role="status">Loading restaurant order activity...</p>}
+          {mapRestaurants.length > 0 ? (
+            <div className="operator-restaurants__map">
+              <MapView
+                restaurants={mapRestaurants}
+                couriers={mapView.couriers}
+                showLabels
+                selectedRestaurantId={selectedId}
+                onSelectRestaurant={setSelectedId}
+                highlightedRestaurantId={mapView.highlightedRestaurantId}
+                highlightedCourierId={mapView.highlightedCourierId}
+                deliveryPin={mapView.deliveryPin}
+                renderDetails={(restaurant) => (
+                  <RestaurantDetails
+                    restaurant={restaurant}
+                    view={mapView}
+                    onViewMenu={() => undefined}
+                    orders={ordersByRestaurant[restaurant.id] ?? []}
+                  />
+                )}
+              />
+            </div>
+          ) : (
+            <div className="operator-restaurants__empty">
+              <strong>No restaurant locations to map</strong>
+              <p>Restaurant records without coordinates remain available in the directory below.</p>
+            </div>
+          )}
+        </section>
+      )}
 
-        <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "grid", gap: "8px" }}>
-          {restaurants.map((restaurant) => (
-            <li key={restaurant.id} style={row}>
-              <strong>{restaurant.name}</strong>
-              <span>{statusLabel(restaurant.status)}</span>
-              <span style={{ marginLeft: "auto" }}>
+      <section className="operator-restaurants__directory" aria-label="Restaurant directory">
+        <div className="operator-restaurants__section-heading">
+          <div>
+            <h2>Restaurant directory</h2>
+            <p>Find a restaurant and manage its ordering availability.</p>
+          </div>
+        </div>
+        <div className="operator-restaurants__filters">
+          <label>
+            <span>Search restaurants</span>
+            <input
+              type="search"
+              value={search}
+              onChange={(event) => setSearch(event.currentTarget.value)}
+              placeholder="Restaurant name"
+            />
+          </label>
+          <label>
+            <span>Restaurant status</span>
+            <select value={statusFilter} onChange={(event) => setStatusFilter(event.currentTarget.value as RestaurantStatus | "ALL")}>
+              <option value="ALL">All statuses</option>
+              <option value="OPEN">Open</option>
+              <option value="PAUSED">Paused</option>
+              <option value="CLOSED">Closed</option>
+            </select>
+          </label>
+        </div>
+        {!loading && !error && filteredRestaurants.length === 0 && restaurants.length > 0 && (
+          <p className="operator-restaurants__empty">No restaurants match these filters.</p>
+        )}
+        <ul className="operator-restaurants__list">
+          {filteredRestaurants.map((restaurant) => (
+            <li key={restaurant.id} className="operator-restaurants__card">
+              <div className="operator-restaurants__card-main">
+                <h3>{restaurant.name}</h3>
+                <span className={`operator-restaurants__status operator-restaurants__status--${restaurant.status.toLowerCase()}`}>
+                  {statusLabel(restaurant.status)}
+                </span>
+                <p>
+                  {ordersLoading
+                    ? "Loading order activity..."
+                    : ordersError
+                      ? "Order activity unavailable"
+                      : `${ordersByRestaurant[restaurant.id]?.length ?? 0} orders recorded`}
+                </p>
+              </div>
+              <div className="operator-restaurants__card-action">
                 {restaurant.status === "OPEN" && (
-                  <button className="interactive-button" style={primary} onClick={() => void onChangeStatus(restaurant, "PAUSED")}>
-                    Pause
+                  <button
+                    type="button"
+                    className="operator-restaurants__pause"
+                    disabled={pendingRestaurantId === restaurant.id}
+                    onClick={async () => {
+                      setPendingRestaurantId(restaurant.id);
+                      try {
+                        await onChangeStatus(restaurant, "PAUSED");
+                      } finally {
+                        setPendingRestaurantId(null);
+                      }
+                    }}
+                  >
+                    {pendingRestaurantId === restaurant.id ? "Pausing..." : "Pause ordering"}
                   </button>
                 )}
                 {restaurant.status === "PAUSED" && (
-                  <button className="interactive-button" style={secondary} onClick={() => void onChangeStatus(restaurant, "OPEN")}>
-                    Reopen
+                  <button
+                    type="button"
+                    className="operator-restaurants__reopen"
+                    disabled={pendingRestaurantId === restaurant.id}
+                    onClick={async () => {
+                      setPendingRestaurantId(restaurant.id);
+                      try {
+                        await onChangeStatus(restaurant, "OPEN");
+                      } finally {
+                        setPendingRestaurantId(null);
+                      }
+                    }}
+                  >
+                    {pendingRestaurantId === restaurant.id ? "Reopening..." : "Reopen ordering"}
                   </button>
                 )}
-              </span>
+                {restaurant.status === "CLOSED" && <span className="operator-restaurants__closed-note">No status action available</span>}
+              </div>
             </li>
           ))}
         </ul>
-      </div>
+      </section>
     </section>
   );
 }

@@ -1,0 +1,374 @@
+.courier-availability {
+  --availability-cream: #fff9f2;
+  --availability-beige: #eadbc8;
+  --availability-caramel: #c89f7a;
+  --availability-chocolate: #4b3028;
+  --availability-orange: #c66b32;
+  box-sizing: border-box;
+  width: min(100% - 32px, 900px);
+  margin: 0 auto;
+  padding: 20px 0 32px;
+  color: var(--availability-chocolate);
+  font-family: Poppins, sans-serif;
+}
+
+.courier-availability__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+  margin-bottom: 16px;
+}
+
+.courier-availability__header h1,
+.courier-availability__header p {
+  margin: 0;
+}
+
+.courier-availability__header h1 {
+  margin-bottom: 7px;
+  font-size: clamp(1.7rem, 3vw, 2rem);
+}
+
+.courier-availability__header > div > p:last-child {
+  color: #765f53;
+  line-height: 1.55;
+}
+
+.courier-availability__eyebrow {
+  margin-bottom: 7px !important;
+  color: #a9572e;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+}
+
+.courier-availability__badge {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 8px;
+  margin-top: 20px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  padding: 8px 12px;
+  font-size: 0.84rem;
+  font-weight: 700;
+}
+
+.courier-availability__badge > span {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: currentColor;
+  box-shadow: 0 0 0 3px rgb(255 255 255 / 70%);
+}
+
+.courier-availability__badge--offline {
+  border-color: #e0d5ca;
+  background: #f3eee9;
+  color: #70574c;
+}
+
+.courier-availability__badge--available {
+  border-color: #b6d7bd;
+  background: #e7f3e8;
+  color: #28633a;
+}
+
+.courier-availability__badge--assigned,
+.courier-availability__badge--carrying {
+  border-color: #eed59a;
+  background: #fff4d8;
+  color: #835900;
+}
+
+.courier-availability__status-card {
+  position: relative;
+  overflow: hidden;
+  min-height: 0;
+  border: 1px solid var(--availability-caramel);
+  border-radius: 18px;
+  padding: clamp(22px, 4vw, 34px);
+  background: linear-gradient(115deg, #f3e4d1 0%, #fff8ed 66%, #f7e9d8 100%);
+  box-shadow: 0 12px 30px rgb(75 48 40 / 8%);
+}
+
+.courier-availability__status-summary {
+  display: grid;
+  grid-template-columns: 76px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 20px;
+  min-height: 138px;
+}
+
+.courier-availability__status-card--available {
+  border-color: #b6d7bd;
+  background: linear-gradient(115deg, #e1f0e2 0%, #f7fbf4 66%, #e8f4e8 100%);
+}
+
+.courier-availability__status-card--assigned,
+.courier-availability__status-card--carrying {
+  border-color: #e6cb8c;
+  background: linear-gradient(115deg, #fff0c8 0%, #fffaf0 66%, #fff2d6 100%);
+}
+
+.courier-availability__status-icon {
+  z-index: 1;
+  display: grid;
+  flex: 0 0 76px;
+  width: 76px;
+  height: 76px;
+  place-items: center;
+  border: 1px solid rgb(198 107 50 / 20%);
+  border-radius: 22px;
+  background: rgb(255 255 255 / 72%);
+  color: var(--availability-orange);
+}
+
+.courier-availability__status-card--available .courier-availability__status-icon {
+  border-color: rgb(40 99 58 / 18%);
+  color: #2f7844;
+}
+
+.courier-availability__status-card--assigned .courier-availability__status-icon,
+.courier-availability__status-card--carrying .courier-availability__status-icon {
+  border-color: rgb(131 89 0 / 18%);
+  color: #9a6a00;
+}
+
+.courier-availability__status-icon svg {
+  width: 44px;
+  height: 44px;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2;
+}
+
+.courier-availability__status-icon circle {
+  fill: rgb(255 255 255 / 35%);
+}
+
+.courier-availability__status-copy {
+  z-index: 1;
+  max-width: 560px;
+}
+
+.courier-availability__status-label {
+  margin: 0 0 5px;
+  color: #765f53;
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.courier-availability__status-copy h2 {
+  margin: 0 0 7px;
+  font-size: clamp(1.35rem, 2.8vw, 1.75rem);
+  line-height: 1.2;
+}
+
+.courier-availability__status-copy > p:last-child {
+  margin: 0;
+  color: #624c42;
+  line-height: 1.55;
+}
+
+.courier-availability__control {
+  display: flex;
+  align-items: center;
+}
+
+.courier-availability__action {
+  flex: 0 0 auto;
+  min-width: 150px;
+  min-height: 46px;
+  border: 1px solid var(--availability-orange);
+  border-radius: 9px;
+  padding: 10px 16px;
+  background: var(--availability-orange);
+  color: #fff;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 700;
+  box-shadow: 0 5px 12px rgb(198 107 50 / 20%);
+  transition: transform 150ms ease, box-shadow 150ms ease, background-color 150ms ease;
+}
+
+.courier-availability__action--secondary {
+  border-color: #c89f7a;
+  background: #fff9f2;
+  color: #684536;
+  box-shadow: none;
+}
+
+.courier-availability__action:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 7px 16px rgb(75 48 40 / 16%);
+}
+
+.courier-availability__action:focus-visible,
+.courier-availability__error button:focus-visible,
+.courier-availability__empty button:focus-visible {
+  outline: 3px solid var(--availability-chocolate);
+  outline-offset: 3px;
+}
+
+.courier-availability__action:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
+.courier-availability__locked {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 8px;
+  border-radius: 9px;
+  padding: 10px 12px;
+  background: #fff4d8;
+  color: #835900;
+  font-size: 0.84rem;
+  font-weight: 700;
+}
+
+.courier-availability__locked svg {
+  width: 20px;
+  height: 20px;
+}
+
+.courier-availability__footnote {
+  margin: 8px 4px 0;
+  color: #765f53;
+  font-size: 0.82rem;
+  line-height: 1.5;
+}
+
+.courier-availability__loading,
+.courier-availability__empty {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border: 1px solid #eadbc8;
+  border-radius: 12px;
+  padding: 18px;
+  background: var(--availability-cream);
+  color: #684536;
+}
+
+.courier-availability__spinner {
+  width: 18px;
+  height: 18px;
+  border: 2px solid #eadbc8;
+  border-top-color: var(--availability-orange);
+  border-radius: 50%;
+  animation: courier-availability-spin 750ms linear infinite;
+}
+
+.courier-availability__error {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 16px;
+  border: 1px solid #e6b8b2;
+  border-radius: 10px;
+  padding: 12px 14px;
+  background: #fff1ef;
+  color: #82382f;
+}
+
+.courier-availability__error p {
+  margin: 0;
+  line-height: 1.5;
+}
+
+.courier-availability__error button,
+.courier-availability__empty button {
+  flex: 0 0 auto;
+  min-height: 38px;
+  border: 1px solid #bd6a5e;
+  border-radius: 8px;
+  padding: 7px 11px;
+  background: #fff;
+  color: #82382f;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 700;
+}
+
+.courier-availability__empty {
+  justify-content: space-between;
+}
+
+@keyframes courier-availability-spin {
+  to { transform: rotate(360deg); }
+}
+
+@media (max-width: 620px) {
+  .courier-availability {
+    padding-top: 16px;
+  }
+
+  .courier-availability__header {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .courier-availability__badge {
+    margin-top: 0;
+  }
+
+  .courier-availability__status-summary {
+    grid-template-columns: 60px minmax(0, 1fr);
+    gap: 16px;
+    min-height: 0;
+  }
+
+  .courier-availability__status-icon {
+    flex-basis: 60px;
+    width: 60px;
+    height: 60px;
+    border-radius: 18px;
+  }
+
+  .courier-availability__status-icon svg {
+    width: 36px;
+    height: 36px;
+  }
+
+  .courier-availability__control {
+    grid-column: 1 / -1;
+    width: 100%;
+  }
+
+  .courier-availability__action {
+    width: 100%;
+  }
+
+  .courier-availability__locked {
+    justify-content: center;
+  }
+
+  .courier-availability__error {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .courier-availability__action {
+    transition: none;
+  }
+
+  .courier-availability__action:hover:not(:disabled) {
+    transform: none;
+  }
+
+  .courier-availability__spinner {
+    animation-duration: 2s;
+  }
+}
