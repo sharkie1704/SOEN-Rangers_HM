@@ -1,0 +1,29 @@
+.customer-dashboard__map-heading {
+  box-sizing: border-box;
+  width: min(100% - 48px, 1200px);
+  margin-right: auto;
+  margin-left: auto;
+  font-family: Poppins, sans-serif;
+}
+
+.customer-dashboard__map-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 22px;
+  margin-bottom: -12px;
+  color: #4B3028;
+}
+
+.customer-dashboard__map-heading h2 {
+  margin: 0;
+  font-size: 1.25rem;
+}
+
+.customer-dashboard__map-heading p {
+  margin: 4px 0 0;
+  color: #70574C;
+  font-size: 0.9rem;
+}
+
+
