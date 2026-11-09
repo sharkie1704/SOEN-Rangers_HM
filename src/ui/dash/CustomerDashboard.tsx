@@ -31,3 +31,56 @@ const items: readonly DashboardNavigationItem[] = [
   },
 ];
 
+export default function CustomerDashboard({ user, onLogout }: CustomerDashboardProps) {
+  const [activeSection, setActiveSection] = useState<CustomerSection>("browse");
+  const [mapRestaurantToOpen, setMapRestaurantToOpen] = useState<string | null>(null);
+
+  return (
+    <DashboardLayout
+      user={user}
+      onLogout={onLogout}
+      sidebar={
+        <DashboardSidebar
+          items={items}
+          activeId={activeSection}
+          onSelect={(id) => {
+            if (id === "browse" || id === "orders") setActiveSection(id);
+          }}
+        />
+      }
+    >
+      {activeSection === "browse" && (
+        <>
+          <WelcomePage name={user.name ?? ""} />
+          <div className="customer-dashboard__map-heading">
+            <div>
+              <h2>Explore restaurants nearby</h2>
+              <p>Choose a map pin to open a restaurant’s menu.</p>
+            </div>
+            <span aria-hidden="true">
+              <svg aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75">
+                <circle cx="12" cy="12" r="8" />
+                <path d="M12 2v4M12 18v4M2 12h4M18 12h4M12 9v3l2 1" />
+              </svg>
+            </span>
+          </div>
+          <DashboardRestaurantMap
+            user={{
+              id: user.id,
+              name: user.name ?? "User",
+              role: user.role,
+              restaurantId: user.restaurantId,
+            }}
+            onViewMenu={setMapRestaurantToOpen}
+          />
+        </>
+      )}
+      <CustomerFlow
+        activeView={activeSection}
+        openRestaurantId={mapRestaurantToOpen}
+        onRestaurantOpened={() => setMapRestaurantToOpen(null)}
+      />
+    </DashboardLayout>
+  );
+}
+
