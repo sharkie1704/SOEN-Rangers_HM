@@ -37,6 +37,8 @@ import { AssignmentService } from "./application/dlv/AssignmentService";
 import { AssignmentController } from "./application/dlv/AssignmentController";
 import { HandoffService } from "./application/dlv/HandoffService";
 import { HandoffController } from "./application/dlv/HandoffController";
+import { CourierDeliveriesService } from "./application/dlv/CourierDeliveriesService";
+import { CourierDeliveriesController } from "./application/dlv/CourierDeliveriesController";
 import type { DispatchRepository } from "./application/dlv/DispatchRepository";
 import { DispatchService } from "./application/dlv/DispatchService";
 import type { DispatchQueueRepository } from "./application/dlv/DispatchQueueRepository";
@@ -185,6 +187,10 @@ export function createApp({
     const assignmentController = new AssignmentController(new AssignmentService(assignments, couriers, dispatcher));
     app.post("/api/orders/:orderId/offer/accept", assignmentController.accept);
     app.post("/api/orders/:orderId/offer/decline", assignmentController.decline);
+  }
+  if (assignments && orders) {
+    const deliveriesController = new CourierDeliveriesController(new CourierDeliveriesService(assignments, orders));
+    app.get("/api/couriers/me/deliveries", deliveriesController.list);
   }
   if (assignments && couriers && orders) {
     const handoffController = new HandoffController(new HandoffService(assignments, couriers, orders, courierIdle));
