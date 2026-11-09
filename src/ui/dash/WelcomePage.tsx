@@ -3,9 +3,10 @@ import "./welcome-page.css";
 
 interface WelcomePageProps {
   name: string;
+  description?: string;
 }
 
-export default function WelcomePage({ name }: WelcomePageProps) {
+export default function WelcomePage({ name, description }: WelcomePageProps) {
   const [expanded, setExpanded] = useState(false);
   const detailsId = useId();
   const firstName = name.trim().split(/\s+/)[0] || "there";
@@ -26,7 +27,7 @@ export default function WelcomePage({ name }: WelcomePageProps) {
       </button>
       <span className="welcome-page__sparkle" aria-hidden="true">✦</span>
       <div id={detailsId} className="welcome-page__details" hidden={!expanded}>
-        Your next favourite dessert might be just around the corner. Explore local spots and find a little treat to love.
+        {description ?? "Your next favourite dessert might be just around the corner. Explore local spots and find a little treat to love."}
       </div>
     </section>
   );

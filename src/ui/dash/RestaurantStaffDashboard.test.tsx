@@ -53,27 +53,33 @@ vi.mock("./DashboardRestaurantMap", () => ({
 }));
 
 describe("restaurant staff dashboard", () => {
-  it("shows the shared restaurant staff shell with an unboxed intro", () => {
+  it("shows the shared welcome and shift intro on the Overview landing page", () => {
     const html = renderDashboard();
 
     expect(html).toContain("DessertDash");
     expect(html).toContain("Riley Baker");
+    expect(html).toContain("Welcome back, Riley!");
+    expect(html).toContain("Your restaurant workspace is ready for today&#x27;s orders and menu updates.");
     expect(html).toContain("Restaurant Staff");
     expect(html).toContain(">Log out</button>");
     expect(html).toContain('class="restaurant-staff-dashboard__intro"');
     expect(html).toContain("Keep your shift running smoothly.");
     expect(html).not.toContain("<strong>Keep your shift running smoothly.</strong>");
     expect(html).toContain("Orders and menu updates are right here.");
+    expect(html).toContain('data-testid="restaurant-map"');
+    expect(html).not.toContain('data-testid="restaurant-orders"');
+    expect(html).not.toContain('data-testid="restaurant-menu"');
     expect(html).toContain('aria-label="Collapse navigation"');
     expect(html).toContain('aria-label="Dashboard sidebar"');
   });
 
-  it("provides accessible Orders and Menu navigation with Orders selected initially", () => {
+  it("provides accessible Overview, Orders, and Menu navigation with Overview selected initially", () => {
     const html = renderDashboard();
 
+    expect(html).toContain('aria-current="page" title="Overview"');
     expect(html).toContain("Orders");
     expect(html).toContain("Menu");
-    expect(html).toContain('aria-current="page" title="Orders"');
+    expect(html).toContain('title="Orders"');
     expect(html).toContain('title="Menu"');
     expect(html).toContain('aria-label="Dashboard navigation"');
     expect(html).toContain("<nav");
@@ -81,13 +87,11 @@ describe("restaurant staff dashboard", () => {
     expect(html).toContain("<button");
   });
 
-  it("keeps the assigned restaurant context for the map and active orders view", () => {
+  it("keeps the assigned restaurant context on the overview map", () => {
     const html = renderDashboard();
 
     expect(html).toContain('data-testid="restaurant-map" data-user-id="staff-1" data-user-role="RESTAURANT" data-restaurant-id="restaurant-1"');
-    expect(html).toContain('data-testid="restaurant-orders" data-restaurant-id="restaurant-1" aria-label="Restaurant orders"');
-    expect(html).toContain("<h2>Orders view</h2>");
-    expect(html).toContain("Incoming and in-progress orders");
+    expect(html).not.toContain('data-testid="restaurant-orders"');
     expect(html).not.toContain('data-testid="restaurant-menu"');
   });
 
@@ -98,7 +102,7 @@ describe("restaurant staff dashboard", () => {
     });
 
     expect(html).toContain('data-testid="restaurant-map" data-user-id="staff-2" data-user-role="RESTAURANT" data-restaurant-id="restaurant-42"');
-    expect(html).toContain('data-testid="restaurant-orders" data-restaurant-id="restaurant-42" aria-label="Restaurant orders"');
+    expect(html).not.toContain('data-testid="restaurant-orders"');
     expect(html).toContain("Jordan Lee");
     expect(html).not.toContain('data-restaurant-id="restaurant-1"');
   });

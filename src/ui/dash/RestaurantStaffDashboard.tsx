@@ -4,14 +4,27 @@ import RestaurantConsolePage from "../ord/RestaurantConsolePage";
 import DashboardRestaurantMap from "./DashboardRestaurantMap";
 import DashboardLayout from "./DashboardLayout";
 import DashboardSidebar, { type DashboardNavigationItem } from "./DashboardSidebar";
+import WelcomePage from "./WelcomePage";
 import "./restaurant-staff-dashboard.css";
 
 type RestaurantStaffDashboardProps = Pick<ComponentProps<typeof DashboardLayout>, "user" | "onLogout"> & {
   restaurantId: string;
 };
-type RestaurantSection = "orders" | "menu";
+type RestaurantSection = "overview" | "orders" | "menu";
 
 const items: readonly DashboardNavigationItem[] = [
+  {
+    id: "overview",
+    label: "Overview",
+    icon: (
+      <svg aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75">
+        <rect x="3" y="3" width="7" height="7" rx="1" />
+        <rect x="14" y="3" width="7" height="7" rx="1" />
+        <rect x="3" y="14" width="7" height="7" rx="1" />
+        <rect x="14" y="14" width="7" height="7" rx="1" />
+      </svg>
+    ),
+  },
   {
     id: "orders",
     label: "Orders",
@@ -34,7 +47,7 @@ const items: readonly DashboardNavigationItem[] = [
 ];
 
 export default function RestaurantStaffDashboard({ user, onLogout, restaurantId }: RestaurantStaffDashboardProps) {
-  const [activeSection, setActiveSection] = useState<RestaurantSection>("orders");
+  const [activeSection, setActiveSection] = useState<RestaurantSection>("overview");
 
   return (
     <DashboardLayout
@@ -45,26 +58,34 @@ export default function RestaurantStaffDashboard({ user, onLogout, restaurantId 
           items={items}
           activeId={activeSection}
           onSelect={(id) => {
-            if (id === "orders" || id === "menu") setActiveSection(id);
+            if (id === "overview" || id === "orders" || id === "menu") setActiveSection(id);
           }}
         />
       }
     >
-      <div className="restaurant-staff-dashboard__intro">
-        <span aria-hidden="true">✦</span>
-        <p>
-          Keep your shift running smoothly.
-          <span>Orders and menu updates are right here.</span>
-        </p>
-      </div>
-      <DashboardRestaurantMap
-        user={{
-          id: user.id,
-          name: user.name ?? "User",
-          role: user.role,
-          restaurantId,
-        }}
-      />
+      {activeSection === "overview" && (
+        <>
+          <WelcomePage
+            name={user.name ?? ""}
+            description="Your restaurant workspace is ready for today's orders and menu updates."
+          />
+          <div className="restaurant-staff-dashboard__intro">
+            <span aria-hidden="true">✦</span>
+            <p>
+              Keep your shift running smoothly.
+              <span>Orders and menu updates are right here.</span>
+            </p>
+          </div>
+          <DashboardRestaurantMap
+            user={{
+              id: user.id,
+              name: user.name ?? "User",
+              role: user.role,
+              restaurantId,
+            }}
+          />
+        </>
+      )}
       {activeSection === "orders" && <RestaurantConsolePage restaurantId={restaurantId} />}
       {activeSection === "menu" && <MenuEditorPage restaurantId={restaurantId} />}
     </DashboardLayout>
