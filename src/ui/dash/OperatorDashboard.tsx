@@ -4,6 +4,7 @@ import { api, ApiError } from "../reg/api/client";
 import OperatorOverview from "./OperatorOverview";
 import OrderSummaryList from "../prc/OrderSummaryList";
 import BillingLedger from "../prc/BillingLedger";
+import OperatorOrdersPage from "../ord/OperatorOrdersPage";
 import DashboardLayout from "./DashboardLayout";
 import type { DashboardNavigationItem } from "./DashboardSidebar";
 import "./dashboard-sidebar.css";
@@ -215,6 +216,7 @@ export default function OperatorDashboard({ user, onLogout }: OperatorDashboardP
           onChangeStatus={changeStatus}
         />
       )}
+      {activeSection === "orders" && <OperatorOrdersPage />}
       {activeSection === "history" && (
         <>
           <OrderSummaryList />
