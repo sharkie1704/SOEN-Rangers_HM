@@ -1,12 +1,11 @@
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
-import MenuEditorPage from "../../ord/MenuEditorPage";
-import RestaurantConsolePage from "../../ord/RestaurantConsolePage";
 import OperatorDashboard from "../../dash/OperatorDashboard";
 import CourierAvailabilityPage from "../../dlv/CourierAvailabilityPage";
 import DashboardRestaurantMap from "../../dash/DashboardRestaurantMap";
 import Header from "../../components/Header";
 import CustomerDashboard from "../../dash/CustomerDashboard";
+import RestaurantStaffDashboard from "../../dash/RestaurantStaffDashboard";
 
 export default function DashboardPage() {
   const { user, logout } = useAuth();
@@ -24,6 +23,15 @@ export default function DashboardPage() {
   if (user.role === "CUSTOMER") {
     return <CustomerDashboard user={user} onLogout={onLogout} />;
   }
+  if (user.role === "RESTAURANT" && user.restaurantId) {
+    return (
+      <RestaurantStaffDashboard
+        user={user}
+        onLogout={onLogout}
+        restaurantId={user.restaurantId}
+      />
+    );
+  }
 
   return (
     <main>
@@ -35,12 +43,6 @@ export default function DashboardPage() {
         restaurantId: user.restaurantId,
       }} />
 
-      {user.role === "RESTAURANT" && user.restaurantId && (
-        <>
-          <RestaurantConsolePage restaurantId={user.restaurantId} />
-          <MenuEditorPage restaurantId={user.restaurantId} />
-        </>
-      )}
       {user.role === "COURIER" && <CourierAvailabilityPage />}
     </main>
   );
