@@ -152,13 +152,26 @@ export default function MenuEditorPage({ restaurantId }: MenuEditorPageInputs) {
   }
 
   return (
-    <section style={page}>
-      <div style={{ maxWidth: "800px", margin: "0 auto" }}>
-        <h2 style={{ fontSize: "28px", margin: "0 0 16px" }}>Manage your menu</h2>
+    <section className="restaurant-menu-page" style={page}>
+      <div className="restaurant-menu-page__inner" style={{ maxWidth: "800px", margin: "0 auto" }}>
+        <header className="restaurant-menu-page__header">
+          <h2>Manage your menu</h2>
+          <p>Keep your offerings up to date and let guests know what’s available.</p>
+        </header>
 
         {restaurantStatus && (
-          <div style={{ ...row, marginBottom: "16px" }}>
-            <span>Restaurant status: <strong>{statusLabel(restaurantStatus)}</strong></span>
+          <div className={`restaurant-menu-page__status restaurant-menu-page__status--${restaurantStatus.toLowerCase()}`} style={{ ...row, marginBottom: "16px" }}>
+            <div className="restaurant-menu-page__status-copy">
+              <span className="restaurant-menu-page__status-label">Restaurant availability</span>
+              <strong className="restaurant-menu-page__status-value">{statusLabel(restaurantStatus)}</strong>
+              <span className="restaurant-menu-page__status-hint">
+                {restaurantStatus === "OPEN"
+                  ? "Your restaurant is ready to welcome orders."
+                  : restaurantStatus === "PAUSED"
+                    ? "New orders are paused until you reopen."
+                    : "Your restaurant is currently closed."}
+              </span>
+            </div>
             {restaurantStatus === "OPEN" && (
               <button className="interactive-button" style={{ ...primary, marginLeft: "auto" }} onClick={() => changeStatus("PAUSED")}>
                 Pause restaurant
@@ -174,33 +187,38 @@ export default function MenuEditorPage({ restaurantId }: MenuEditorPageInputs) {
 
         {loading && <p>Loading menu...</p>}
         {error && <p className="error">{error}</p>}
-        {message && <p role="status" style={{ fontWeight: 600 }}>{message}</p>}
+        {message && <p className="restaurant-orders-page__message" role="status">{message}</p>}
 
-        <form onSubmit={addItem} style={{ ...row, marginBottom: "16px" }}>
+        <form className="restaurant-menu-page__add-form" onSubmit={addItem} style={{ ...row, marginBottom: "16px" }}>
+          <div className="restaurant-menu-page__add-copy">
+            <span className="restaurant-menu-page__add-mark" aria-hidden="true">+</span>
+            <strong>Add a menu item</strong>
+            <span>Give guests one more reason to order. Add a name and price to get started.</span>
+          </div>
           <label>Name <input style={input} value={newName} onChange={(e) => setNewName(e.target.value)} required /></label>
           <label>Price ($) <input style={{ ...input, width: "90px" }} type="number" step="0.01" min="0.01" value={newPrice} onChange={(e) => setNewPrice(e.target.value)} required /></label>
           <button type="submit" className="interactive-button" style={primary}>Add item</button>
         </form>
-        {!loading && !error && items.length === 0 && <p>Your menu is empty.</p>}
+        {!loading && !error && items.length === 0 && <p className="restaurant-menu-page__empty">Your menu is empty. Add your first item above to get started.</p>}
 
-        <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "grid", gap: "8px" }}>
+        <ul className="restaurant-menu-page__items" style={{ listStyle: "none", padding: 0, margin: 0, display: "grid", gap: "8px" }}>
           {items.map((item) => (
-            <li key={item.id}>
+            <li className="restaurant-menu-page__item" key={item.id}>
               {editingId === item.id ? (
-                <form onSubmit={(e) => { e.preventDefault(); saveEdit(item); }} style={row}>
+                <form className="restaurant-menu-page__item-content" onSubmit={(e) => { e.preventDefault(); saveEdit(item); }} style={row}>
                   <label>Name <input style={input} value={editName} onChange={(e) => setEditName(e.target.value)} required /></label>
                   <label>Price ($) <input style={{ ...input, width: "90px" }} type="number" step="0.01" min="0.01" value={editPrice} onChange={(e) => setEditPrice(e.target.value)} required /></label>
                   <button type="submit" className="interactive-button" style={primary}>Save</button>
                   <button type="button" className="interactive-button" style={secondary} onClick={() => setEditingId(null)}>Cancel</button>
                 </form>
               ) : (
-                <div style={row}>
-                  <strong>{item.name}</strong>
-                  <span>{formatPrice(item.priceCents)}</span>
-                  <span style={{ color: item.available ? "#2F6B2F" : "#8A2E2E", fontWeight: 600 }}>
+                <div className="restaurant-menu-page__item-content" style={row}>
+                  <strong className="restaurant-menu-page__item-name">{item.name}</strong>
+                  <span className="restaurant-menu-page__item-price">{formatPrice(item.priceCents)}</span>
+                  <span className={`restaurant-menu-page__availability${item.available ? " restaurant-menu-page__availability--available" : " restaurant-menu-page__availability--sold-out"}`} style={{ color: item.available ? "#2F6B2F" : "#8A2E2E", fontWeight: 600 }}>
                     {item.available ? "Available" : "Sold out"}
                   </span>
-                  <span style={{ marginLeft: "auto", display: "flex", gap: "8px" }}>
+                  <span className="restaurant-menu-page__actions" style={{ marginLeft: "auto", display: "flex", gap: "8px" }}>
                     <button className="interactive-button" style={secondary} onClick={() => startEdit(item)}>Edit</button>
                     <button className="interactive-button" style={primary} onClick={() => toggleAvailable(item)}>
                       {item.available ? "Mark sold out" : "Mark available"}
