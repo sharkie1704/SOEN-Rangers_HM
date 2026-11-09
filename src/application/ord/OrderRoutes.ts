@@ -36,6 +36,10 @@ export class OrderRoutes {
     res.status(201).json({ order });
   });
 
+  listAll = (req: Request, res: Response) => this.respond(res, async () => {
+    res.json({ orders: await this.orders.allOrders(toActor(req.user)) });
+  });
+
   listMine = (req: Request, res: Response) => this.respond(res, async () => {
     res.json({ orders: await this.orders.customerOrders(toActor(req.user)) });
   });

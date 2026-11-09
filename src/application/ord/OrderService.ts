@@ -85,6 +85,13 @@ export class OrderService {
     return toOrderDTO(order);
   }
 
+  async allOrders(actor: OrderActor | null): Promise<readonly OrderDTO[]> {
+    if (actor?.role !== Role.OPERATOR || !actor.userId.trim()) {
+      throw new OrderError("FORBIDDEN", "Only operators can view all orders.");
+    }
+    return (await this.repository.findAll()).map(toOrderDTO);
+  }
+
   async customerOrders(actor: OrderActor | null): Promise<readonly OrderDTO[]> {
     const customer = this.requireActor(actor);
     if (!hasPermission({ name: "customerOrders" }, { ...customer, id: customer.userId })) {
