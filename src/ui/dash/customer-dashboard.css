@@ -1,0 +1,52 @@
+.customer-dashboard__map-heading {
+  box-sizing: border-box;
+  width: min(100% - 48px, 1200px);
+  margin-right: auto;
+  margin-left: auto;
+  font-family: Poppins, sans-serif;
+}
+
+.customer-dashboard__map-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 22px;
+  margin-bottom: -12px;
+  color: #4B3028;
+}
+
+.customer-dashboard__map-heading h2 {
+  margin: 0;
+  font-size: 1.25rem;
+}
+
+.customer-dashboard__map-heading p {
+  margin: 4px 0 0;
+  color: #70574C;
+  font-size: 0.9rem;
+}
+
+.customer-dashboard__map-heading > span {
+  display: inline-flex;
+  width: 32px;
+  height: 32px;
+  align-items: center;
+  justify-content: center;
+  color: #C66B32;
+}
+
+.customer-dashboard__map-heading svg {
+  width: 28px;
+  height: 28px;
+}
+
+@media (max-width: 520px) {
+  .customer-dashboard__map-heading {
+    width: calc(100% - 32px);
+  }
+
+  .customer-dashboard__map-heading {
+    margin-top: 20px;
+    margin-bottom: -12px;
+  }
+}

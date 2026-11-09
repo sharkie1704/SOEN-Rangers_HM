@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import RestaurantListPage from "./RestaurantListPage";
 import RestaurantMenuPage from "./RestaurantMenuPage";
 import PlaceOrderPage, { type CartItem } from "./PlaceOrderPage";
@@ -6,17 +6,20 @@ import CustomerOrderHistory from "./CustomerOrderHistory";
 import "./customer-flow.css";
 
 interface Props {
+  activeView?: "browse" | "orders";
   openRestaurantId?: string | null;
   onRestaurantOpened?: () => void;
 }
 
-export default function CustomerFlow({ openRestaurantId, onRestaurantOpened }: Props) {
+export default function CustomerFlow({ activeView, openRestaurantId, onRestaurantOpened }: Props) {
   const [selectedRestaurantId, setSelectedRestaurantId] = useState<string | null>(null);
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [cartRestaurantId, setCartRestaurantId] = useState<string | null>(null);
   const [cartNotice, setCartNotice] = useState("");
   const [showCart, setShowCart] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
+  const [historyVisited, setHistoryVisited] = useState(false);
+  const showingHistory = activeView ? activeView === "orders" : showHistory;
 
   function updateCart(items: CartItem[]) {
     setCartItems(items);
@@ -39,9 +42,13 @@ export default function CustomerFlow({ openRestaurantId, onRestaurantOpened }: P
     onRestaurantOpened?.();
   }, [openRestaurantId]);
 
-  // navigate to the cart page (opened from the menu page)
+  useEffect(() => {
+    if (showingHistory) setHistoryVisited(true);
+  }, [showingHistory]);
+
+  let browseContent: ReactNode;
   if (showCart) {
-    return (
+    browseContent = (
       <PlaceOrderPage
         cartItems={cartItems}
         restaurantId={selectedRestaurantId ?? ""}
@@ -53,11 +60,8 @@ export default function CustomerFlow({ openRestaurantId, onRestaurantOpened }: P
         }}
       />
     );
-  }
-
-  //navigate to the selected menu page 
-  if (selectedRestaurantId !== null) {
-    return (
+  } else if (selectedRestaurantId !== null) {
+    browseContent = (
       <RestaurantMenuPage
         restaurantId={selectedRestaurantId}
         onBack={() => setSelectedRestaurantId(null)}
@@ -74,18 +78,27 @@ export default function CustomerFlow({ openRestaurantId, onRestaurantOpened }: P
         }}
       />
     );
+  } else {
+    browseContent = (
+      <>
+        {cartNotice && <p role="status" style={{ textAlign: "center", color: "#923C32" }}>{cartNotice}</p>}
+        <RestaurantListPage onSelectRestaurant={selectRestaurant} />
+      </>
+    );
   }
 
   return (
     <>
-      <nav className="customer-tabs" aria-label="Customer pages">
-        <button className="customer-tab" type="button" onClick={() => setShowHistory(false)} aria-current={!showHistory ? "page" : undefined}>Browse restaurants</button>
-        <button className="customer-tab" type="button" onClick={() => setShowHistory(true)} aria-current={showHistory ? "page" : undefined}>Pricing &amp; History</button>
-      </nav>
-      {showHistory ? <CustomerOrderHistory /> : <>
-        {cartNotice && <p role="status" style={{ textAlign: "center", color: "#923C32" }}>{cartNotice}</p>}
-        <RestaurantListPage onSelectRestaurant={selectRestaurant} />
-      </>}
+      {activeView === undefined && (
+        <nav className="customer-tabs" aria-label="Customer pages">
+          <button className="customer-tab" type="button" onClick={() => setShowHistory(false)} aria-current={!showHistory ? "page" : undefined}>Browse restaurants</button>
+          <button className="customer-tab" type="button" onClick={() => { setShowHistory(true); setHistoryVisited(true); }} aria-current={showHistory ? "page" : undefined}>Pricing &amp; History</button>
+        </nav>
+      )}
+      <div hidden={showingHistory}>{browseContent}</div>
+      <div hidden={!showingHistory}>
+        {(showingHistory || historyVisited) && <CustomerOrderHistory />}
+      </div>
     </>
   );
 }
