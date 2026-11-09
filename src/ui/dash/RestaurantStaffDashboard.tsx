@@ -33,4 +33,40 @@ const items: readonly DashboardNavigationItem[] = [
   },
 ];
 
+export default function RestaurantStaffDashboard({ user, onLogout, restaurantId }: RestaurantStaffDashboardProps) {
+  const [activeSection, setActiveSection] = useState<RestaurantSection>("orders");
 
+  return (
+    <DashboardLayout
+      user={user}
+      onLogout={onLogout}
+      sidebar={
+        <DashboardSidebar
+          items={items}
+          activeId={activeSection}
+          onSelect={(id) => {
+            if (id === "orders" || id === "menu") setActiveSection(id);
+          }}
+        />
+      }
+    >
+      <div className="restaurant-staff-dashboard__intro">
+        <span aria-hidden="true">✦</span>
+        <p>
+          Keep your shift running smoothly.
+          <span>Orders and menu updates are right here.</span>
+        </p>
+      </div>
+      <DashboardRestaurantMap
+        user={{
+          id: user.id,
+          name: user.name ?? "User",
+          role: user.role,
+          restaurantId,
+        }}
+      />
+      {activeSection === "orders" && <RestaurantConsolePage restaurantId={restaurantId} />}
+      {activeSection === "menu" && <MenuEditorPage restaurantId={restaurantId} />}
+    </DashboardLayout>
+  );
+}
