@@ -7,29 +7,26 @@ interface OperatorOverviewProps {
   restaurants: readonly OperatorRestaurant[];
   loading: boolean;
   error: string;
+  onRefresh: () => void;
+  onNavigate: (section: "restaurants" | "orders") => void;
 }
 
-export default function OperatorOverview({ restaurants, loading, error }: OperatorOverviewProps) {
+export default function OperatorOverview({ restaurants, loading, error, onRefresh, onNavigate }: OperatorOverviewProps) {
   const [selectedRestaurantId, setSelectedRestaurantId] = useState<string | null>(null);
   const counts = {
+    total: restaurants.length,
     open: restaurants.filter((restaurant) => restaurant.status === "OPEN").length,
     paused: restaurants.filter((restaurant) => restaurant.status === "PAUSED").length,
+    closed: restaurants.filter((restaurant) => restaurant.status === "CLOSED").length,
   };
   const restaurantValue = (count: number) => loading ? "Loading…" : error ? "Unable to load" : count;
-  // ORD endpoints do not authorize Operator-wide order reads. PRC summaries also
-  // omit legacy deliveries without fare snapshots, so their count is not a full delivery total.
-  // Keep order counts unavailable until a complete, authorized data source exists.
   const cards = [
-    { label: "Total Orders", value: "N/A", note: "Platform-wide order totals are not available yet." },
-    { label: "Active Orders", value: "N/A", note: "Platform-wide active-order counts are not available yet." },
-    { label: "Delivered Orders", value: "N/A", note: "Complete delivery counts are not available yet. View summaries in Order History." },
-    { label: "Open Restaurants", value: restaurantValue(counts.open), note: "Currently accepting orders." },
-    { label: "Paused Restaurants", value: restaurantValue(counts.paused), note: "Ordering is temporarily paused." },
-    { label: "Available Couriers", value: "N/A", note: "Not available yet." },
+    { label: "Total restaurants", value: restaurantValue(counts.total), note: "Restaurants on the platform." },
+    { label: "Open", value: restaurantValue(counts.open), note: "Currently accepting orders." },
+    { label: "Paused", value: restaurantValue(counts.paused), note: "Temporarily not accepting orders." },
+    { label: "Closed", value: restaurantValue(counts.closed), note: "Currently closed." },
   ];
 
-
-  // Preserve the existing restaurant markers; queue and courier data are not connected yet.
   const mapRestaurants: MapRestaurant[] = restaurants.flatMap((restaurant) => (
     restaurant.lat === null || restaurant.lng === null ? [] : [{
       id: restaurant.id,
@@ -43,10 +40,25 @@ export default function OperatorOverview({ restaurants, loading, error }: Operat
 
   return (
     <section className="operator-overview" aria-label="Operator overview">
-      <h1>Overview</h1>
+      <header className="operator-overview__header">
+        <div>
+          <p className="operator-overview__eyebrow">PLATFORM AT A GLANCE</p>
+          <h1>Overview</h1>
+          <p>Monitor restaurant operations and jump straight into the work that needs attention.</p>
+        </div>
+        <div className="operator-overview__actions">
+          <button type="button" onClick={() => onNavigate("orders")}>View orders</button>
+          <button type="button" onClick={() => onNavigate("restaurants")}>Manage restaurants</button>
+        </div>
+      </header>
       {loading && <p role="status">Loading restaurants...</p>}
-      {error && <p role="alert">{error}</p>}
-      <dl className="operator-overview__cards" aria-label="Platform summary">
+      {error && (
+        <div className="operator-overview__error" role="alert">
+          <span>{error}</span>
+          <button type="button" onClick={onRefresh}>Try again</button>
+        </div>
+      )}
+      <dl className="operator-overview__cards" aria-label="Restaurant status summary">
         {cards.map(({ label, value, note }) => (
           <div className="operator-overview__card" key={label}>
             <dt>{label}</dt>
@@ -59,8 +71,15 @@ export default function OperatorOverview({ restaurants, loading, error }: Operat
           </div>
         ))}
       </dl>
-      <h2>City map</h2>
+      <div className="operator-overview__section-heading">
+        <div>
+          <h2>Restaurant locations</h2>
+          <p>Select a marker to explore the restaurant's location.</p>
+        </div>
+        <span>{loading ? "Loading locations…" : `${mapRestaurants.length} mapped`}</span>
+      </div>
       {!loading && !error && (
+        mapRestaurants.length > 0 ? (
           <div className="operator-overview__map">
             <MapView
               restaurants={mapRestaurants}
@@ -70,6 +89,12 @@ export default function OperatorOverview({ restaurants, loading, error }: Operat
               onSelectRestaurant={setSelectedRestaurantId}
             />
           </div>
+        ) : (
+          <div className="operator-overview__empty">
+            <strong>No mapped restaurant locations yet</strong>
+            <p>Locations will appear here when restaurants have coordinates.</p>
+          </div>
+        )
       )}
     </section>
   );

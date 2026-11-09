@@ -1,11 +1,13 @@
 import { useEffect, useId, useState, type ComponentProps } from "react";
 import OperatorRestaurantsPage, { type OperatorRestaurant } from "../ord/OperatorRestaurantsPage";
+import OperatorOrdersPage from "../ord/OperatorOrdersPage";
 import { api, ApiError } from "../reg/api/client";
 import OperatorOverview from "./OperatorOverview";
 import OrderSummaryList from "../prc/OrderSummaryList";
 import BillingLedger from "../prc/BillingLedger";
 import DashboardLayout from "./DashboardLayout";
 import type { DashboardNavigationItem } from "./DashboardSidebar";
+import WelcomePage from "./WelcomePage";
 import "./dashboard-sidebar.css";
 import "./operator-dashboard.css";
 
@@ -98,9 +100,13 @@ export default function OperatorDashboard({ user, onLogout }: OperatorDashboardP
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
+  const [resetting, setResetting] = useState(false);
+  const [restaurantReload, setRestaurantReload] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
+    setLoading(true);
+    setError("");
 
     async function loadRestaurants() {
       try {
@@ -115,7 +121,7 @@ export default function OperatorDashboard({ user, onLogout }: OperatorDashboardP
 
     loadRestaurants();
     return () => { cancelled = true; };
-  }, []);
+  }, [restaurantReload]);
 
   async function changeStatus(restaurant: OperatorRestaurant, status: "PAUSED" | "OPEN") {
     try {
@@ -134,12 +140,14 @@ export default function OperatorDashboard({ user, onLogout }: OperatorDashboardP
 
   async function resetApp() {
     if (!window.confirm("Reset the application? This permanently deletes all database data.")) return;
+    setResetting(true);
+    setMessage("");
     try {
       await api<void>("/api/admin/reset", { method: "POST" });
-      window.alert("Application data was reset.");
       await onLogout();
     } catch (e) {
       setMessage(e instanceof ApiError ? `Error: ${e.message}` : "Error: reset failed");
+      setResetting(false);
     }
   }
 
@@ -204,7 +212,19 @@ export default function OperatorDashboard({ user, onLogout }: OperatorDashboardP
       }
     >
       {activeSection === "overview" && (
-        <OperatorOverview restaurants={restaurants} loading={loading} error={error} />
+        <>
+          <WelcomePage
+            name={user.name ?? ""}
+            description="Review activity and keep DessertDash running smoothly."
+          />
+          <OperatorOverview
+            restaurants={restaurants}
+            loading={loading}
+            error={error}
+            onRefresh={() => setRestaurantReload((current) => current + 1)}
+            onNavigate={setActiveSection}
+          />
+        </>
       )}
       {activeSection === "restaurants" && (
         <OperatorRestaurantsPage
@@ -213,25 +233,29 @@ export default function OperatorDashboard({ user, onLogout }: OperatorDashboardP
           error={error}
           message={message}
           onChangeStatus={changeStatus}
+          onRefresh={() => setRestaurantReload((current) => current + 1)}
         />
       )}
-      {activeSection === "history" && (
-        <>
-          <OrderSummaryList />
-          <BillingLedger />
-        </>
-      )}
-      {activeSection === "simulator" && (
-        <section style={{ padding: "24px", color: "#4B3028" }}>
-          <h1>Simulator Controls</h1>
-          <p>Reset removes all users, restaurants, orders, events, assignments, and billing data.</p>
-          <button type="button" onClick={resetApp} style={{ background: "#923C32", color: "#fff", border: 0, borderRadius: 8, padding: "10px 16px", cursor: "pointer" }}>
-            Reset app
-          </button>
-        </section>
-      )}
+      {activeSection === "orders" && <OperatorOrdersPage restaurants={restaurants} />}
       {activeSection === "history" && <OrderSummaryList operatorView />}
       {activeSection === "ledger" && <BillingLedger />}
+      {activeSection === "simulator" && (
+        <section className="operator-simulator" aria-label="Simulator controls">
+          <p className="operator-simulator__eyebrow">ADMINISTRATION</p>
+          <h1>Simulator controls</h1>
+          <p>Reset the development environment to its initial state. This permanently deletes users, restaurants, orders, events, assignments, and billing data.</p>
+          <div className="operator-simulator__danger">
+            <div>
+              <h2>Reset application data</h2>
+              <p>This action cannot be undone. You will be signed out after the reset completes.</p>
+            </div>
+            <button type="button" onClick={() => void resetApp()} disabled={resetting}>
+              {resetting ? "Resetting application…" : "Reset application"}
+            </button>
+          </div>
+          {message && <p className="operator-simulator__error" role="alert">{message}</p>}
+        </section>
+      )}
     </DashboardLayout>
   );
 }
