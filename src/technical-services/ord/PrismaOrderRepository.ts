@@ -113,6 +113,11 @@ export class PrismaOrderRepository implements OrderRepository {
     return row ? this.toDomain(row) : undefined;
   }
 
+  async findAll(): Promise<readonly Order[]> {
+    const rows = await this.db.order.findMany({ include: withHistory, orderBy: [{ placedAt: "desc" }, { id: "desc" }] });
+    return rows.map((row) => this.toDomain(row));
+  }
+
   async findByRestaurant(restaurantId: string): Promise<readonly Order[]> {
     const rows = await this.db.order.findMany({ where: { restaurantId }, include: withHistory, orderBy: { id: "asc" } });
     return rows.map((row) => this.toDomain(row));

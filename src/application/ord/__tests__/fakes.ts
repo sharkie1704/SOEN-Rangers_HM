@@ -31,6 +31,9 @@ export class InMemoryOrderRepository implements OrderRepository {
   async add(order: Order): Promise<void> { this.orders.set(order.id, order); }
   async save(): Promise<void> {}
   async findById(orderId: number): Promise<Order | undefined> { return this.orders.get(orderId); }
+  async findAll(): Promise<readonly Order[]> {
+    return [...this.orders.values()].sort((a, b) => b.placedAt.getTime() - a.placedAt.getTime() || b.id - a.id);
+  }
   async findByCustomer(customerId: string): Promise<readonly Order[]> {
     return [...this.orders.values()].filter((order) => order.customerId === customerId);
   }
