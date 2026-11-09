@@ -23,6 +23,10 @@ export class OrderController {
     return this.service.get(actor, orderId);
   }
 
+  allOrders(actor: OrderActor | null): Promise<readonly OrderDTO[]> {
+    return this.service.allOrders(actor);
+  }
+
   customerOrders(actor: OrderActor | null): Promise<readonly OrderDTO[]> {
     return this.service.customerOrders(actor);
   }

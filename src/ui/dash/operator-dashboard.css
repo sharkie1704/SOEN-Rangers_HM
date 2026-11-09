@@ -79,7 +79,6 @@
 
 .operator-overview__eyebrow,
 .operator-restaurants__eyebrow,
-.operator-orders__eyebrow,
 .operator-simulator__eyebrow {
   margin: 0 0 8px;
   color: #a9572e;
@@ -94,8 +93,7 @@
   gap: 8px;
 }
 
-.operator-overview__actions button,
-.operator-orders__refresh {
+.operator-overview__actions button {
   min-height: 42px;
   padding: 9px 14px;
   border: 1px solid #c66b32;
@@ -112,13 +110,11 @@
   color: #a9572e;
 }
 
-.operator-overview__actions button:hover,
-.operator-orders__refresh:hover:not(:disabled) {
+.operator-overview__actions button:hover {
   filter: brightness(0.94);
 }
 
-.operator-overview__actions button:focus-visible,
-.operator-orders__refresh:focus-visible {
+.operator-overview__actions button:focus-visible {
   outline: 3px solid #4b3028;
   outline-offset: 2px;
 }
@@ -155,7 +151,7 @@
 
 .operator-overview__cards {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 16px;
   margin: 0;
 }
@@ -257,8 +253,7 @@
 }
 
 .operator-overview__empty,
-.operator-restaurants__empty,
-.operator-orders__empty {
+.operator-restaurants__empty {
   border: 1px dashed #c89f7a;
   border-radius: 12px;
   padding: 20px;
@@ -266,14 +261,12 @@
 }
 
 .operator-overview__empty p,
-.operator-restaurants__empty p,
-.operator-orders__empty p {
+.operator-restaurants__empty p {
   margin: 6px 0 0;
   color: #765f53;
 }
 
 .operator-restaurants,
-.operator-orders,
 .operator-simulator {
   box-sizing: border-box;
   width: min(100% - 32px, 1200px);
@@ -283,8 +276,7 @@
   font-family: Poppins, sans-serif;
 }
 
-.operator-restaurants__header,
-.operator-orders__header {
+.operator-restaurants__header {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
@@ -293,13 +285,11 @@
 }
 
 .operator-restaurants__header h1,
-.operator-orders__header h1,
 .operator-simulator h1 {
   margin: 0 0 8px;
 }
 
 .operator-restaurants__header p:last-child,
-.operator-orders__header p:last-child,
 .operator-simulator > p:not(.operator-simulator__eyebrow) {
   margin: 0;
   color: #765f53;
@@ -356,8 +346,7 @@
 }
 
 .operator-restaurants__summary h2,
-.operator-restaurants__section-heading h2,
-.operator-orders__section-heading h2 {
+.operator-restaurants__section-heading h2 {
   margin: 0 0 5px;
   font-size: 1.2rem;
 }
@@ -385,8 +374,7 @@
   font-weight: 700;
 }
 
-.operator-restaurants__section-heading,
-.operator-orders__section-heading {
+.operator-restaurants__section-heading {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -394,14 +382,12 @@
   margin-bottom: 14px;
 }
 
-.operator-restaurants__section-heading p,
-.operator-orders__section-heading p {
+.operator-restaurants__section-heading p {
   margin: 0;
   color: #765f53;
 }
 
-.operator-restaurants__section-heading > span,
-.operator-orders__section-heading > span {
+.operator-restaurants__section-heading > span {
   flex: 0 0 auto;
   font-size: 0.85rem;
   font-weight: 700;
@@ -414,16 +400,14 @@
   border-radius: 10px;
 }
 
-.operator-restaurants__filters,
-.operator-orders__filters {
+.operator-restaurants__filters {
   display: grid;
   grid-template-columns: minmax(0, 2fr) minmax(180px, 1fr);
   gap: 12px;
   margin: 16px 0;
 }
 
-.operator-restaurants__filters label,
-.operator-orders__filters label {
+.operator-restaurants__filters label {
   display: grid;
   gap: 6px;
   color: #684536;
@@ -432,9 +416,7 @@
 }
 
 .operator-restaurants__filters input,
-.operator-restaurants__filters select,
-.operator-orders__filters input,
-.operator-orders__filters select {
+.operator-restaurants__filters select {
   box-sizing: border-box;
   min-height: 42px;
   width: 100%;
@@ -447,9 +429,7 @@
 }
 
 .operator-restaurants__filters input:focus-visible,
-.operator-restaurants__filters select:focus-visible,
-.operator-orders__filters input:focus-visible,
-.operator-orders__filters select:focus-visible {
+.operator-restaurants__filters select:focus-visible {
   outline: 3px solid #c66b32;
   outline-offset: 2px;
 }
@@ -517,8 +497,7 @@
 }
 
 .operator-restaurants__pause,
-.operator-restaurants__reopen,
-.operator-orders__error button {
+.operator-restaurants__reopen {
   min-height: 40px;
   border: 1px solid #c66b32;
   border-radius: 8px;
@@ -536,9 +515,7 @@
 }
 
 .operator-restaurants__pause:disabled,
-.operator-restaurants__reopen:disabled,
-.operator-orders__refresh:disabled,
-.operator-orders__error button:disabled {
+.operator-restaurants__reopen:disabled {
   cursor: wait;
   opacity: 0.6;
 }
@@ -549,8 +526,7 @@
   color: #765f53;
 }
 
-.operator-restaurants__error,
-.operator-orders__error {
+.operator-restaurants__error {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -571,133 +547,6 @@
   padding: 12px 14px;
   background: #e2f1e4;
   color: #28633a;
-}
-
-.operator-orders__header {
-  margin-bottom: 20px;
-}
-
-.operator-orders__metrics {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 12px;
-  margin-bottom: 20px;
-}
-
-.operator-orders__metrics article {
-  display: grid;
-  gap: 7px;
-  padding: 18px;
-  border: 1px solid #eadbc8;
-  border-radius: 12px;
-  background: linear-gradient(145deg, #fff9f2, #f3e6d6);
-}
-
-.operator-orders__metrics article span {
-  color: #765f53;
-  font-size: 0.88rem;
-}
-
-.operator-orders__metrics article strong {
-  font-size: 1.8rem;
-}
-
-.operator-orders__dispatch {
-  margin: 20px 0;
-  padding: 18px;
-  border: 1px solid #e6c27c;
-  border-radius: 12px;
-  background: #fff8e8;
-}
-
-.operator-orders__dispatch ol {
-  display: grid;
-  gap: 8px;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.operator-orders__dispatch li {
-  display: grid;
-  grid-template-columns: 90px minmax(120px, 1fr) minmax(180px, 1fr) auto;
-  gap: 12px;
-  align-items: center;
-  padding: 10px;
-  border-radius: 8px;
-  background: rgb(255 255 255 / 75%);
-}
-
-.operator-orders__position {
-  color: #835900;
-  font-size: 0.82rem;
-  font-weight: 700;
-}
-
-.operator-orders__table-wrap {
-  overflow-x: auto;
-  border: 1px solid #eadbc8;
-  border-radius: 10px;
-  background: #fff;
-}
-
-.operator-orders__table-wrap:focus-visible {
-  outline: 3px solid #4b3028;
-  outline-offset: 3px;
-}
-
-.operator-orders__table-wrap table {
-  width: 100%;
-  min-width: 760px;
-  border-collapse: collapse;
-  text-align: left;
-}
-
-.operator-orders__table-wrap th,
-.operator-orders__table-wrap td {
-  padding: 12px;
-  border-bottom: 1px solid #eadbc8;
-  vertical-align: top;
-}
-
-.operator-orders__table-wrap thead {
-  background: #f3e6d6;
-}
-
-.operator-orders__table-wrap thead th {
-  color: #684536;
-  font-size: 0.82rem;
-}
-
-.operator-orders__status {
-  display: inline-flex;
-  border-radius: 999px;
-  padding: 4px 9px;
-  background: #eee3d7;
-  font-size: 0.8rem;
-  font-weight: 700;
-  white-space: nowrap;
-}
-
-.operator-orders__status--delivered {
-  background: #e2f1e4;
-  color: #28633a;
-}
-
-.operator-orders__status--ready,
-.operator-orders__status--pickedup {
-  background: #fff0cd;
-  color: #835900;
-}
-
-.operator-orders__status--rejected,
-.operator-orders__status--cancelled {
-  background: #f2d8d5;
-  color: #923c32;
-}
-
-.operator-orders__empty {
-  margin-top: 20px;
 }
 
 .operator-simulator {
@@ -768,7 +617,6 @@
 @media (max-width: 700px) {
   .operator-overview__header,
   .operator-restaurants__header,
-  .operator-orders__header,
   .operator-simulator__danger {
     flex-direction: column;
   }
@@ -787,19 +635,4 @@
     flex-direction: column;
   }
 
-  .operator-orders__metrics {
-    grid-template-columns: 1fr;
-  }
-
-  .operator-orders__dispatch li {
-    grid-template-columns: 1fr 1fr;
-  }
-
-  .operator-orders__dispatch li span:nth-child(3) {
-    grid-column: 1 / -1;
-  }
-
-  .operator-orders__filters {
-    grid-template-columns: 1fr;
-  }
 }

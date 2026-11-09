@@ -2,6 +2,7 @@ import request from "supertest";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createApp } from "../../../app";
 import { Role } from "../../../domain/reg/Role.ts";
+import { Order } from "../../../domain/ord/Order.ts";
 import { Session } from "../../../domain/reg/Session.ts";
 import { FakePasswordHasher, InMemoryUserRepository } from "../../../domain/reg/__tests__/fakes";
 import { JwtSessionTokenService } from "../../../technical-services/reg/JwtSessionTokenService";
@@ -40,6 +41,38 @@ beforeEach(() => {
     menu: new InMemoryMenuRepository(),
     restaurantStatus: new InMemoryRestaurantStatusRepository(),
     orders, orderMenu: menu, pricing,
+  });
+});
+
+describe("operator all-orders route", () => {
+  it("returns all customers' and restaurants' orders newest first for an operator", async () => {
+    for (const [id, restaurantId, customerId, placedAt] of [
+      [1, "rest-a", "customer-a", "2026-11-01T10:00:00Z"],
+      [2, "rest-b", "customer-b", "2026-11-02T10:00:00Z"],
+    ] as const) {
+      await orders.add(new Order({
+        id, restaurantId, customerId, restaurantName: restaurantId,
+        lines: [{ menuItemId: 1, name: "Cake", quantity: 1, unitPriceCents: 1000 }],
+      }, new Date(placedAt)));
+    }
+    const response = await request(app).get("/api/orders/all").set("Authorization", authorization(Role.OPERATOR));
+    expect(response.status).toBe(200);
+    expect(response.body.orders).toMatchObject([
+      { id: 2, restaurantId: "rest-b", customerId: "customer-b", status: "Placed", totalCents: 1000 },
+      { id: 1, restaurantId: "rest-a", customerId: "customer-a", status: "Placed", totalCents: 1000 },
+    ]);
+    expect(response.body.orders[0].lines).toEqual([
+      { menuItemId: 1, name: "Cake", quantity: 1, unitPriceCents: 1000 },
+    ]);
+  });
+
+  it("rejects unauthenticated users and non-operators", async () => {
+    expect((await request(app).get("/api/orders/all")).status).toBe(401);
+    for (const role of [Role.CUSTOMER, Role.RESTAURANT, Role.COURIER]) {
+      const response = await request(app).get("/api/orders/all").set("Authorization", authorization(role));
+      expect(response.status).toBe(403);
+      expect(response.body.code).toBe("FORBIDDEN");
+    }
   });
 });
 

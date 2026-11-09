@@ -9,6 +9,9 @@ vi.mock("../ord/OperatorRestaurantsPage", () => ({
 vi.mock("../ord/OperatorOrdersPage", () => ({
   default: () => createElement("section", { "data-testid": "operator-orders" }, "Order monitoring"),
 }));
+vi.mock("../ord/OperatorDispatchQueuePage", () => ({
+  default: () => createElement("section", { "data-testid": "operator-dispatch" }, "Dispatch queue"),
+}));
 vi.mock("../prc/OrderSummaryList", () => ({
   default: () => createElement("section", { "data-testid": "operator-order-history" }, "Delivered order history"),
 }));
@@ -31,6 +34,7 @@ describe("operator dashboard", () => {
     expect(html).toContain('aria-current="page" title="Overview"');
     expect(html).toContain('title="Restaurants"');
     expect(html).toContain('title="Orders"');
+    expect(html).toContain('title="Dispatch Queue"');
     expect(html).toContain('title="Order History &amp; Billing"');
     expect(html).toContain('title="Simulator Controls"');
     expect(html).toContain(">Log out</button>");

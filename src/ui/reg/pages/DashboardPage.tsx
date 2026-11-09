@@ -4,8 +4,9 @@ import { useAuth } from "../auth/AuthContext";
 import CourierDashboard from "../../dash/CourierDashboard";
 import CustomerDashboard from "../../dash/CustomerDashboard";
 import RestaurantStaffDashboard from "../../dash/RestaurantStaffDashboard";
-
 const OperatorDashboard = lazy(() => import("../../dash/OperatorDashboard"));
+import DashboardRestaurantMap from "../../dash/DashboardRestaurantMap";
+import Header from "../../components/Header";
 
 export default function DashboardPage() {
   const { user, logout } = useAuth();
@@ -40,5 +41,15 @@ export default function DashboardPage() {
     );
   }
 
-  return null;
+  return (
+    <main>
+      <Header user={user} onLogout={onLogout} />
+      <DashboardRestaurantMap user={{
+        id: user.id,
+        name: user.name ?? "User",
+        role: user.role,
+        restaurantId: user.restaurantId,
+      }} />
+    </main>
+  );
 }

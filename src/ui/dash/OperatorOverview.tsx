@@ -1,4 +1,6 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import type { OrderDTO } from "../../application/ord/OrderDTO.ts";
+import { api, ApiError } from "../reg/api/client";
 import type { OperatorRestaurant } from "../ord/OperatorRestaurantsPage";
 import MapView, { type MapRestaurant } from "./MapView";
 import "./operator-dashboard.css";
@@ -13,18 +15,51 @@ interface OperatorOverviewProps {
 
 export default function OperatorOverview({ restaurants, loading, error, onRefresh, onNavigate }: OperatorOverviewProps) {
   const [selectedRestaurantId, setSelectedRestaurantId] = useState<string | null>(null);
+  const [orders, setOrders] = useState<Pick<OrderDTO, "status">[]>([]);
+  const [ordersLoading, setOrdersLoading] = useState(true);
+  const [ordersError, setOrdersError] = useState("");
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadOrders() {
+      try {
+        const response = await api<{ orders: Pick<OrderDTO, "status">[] }>("/api/orders/all");
+        if (!cancelled) setOrders(response.orders);
+      } catch (e) {
+        if (!cancelled) {
+          setOrdersError(e instanceof ApiError
+            ? `Could not load order statistics: ${e.message}`
+            : "Could not load order statistics. Please try reopening Overview.");
+        }
+      } finally {
+        if (!cancelled) setOrdersLoading(false);
+      }
+    }
+
+    loadOrders();
+    return () => { cancelled = true; };
+  }, []);
+
+  // All three order counts use the same authorized platform-wide response.
+  const orderCounts = {
+    total: orders.length,
+    active: orders.filter((order) => ["Placed", "Accepted", "Preparing", "Ready", "PickedUp"].includes(order.status)).length,
+    delivered: orders.filter((order) => order.status === "Delivered").length,
+  };
+  const orderValue = (count: number) => ordersLoading ? "Loading…" : ordersError ? "Unable to load" : count;
   const counts = {
-    total: restaurants.length,
     open: restaurants.filter((restaurant) => restaurant.status === "OPEN").length,
     paused: restaurants.filter((restaurant) => restaurant.status === "PAUSED").length,
-    closed: restaurants.filter((restaurant) => restaurant.status === "CLOSED").length,
   };
   const restaurantValue = (count: number) => loading ? "Loading…" : error ? "Unable to load" : count;
   const cards = [
-    { label: "Total restaurants", value: restaurantValue(counts.total), note: "Restaurants on the platform." },
-    { label: "Open", value: restaurantValue(counts.open), note: "Currently accepting orders." },
-    { label: "Paused", value: restaurantValue(counts.paused), note: "Temporarily not accepting orders." },
-    { label: "Closed", value: restaurantValue(counts.closed), note: "Currently closed." },
+    { label: "Total Orders", value: orderValue(orderCounts.total), note: "All platform orders, including delivered, cancelled and rejected orders." },
+    { label: "Active Orders", value: orderValue(orderCounts.active), note: "Orders placed, accepted, preparing, ready or picked up." },
+    { label: "Delivered Orders", value: orderValue(orderCounts.delivered), note: "All orders with Delivered status." },
+    { label: "Open Restaurants", value: restaurantValue(counts.open), note: "Currently accepting orders." },
+    { label: "Paused Restaurants", value: restaurantValue(counts.paused), note: "Ordering is temporarily paused." },
+    { label: "Available Couriers", value: "N/A", note: "Not available yet." },
   ];
 
   const mapRestaurants: MapRestaurant[] = restaurants.flatMap((restaurant) => (
@@ -58,7 +93,8 @@ export default function OperatorOverview({ restaurants, loading, error, onRefres
           <button type="button" onClick={onRefresh}>Try again</button>
         </div>
       )}
-      <dl className="operator-overview__cards" aria-label="Restaurant status summary">
+      {ordersError && <p role="alert">{ordersError}</p>}
+      <dl className="operator-overview__cards" aria-label="Platform summary">
         {cards.map(({ label, value, note }) => (
           <div className="operator-overview__card" key={label}>
             <dt>{label}</dt>

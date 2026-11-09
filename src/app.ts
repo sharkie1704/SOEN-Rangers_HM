@@ -165,6 +165,7 @@ export function createApp({
     app.post("/api/orders/quote", orderRoutes.quote);
     app.post("/api/orders", orderRoutes.place);
     app.get("/api/orders", orderRoutes.listMine);
+    app.get("/api/orders/all", orderRoutes.listAll);
     app.get("/api/orders/:orderId", orderRoutes.getOne);
     app.post("/api/orders/:orderId/cancel", orderRoutes.cancel);
     app.post("/api/orders/:orderId/accept", orderRoutes.accept);

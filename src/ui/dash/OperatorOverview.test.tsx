@@ -15,7 +15,7 @@ const restaurants = [
 ];
 
 describe("operator overview", () => {
-  it("shows truthful restaurant totals, quick actions, and only mapped locations", () => {
+  it("shows all six platform cards, quick actions, and only mapped locations", () => {
     const html = renderToStaticMarkup(createElement(OperatorOverview, {
       restaurants,
       loading: false,
@@ -24,15 +24,18 @@ describe("operator overview", () => {
       onNavigate: () => {},
     }));
 
-    expect(html).toContain("Total restaurants");
-    expect(html).toContain("Open");
-    expect(html).toContain("Paused");
-    expect(html).toContain("Closed");
-    expect(html).toContain("<dd><span class=\"operator-overview__value\">3</span>");
+    expect(html).toContain("Total Orders");
+    expect(html).toContain("Active Orders");
+    expect(html).toContain("Delivered Orders");
+    expect(html).toContain("Open Restaurants");
+    expect(html).toContain("Paused Restaurants");
+    expect(html).toContain("Available Couriers");
+    expect(html).toContain("N/A");
+    expect(html).toContain("<dt>Open Restaurants</dt><dd><span class=\"operator-overview__value\">1</span>");
+    expect(html).toContain("<dt>Paused Restaurants</dt><dd><span class=\"operator-overview__value\">1</span>");
     expect(html).toContain("View orders");
     expect(html).toContain("Manage restaurants");
     expect(html).toContain('data-testid="overview-map" data-restaurants="2"');
-    expect(html).not.toContain("N/A");
   });
 
   it("provides a retry action when restaurant data cannot be loaded", () => {

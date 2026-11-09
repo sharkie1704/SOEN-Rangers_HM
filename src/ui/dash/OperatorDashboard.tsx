@@ -1,10 +1,11 @@
 import { useEffect, useId, useState, type ComponentProps } from "react";
 import OperatorRestaurantsPage, { type OperatorRestaurant } from "../ord/OperatorRestaurantsPage";
-import OperatorOrdersPage from "../ord/OperatorOrdersPage";
 import { api, ApiError } from "../reg/api/client";
 import OperatorOverview from "./OperatorOverview";
 import OrderSummaryList from "../prc/OrderSummaryList";
 import BillingLedger from "../prc/BillingLedger";
+import OperatorOrdersPage from "../ord/OperatorOrdersPage";
+import OperatorDispatchQueuePage from "../ord/OperatorDispatchQueuePage";
 import DashboardLayout from "./DashboardLayout";
 import type { DashboardNavigationItem } from "./DashboardSidebar";
 import WelcomePage from "./WelcomePage";
@@ -12,7 +13,7 @@ import "./dashboard-sidebar.css";
 import "./operator-dashboard.css";
 
 type OperatorDashboardProps = Pick<ComponentProps<typeof DashboardLayout>, "user" | "onLogout">;
-type OperatorSection = "overview" | "restaurants" | "orders" | "history" | "ledger" | "simulator";
+type OperatorSection = "overview" | "restaurants" | "orders" | "dispatch" | "history" | "ledger" | "simulator";
 
 const items: readonly (DashboardNavigationItem & { readonly id: OperatorSection | "billing" })[] = [
   {
@@ -43,6 +44,17 @@ const items: readonly (DashboardNavigationItem & { readonly id: OperatorSection 
       <svg aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75">
         <rect x="4" y="3" width="16" height="18" rx="2" />
         <path d="M8 8h8M8 12h8M8 16h5" />
+      </svg>
+    ),
+  },
+  {
+    id: "dispatch",
+    label: "Dispatch Queue",
+    icon: (
+      <svg aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75">
+        <path d="M3 6h12v12H3zM15 10h4l3 4v4h-7z" />
+        <circle cx="7" cy="19" r="1.5" />
+        <circle cx="18" cy="19" r="1.5" />
       </svg>
     ),
   },
@@ -237,6 +249,7 @@ export default function OperatorDashboard({ user, onLogout }: OperatorDashboardP
         />
       )}
       {activeSection === "orders" && <OperatorOrdersPage restaurants={restaurants} />}
+      {activeSection === "dispatch" && <OperatorDispatchQueuePage />}
       {activeSection === "history" && <OrderSummaryList operatorView />}
       {activeSection === "ledger" && <BillingLedger />}
       {activeSection === "simulator" && (
