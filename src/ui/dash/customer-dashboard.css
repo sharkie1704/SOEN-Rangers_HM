@@ -26,4 +26,27 @@
   font-size: 0.9rem;
 }
 
+.customer-dashboard__map-heading > span {
+  display: inline-flex;
+  width: 32px;
+  height: 32px;
+  align-items: center;
+  justify-content: center;
+  color: #C66B32;
+}
 
+.customer-dashboard__map-heading svg {
+  width: 28px;
+  height: 28px;
+}
+
+@media (max-width: 520px) {
+  .customer-dashboard__map-heading {
+    width: calc(100% - 32px);
+  }
+
+  .customer-dashboard__map-heading {
+    margin-top: 20px;
+    margin-bottom: -12px;
+  }
+}
