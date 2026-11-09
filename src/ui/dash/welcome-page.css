@@ -1,0 +1,108 @@
+.welcome-page {
+  box-sizing: border-box;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  column-gap: 8px;
+  row-gap: 6px;
+  width: min(100% - 48px, 1200px);
+  padding: 12px 0 14px;
+  margin: 12px auto 0;
+  position: relative;
+  color: #4B3028;
+  font-family: Poppins, sans-serif;
+}
+
+.welcome-page::after {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 1px;
+  background: linear-gradient(90deg, #C66B32 0%, #EADBC8 36%, transparent 100%);
+  content: "";
+}
+
+.welcome-page__toggle {
+  display: flex;
+  flex: 0 1 auto;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 7px;
+  min-width: 0;
+  max-width: 100%;
+  min-height: 36px;
+  padding: 4px 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+}
+
+.welcome-page__toggle span {
+  overflow: hidden;
+  font-size: clamp(1.1rem, 2.5vw, 1.4rem);
+  font-weight: 700;
+  line-height: 1.2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.welcome-page__toggle svg {
+  flex: 0 0 20px;
+  width: 20px;
+  height: 20px;
+  color: #C66B32;
+  transition: transform 150ms ease;
+}
+
+.welcome-page__toggle[aria-expanded="true"] svg {
+  transform: rotate(180deg);
+}
+
+.welcome-page__toggle:hover {
+  color: #A35A30;
+}
+
+.welcome-page__toggle:hover + .welcome-page__sparkle {
+  transform: rotate(20deg) scale(1.12);
+}
+
+.welcome-page__toggle:focus-visible {
+  outline: 3px solid #C66B32;
+  outline-offset: 3px;
+  border-radius: 3px;
+}
+
+.welcome-page__details {
+  flex: 0 0 100%;
+  padding: 4px 0 0;
+  color: #70574C;
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.welcome-page__sparkle {
+  margin-left: auto;
+  color: #C66B32;
+  font-size: 1.35rem;
+  text-shadow: 0 2px 8px rgb(198 107 50 / 20%);
+  transition: transform 180ms ease;
+}
+
+@media (max-width: 520px) {
+  .welcome-page {
+    width: calc(100% - 32px);
+    padding: 10px 0 14px;
+    margin-top: 16px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .welcome-page__toggle svg,
+  .welcome-page__sparkle {
+    transition: none;
+  }
+}
