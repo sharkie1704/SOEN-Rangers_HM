@@ -12,6 +12,7 @@ export type CartItem = {
     price: number;
     quantity: number;
     image: string;
+    available: boolean;
 };
 
 const restaurantNames: Record<string, string> = {
@@ -30,11 +31,13 @@ type PlaceOrderPageInputs = {
 };
 
 // What we remember about an order once it has been placed
+type PlacedOrderItem = Omit<CartItem, "available">;
+
 type PlacedOrder = {
     id: number;
     status: string;
     totalCents: number;
-    items: CartItem[];
+    items: PlacedOrderItem[];
     fare: FareBreakdown;
 };
 
@@ -54,15 +57,16 @@ export default function PlaceOrderPage({
     const [quoteAttempt, setQuoteAttempt] = useState(0);
     const key = checkoutKey(restaurantId, cartItems);
     const hasItems = cartItems.length > 0;
+    const allSelectedItemsSoldOut = hasItems && cartItems.every((item) => item.available === false);
     const current = quoteState?.key === key ? quoteState : null;
     const quote = current?.quote;
-    const quoteLoading = hasItems && !quote && !current?.error;
-    const canPlace = !!quote && !quoteLoading && !placingOrder;
+    const quoteLoading = hasItems && !allSelectedItemsSoldOut && !quote && !current?.error;
+    const canPlace = !!quote && !quoteLoading && !placingOrder && !allSelectedItemsSoldOut;
 
     useEffect(() => {
         let cancelled = false;
         setQuoteState(null);
-        if (hasItems) {
+        if (hasItems && !allSelectedItemsSoldOut) {
             fetchCheckoutQuote(key)
                 .then((quote) => { if (!cancelled) setQuoteState({ key, quote }); })
                 .catch((error: unknown) => {
@@ -70,7 +74,7 @@ export default function PlaceOrderPage({
                 });
         }
         return () => { cancelled = true; };
-    }, [key, hasItems, quoteAttempt]);
+    }, [key, hasItems, allSelectedItemsSoldOut, quoteAttempt]);
 
     function changeQuantity(id: number, change: number) {
         onCartChange(
@@ -296,6 +300,9 @@ export default function PlaceOrderPage({
                 {/* Order summary */}
                 <section aria-label="Order summary" style={{ ...cardStyle, marginTop: "32px" }}>
                     {placeError && <p role="alert" style={{ color: "#9B1C1C" }}>{placeError}</p>}
+                    {allSelectedItemsSoldOut && (
+                        <p role="status">All selected items are sold out. Remove them or return to the menu to choose available items.</p>
+                    )}
                     {quoteLoading && <p role="status">Updating your fare…</p>}
                     {current?.error && <div role="alert">
                         <p>{current.error}</p>
