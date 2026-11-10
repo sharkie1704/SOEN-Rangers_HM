@@ -232,6 +232,10 @@ export default function OperatorDashboard({ user, onLogout }: OperatorDashboardP
       setBillingExpanded((expanded) => !expanded);
       return;
     }
+    if (id === "history" || id === "ledger") {
+      setActiveSection(id);
+      return;
+    }
     const item = items.find((item) => item.id === id);
     if (item && item.id !== "billing") setActiveSection(item.id);
   }
