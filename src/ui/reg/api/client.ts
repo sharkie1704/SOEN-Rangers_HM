@@ -1,3 +1,5 @@
+import { publishLocalOutputEvent } from "./OutputEvents";
+
 export interface ApiErrorDetail {
   path: string;
   message: string;
@@ -35,12 +37,23 @@ export async function api<T>(
   options: { method?: string; body?: unknown } = {},
 ): Promise<T> {
   const method = options.method ?? "GET";
-  const res = await fetch(path, {
-    method,
-    headers: options.body ? { "Content-Type": "application/json" } : undefined,
-    body: options.body ? JSON.stringify(options.body) : undefined,
-    credentials: "include",
-  });
+  let res: Response;
+  try {
+    res = await fetch(path, {
+      method,
+      headers: options.body ? { "Content-Type": "application/json" } : undefined,
+      body: options.body ? JSON.stringify(options.body) : undefined,
+      credentials: "include",
+    });
+  } catch (error) {
+    publishLocalOutputEvent({
+      method,
+      path,
+      status: 0,
+      timestamp: new Date().toISOString(),
+    });
+    throw error;
+  }
   if (res.status === 204) {
     return undefined as T;
   }
@@ -54,4 +67,3 @@ export async function api<T>(
 
   return data as T;
 }
-

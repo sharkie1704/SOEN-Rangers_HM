@@ -46,6 +46,8 @@ describe("customer dashboard", () => {
     expect(html).toContain('aria-current="page" title="Browse Restaurants"');
     expect(html).toContain('title="My Orders"');
     expect(html).toContain('aria-label="Dashboard navigation"');
+    expect(html).toContain('aria-label="Dashboard output console"');
+    expect(html).toContain('title="Output Console"');
     expect(html).toContain('aria-label="Collapse navigation"');
     expect(html).toContain(">Log out</button>");
     expect(html).toContain('data-testid="customer-flow" data-active-view="browse"');

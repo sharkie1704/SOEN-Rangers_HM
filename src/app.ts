@@ -53,7 +53,7 @@ import { LedgerRoutes } from "./application/prc/LedgerRoutes";
 import { LedgerService } from "./application/prc/LedgerService";
 import type { LedgerRepository } from "./application/prc/LedgerRepository";
 import { toUserDto } from "./technical-services/http/UserDTO";
-import { subscribeToCommandEvents } from "./application/http/CommandEvents";
+import { subscribeToCommandEvents, subscribeToOutputEvents } from "./application/http/CommandEvents";
 import { Role } from "./domain/reg/Role";
 
 export interface AppDeps {
@@ -143,7 +143,13 @@ export function createApp({
     const unsubscribe = subscribeToCommandEvents(() => {
       res.write("event: command\ndata: {\"changed\":true}\n\n");
     });
-    req.on("close", unsubscribe);
+    const unsubscribeOutput = subscribeToOutputEvents((event) => {
+      res.write(`event: output\ndata: ${JSON.stringify(event)}\n\n`);
+    });
+    req.on("close", () => {
+      unsubscribe();
+      unsubscribeOutput();
+    });
   });
   // Offers an order to a courier when it becomes ready, and again when a courier declines it
   const dispatcher = orders && assignments && dispatch ? new DispatchService(orders, assignments, dispatch) : undefined;
