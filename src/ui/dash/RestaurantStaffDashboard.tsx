@@ -1,6 +1,7 @@
 import { useState, type ComponentProps } from "react";
 import MenuEditorPage from "../ord/MenuEditorPage";
 import RestaurantConsolePage from "../ord/RestaurantConsolePage";
+import OrderSummaryList from "../prc/OrderSummaryList";
 import DashboardRestaurantMap from "./DashboardRestaurantMap";
 import DashboardLayout from "./DashboardLayout";
 import DashboardSidebar, { type DashboardNavigationItem } from "./DashboardSidebar";
@@ -10,7 +11,7 @@ import "./restaurant-staff-dashboard.css";
 type RestaurantStaffDashboardProps = Pick<ComponentProps<typeof DashboardLayout>, "user" | "onLogout"> & {
   restaurantId: string;
 };
-type RestaurantSection = "overview" | "orders" | "menu";
+type RestaurantSection = "overview" | "orders" | "history" | "menu";
 
 const items: readonly DashboardNavigationItem[] = [
   {
@@ -44,6 +45,16 @@ const items: readonly DashboardNavigationItem[] = [
       </svg>
     ),
   },
+  {
+    id: "history",
+    label: "History",
+    icon: (
+      <svg aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75">
+        <circle cx="12" cy="12" r="8" />
+        <path d="M12 7v5l3 2" />
+      </svg>
+    ),
+  },
 ];
 
 export default function RestaurantStaffDashboard({ user, onLogout, restaurantId }: RestaurantStaffDashboardProps) {
@@ -58,7 +69,7 @@ export default function RestaurantStaffDashboard({ user, onLogout, restaurantId 
           items={items}
           activeId={activeSection}
           onSelect={(id) => {
-            if (id === "overview" || id === "orders" || id === "menu") setActiveSection(id);
+            if (id === "overview" || id === "orders" || id === "history" || id === "menu") setActiveSection(id);
           }}
         />
       }
@@ -80,6 +91,7 @@ export default function RestaurantStaffDashboard({ user, onLogout, restaurantId 
         </>
       )}
       {activeSection === "orders" && <RestaurantConsolePage restaurantId={restaurantId} />}
+      {activeSection === "history" && <OrderSummaryList restaurantView />}
       {activeSection === "menu" && <MenuEditorPage restaurantId={restaurantId} />}
     </DashboardLayout>
   );

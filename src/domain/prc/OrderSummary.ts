@@ -3,6 +3,7 @@ import type { Order } from "../ord/Order.ts";
 import type { OrderLineDTO } from "../ord/OrderLineDTO.ts";
 import type { StateChangeEvent } from "../ord/StateChangeEvent.ts";
 import type { FareBreakdown } from "./FareBreakdown.ts";
+import type { LedgerEntry } from "./LedgerEntry.ts";
 
 export interface OrderSummary {
   readonly orderId: number;
@@ -14,6 +15,12 @@ export interface OrderSummary {
   readonly placedAt: Date;
   readonly deliveredAt: Date;
   readonly generatedAt: Date;
+}
+
+export interface RoleScopedOrderSummary extends Omit<OrderSummary, "fare" | "lines"> {
+  readonly lines: readonly (Omit<OrderLineDTO, "unitPriceCents"> & { readonly unitPriceCents?: number })[];
+  readonly fare?: FareBreakdown;
+  readonly ledger?: LedgerEntry;
 }
 
 export function createOrderSummary(

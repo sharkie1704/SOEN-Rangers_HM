@@ -158,7 +158,7 @@ export function createApp({
     courierIdle.subscribe(new DispatchQueueObserver(new DispatchQueueService(dispatchQueue), assignments, couriers));
   }
   if (orderSummaries) {
-    const summaryRoutes = new OrderSummaryRoutes(new OrderSummaryService(orderSummaries));
+    const summaryRoutes = new OrderSummaryRoutes(new OrderSummaryService(orderSummaries, ledger));
     app.get("/api/order-summaries", summaryRoutes.list);
   }
   if (ledger) {

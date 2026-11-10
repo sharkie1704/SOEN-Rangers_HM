@@ -1,5 +1,4 @@
 import { describe, expect, it } from "vitest";
-import { OrderError } from "../../../domain/ord/OrderError.ts";
 import { Role } from "../../../domain/reg/Role.ts";
 import type { OrderSummary } from "../../../domain/prc/OrderSummary.ts";
 import type { OrderSummaryRepository } from "../OrderSummaryRepository.ts";
@@ -26,13 +25,21 @@ function summary(orderId: number, customerId: string): OrderSummary {
 }
 
 const customerSummary = summary(1, "customer-1");
-const otherSummary = summary(2, "customer-2");
+const otherSummary = { ...summary(2, "customer-2"), restaurantId: "restaurant-2" };
 
 class InMemoryOrderSummaryRepository implements OrderSummaryRepository {
   summaries = [customerSummary, otherSummary];
 
   async findByCustomer(customerId: string): Promise<readonly OrderSummary[]> {
     return this.summaries.filter((summary) => summary.customerId === customerId);
+  }
+
+  async findByRestaurant(restaurantId: string): Promise<readonly OrderSummary[]> {
+    return this.summaries.filter((summary) => summary.restaurantId === restaurantId);
+  }
+
+  async findByCourier(courierId: string): Promise<readonly OrderSummary[]> {
+    return courierId === "courier-1" ? [customerSummary] : [];
   }
 
   async findAll(): Promise<readonly OrderSummary[]> {
@@ -56,11 +63,33 @@ describe("OrderSummaryService", () => {
       .resolves.toEqual(repository.summaries);
   });
 
-  it.each([Role.RESTAURANT, Role.COURIER])("forbids %s accounts", async (role) => {
+  it("returns only the restaurant's summaries", async () => {
     const service = new OrderSummaryService(new InMemoryOrderSummaryRepository());
 
-    await expect(service.list({ userId: "other-user", role })).rejects.toBeInstanceOf(OrderError);
-    await expect(service.list({ userId: "other-user", role })).rejects.toMatchObject({ code: "FORBIDDEN" });
+    await expect(service.list({ userId: "restaurant-user", role: Role.RESTAURANT, restaurantId: "restaurant-1" }))
+      .resolves.toEqual([customerSummary]);
+  });
+
+  it("returns completed deliveries without payment details to couriers", async () => {
+    const service = new OrderSummaryService(new InMemoryOrderSummaryRepository());
+
+    await expect(service.list({ userId: "courier-1", role: Role.COURIER })).resolves.toEqual([{
+      orderId: customerSummary.orderId,
+      customerId: customerSummary.customerId,
+      restaurantId: customerSummary.restaurantId,
+      restaurantName: customerSummary.restaurantName,
+      lines: [],
+      placedAt: customerSummary.placedAt,
+      deliveredAt: customerSummary.deliveredAt,
+      generatedAt: customerSummary.generatedAt,
+    }]);
+  });
+
+  it("forbids restaurant actors without a restaurant scope", async () => {
+    const service = new OrderSummaryService(new InMemoryOrderSummaryRepository());
+
+    await expect(service.list({ userId: "restaurant-user", role: Role.RESTAURANT }))
+      .rejects.toMatchObject({ code: "FORBIDDEN" });
   });
 
   it("forbids missing or empty actors", async () => {
