@@ -4,8 +4,9 @@ import type { Order } from "../../domain/ord/Order.ts";
 import type { StateChangeEvent } from "../../domain/ord/StateChangeEvent.ts";
 import type { OrderStatus as DbOrderStatus } from "../../generated/prisma/client.ts";
 
-const toDbState: Record<"Delivered" | "Rejected" | "Cancelled", DbOrderStatus> = {
+const toDbState: Record<"Delivered" | "Refunded" | "Rejected" | "Cancelled", DbOrderStatus> = {
   Delivered: "DELIVERED",
+  Refunded: "REFUNDED",
   Rejected: "REJECTED",
   Cancelled: "CANCELLED",
 };

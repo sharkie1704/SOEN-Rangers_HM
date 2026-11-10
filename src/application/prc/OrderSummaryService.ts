@@ -37,7 +37,7 @@ export class OrderSummaryService {
     }
 
     const ledgerByOrder = actor.role === Role.OPERATOR && this.ledger
-      ? new Map((await this.ledger.read()).entries.map((entry) => [entry.orderId, entry]))
+      ? latestLedgerEntries(await this.ledger.read())
       : undefined;
 
     return summaries.map((summary) => {
@@ -59,4 +59,15 @@ export class OrderSummaryService {
       };
     });
   }
+}
+
+function latestLedgerEntries(snapshot: Awaited<ReturnType<NonNullable<LedgerRepository>["read"]>>): Map<number, NonNullable<LedgerRepository> extends never ? never : import("../../domain/prc/LedgerEntry.ts").LedgerEntry> {
+  const latest = new Map<number, import("../../domain/prc/LedgerEntry.ts").LedgerEntry>();
+  for (const entry of snapshot.entries) {
+    const existing = latest.get(entry.orderId);
+    if (!existing || entry.finalizedAt.getTime() > existing.finalizedAt.getTime()) {
+      latest.set(entry.orderId, entry);
+    }
+  }
+  return latest;
 }

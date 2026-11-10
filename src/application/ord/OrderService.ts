@@ -160,6 +160,14 @@ export class OrderService {
     return this.save(order, order.cancel(customer.userId, await this.repository.nextEventId()));
   }
 
+  async refund(actor: OrderActor | null, orderId: number): Promise<OrderTransitionDTO> {
+    if (!actor || actor.role !== Role.OPERATOR || !actor.userId.trim()) {
+      throw new OrderError("FORBIDDEN", "Only authenticated operators can refund orders.");
+    }
+    const order = await this.findOrder(orderId);
+    return this.save(order, order.refund(actor.userId, await this.repository.nextEventId()));
+  }
+
   async markReady(actor: OrderActor | null, orderId: number): Promise<OrderTransitionDTO> {
     const { order, restaurantActor } = await this.restaurantOrder(actor, orderId);
     const transition = await this.repository.withQueueLock(order.restaurantId, async (orders) => {

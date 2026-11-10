@@ -5,7 +5,7 @@ import "./billing-ledger.css";
 type LedgerEntry = {
   eventId: number;
   orderId: number;
-  finalState: "Delivered" | "Rejected" | "Cancelled";
+  finalState: "Delivered" | "Refunded" | "Rejected" | "Cancelled";
   epoch: number;
   placedAt: string;
   finalizedAt: string;

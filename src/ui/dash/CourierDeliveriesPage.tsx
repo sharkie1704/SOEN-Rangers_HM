@@ -25,6 +25,7 @@ const statusLabels: Record<DeliveryOrderStatus, string> = {
   Ready: "Ready for pickup",
   PickedUp: "Picked up",
   Delivered: "Delivered",
+  Refunded: "Refunded",
   Rejected: "Rejected",
   Cancelled: "Cancelled",
 };

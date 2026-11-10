@@ -14,6 +14,7 @@ const toDbStatus: Record<OrderStatus, DbOrderStatus> = {
   Ready: "READY",
   PickedUp: "PICKED_UP",
   Delivered: "DELIVERED",
+  Refunded: "REFUNDED" as DbOrderStatus,
   Rejected: "REJECTED",
   Cancelled: "CANCELLED",
 };
@@ -27,6 +28,7 @@ const toDbAction: Record<OrderAction, DbOrderAction> = {
   "mark-ready": "MARK_READY",
   "pick-up": "PICK_UP",
   deliver: "DELIVER",
+  refund: "REFUND" as DbOrderAction,
 };
 
 const fromDbStatus = invert(toDbStatus);

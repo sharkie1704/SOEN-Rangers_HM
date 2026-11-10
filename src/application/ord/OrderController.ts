@@ -59,6 +59,10 @@ export class OrderController {
     return this.service.cancel(actor, orderId);
   }
 
+  refund(actor: OrderActor | null, orderId: number): Promise<OrderTransitionDTO> {
+    return this.service.refund(actor, orderId);
+  }
+
   markReady(actor: OrderActor | null, orderId: number): Promise<OrderTransitionDTO> {
     return this.service.markReady(actor, orderId);
   }

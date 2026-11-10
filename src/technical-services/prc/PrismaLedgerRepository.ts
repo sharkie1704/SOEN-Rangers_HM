@@ -5,6 +5,7 @@ import type { OrderStatus as DbOrderStatus } from "../../generated/prisma/client
 
 const toDomainState: Partial<Record<DbOrderStatus, LedgerFinalState>> = {
   DELIVERED: "Delivered",
+  REFUNDED: "Refunded",
   REJECTED: "Rejected",
   CANCELLED: "Cancelled",
 };
