@@ -28,13 +28,13 @@ vi.mock("../../db/PrismaClient.ts", () => ({ prisma: mocks.prisma }));
 
 import { PrismaOrderRepository } from "../PrismaOrderRepository.ts";
 
-function terminalOrder(status: Extract<OrderStatus, "Delivered" | "Rejected" | "Cancelled">) {
+function terminalOrder(status: Extract<OrderStatus, "Delivered" | "Refunded" | "Rejected" | "Cancelled">) {
   const event: StateChangeEvent = {
     eventId: 50,
     orderId: 8,
     actorId: "actor-1",
-    action: status === "Delivered" ? "deliver" : status === "Rejected" ? "reject" : "cancel",
-    from: status === "Delivered" ? "PickedUp" : "Placed",
+    action: status === "Delivered" ? "deliver" : status === "Refunded" ? "refund" : status === "Rejected" ? "reject" : "cancel",
+    from: status === "Delivered" ? "PickedUp" : status === "Refunded" ? "Delivered" : "Placed",
     to: status,
     occurredAt: new Date("2026-11-07T10:30:00Z"),
   };
@@ -67,7 +67,7 @@ describe("PrismaOrderRepository terminal event persistence", () => {
     mocks.tx.ledgerEntry.create.mockReset();
   });
 
-  it.each(["Delivered", "Rejected", "Cancelled"] as const)("writes one immutable ledger row for %s", async (status) => {
+  it.each(["Delivered", "Refunded", "Rejected", "Cancelled"] as const)("writes one immutable ledger row for %s", async (status) => {
     const { order, event } = terminalOrder(status);
 
     await new PrismaOrderRepository().save(order);

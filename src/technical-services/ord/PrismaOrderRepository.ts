@@ -104,7 +104,7 @@ export class PrismaOrderRepository implements OrderRepository {
       });
       const ledger = new PrismaLedgerEntryStore(tx);
       for (const event of pending) {
-        if (event.to !== "Delivered" && event.to !== "Rejected" && event.to !== "Cancelled") continue;
+        if (event.to !== "Delivered" && event.to !== "Refunded" && event.to !== "Rejected" && event.to !== "Cancelled") continue;
         await ledger.add(order, event);
       }
     });
