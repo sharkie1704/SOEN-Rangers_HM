@@ -76,6 +76,8 @@ export default function OrderSummaryList({ operatorView = false, restaurantView 
   const [summaries, setSummaries] = useState<Summary[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [message, setMessage] = useState("");
+  const [refundingOrderId, setRefundingOrderId] = useState<number | null>(null);
 
   async function loadSummaries() {
     setLoading(true);
@@ -87,6 +89,22 @@ export default function OrderSummaryList({ operatorView = false, restaurantView 
       setError(cause instanceof ApiError ? cause.message : "Could not load order summaries.");
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function refundOrder(orderId: number) {
+    if (!window.confirm(`Refund order #${orderId}? This action cannot be undone.`)) return;
+    setRefundingOrderId(orderId);
+    setError("");
+    setMessage("");
+    try {
+      await api(`/api/orders/${orderId}/refund`, { method: "POST" });
+      setMessage(`Order #${orderId} refunded successfully.`);
+      await loadSummaries();
+    } catch (cause) {
+      setError(cause instanceof ApiError ? cause.message : "Could not refund the order.");
+    } finally {
+      setRefundingOrderId(null);
     }
   }
 
@@ -123,6 +141,7 @@ export default function OrderSummaryList({ operatorView = false, restaurantView 
 
       {loading && <p role="status">Loading order summaries…</p>}
       {error && <p className="order-summaries__error" role="alert">{error}</p>}
+      {message && <p className="order-summaries__message" role="status">{message}</p>}
       {!operatorView && !loading && !error && summaries.length === 0 && (
         <p className="order-summaries__empty">No order history yet.</p>
       )}
@@ -145,7 +164,7 @@ export default function OrderSummaryList({ operatorView = false, restaurantView 
           <>
             {summaries.length > 0 && (
               <p id={refundDescriptionId} className="order-summaries__refund-note">
-                Refunds are not available yet.
+                Only delivered orders can be refunded, and each order can be refunded once.
               </p>
             )}
             <div className="order-summaries__table-wrap" role="region" aria-label="Delivered order table" tabIndex={0}>
@@ -169,7 +188,7 @@ export default function OrderSummaryList({ operatorView = false, restaurantView 
                   {summaries.map((summary) => (
                     <tr key={summary.orderId}>
                       <th scope="row">#{summary.orderId}</th>
-                      <td>Delivered</td>
+                      <td>{summary.ledger?.finalState ?? "Delivered"}</td>
                       <td>{summary.fare ? money(summary.fare.totalCents) : "Hidden"}</td>
                       <td>{summary.ledger ? `${summary.ledger.finalState} · #${summary.ledger.eventId}` : "Not recorded"}</td>
                       <td>
@@ -187,8 +206,13 @@ export default function OrderSummaryList({ operatorView = false, restaurantView 
                       </td>
                       <td>
                         <div className="order-summaries__table-actions">
-                          <button type="button" disabled aria-describedby={refundDescriptionId}>
-                            Refund
+                          <button
+                            type="button"
+                            disabled={summary.ledger?.finalState === "Refunded" || refundingOrderId !== null}
+                            aria-describedby={refundDescriptionId}
+                            onClick={() => void refundOrder(summary.orderId)}
+                          >
+                            {refundingOrderId === summary.orderId ? "Refunding…" : summary.ledger?.finalState === "Refunded" ? "Refunded" : "Refund"}
                           </button>
                         </div>
                       </td>

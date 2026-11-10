@@ -88,6 +88,10 @@
   font-size: 0.875rem;
 }
 
+.order-summaries__message {
+  color: #2e6b3e;
+}
+
 .order-summaries {
   --summary-cream: #fff9f2;
   --summary-beige: #eadbc8;
