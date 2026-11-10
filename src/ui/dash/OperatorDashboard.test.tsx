@@ -37,6 +37,8 @@ describe("operator dashboard", () => {
     expect(html).toContain('title="Dispatch Queue"');
     expect(html).toContain('title="Order History &amp; Billing"');
     expect(html).toContain('title="Simulator Controls"');
+    expect(html).toContain('aria-label="Dashboard output console"');
+    expect(html).toContain('title="Output Console"');
     expect(html).toContain(">Log out</button>");
   });
 

@@ -67,6 +67,8 @@ describe("restaurant staff dashboard", () => {
     expect(html).not.toContain('data-testid="restaurant-menu"');
     expect(html).toContain('aria-label="Collapse navigation"');
     expect(html).toContain('aria-label="Dashboard sidebar"');
+    expect(html).toContain('aria-label="Dashboard output console"');
+    expect(html).toContain('title="Output Console"');
   });
 
   it("provides accessible Overview, Orders, and Menu navigation with Overview selected initially", () => {

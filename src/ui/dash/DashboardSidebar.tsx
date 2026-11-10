@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { useDashboardOutputConsoleActive } from "./DashboardOutputConsoleContext";
 import "./dashboard-sidebar.css";
 
 export interface DashboardNavigationItem {
@@ -14,6 +15,8 @@ interface DashboardSidebarProps {
 }
 
 export default function DashboardSidebar({ items, activeId, onSelect }: DashboardSidebarProps) {
+  const outputConsoleActive = useDashboardOutputConsoleActive();
+
   return (
     <nav className="dashboard-sidebar" aria-label="Dashboard navigation">
       <ul className="dashboard-sidebar__items">
@@ -22,7 +25,7 @@ export default function DashboardSidebar({ items, activeId, onSelect }: Dashboar
             <button
               type="button"
               className="dashboard-sidebar__button"
-              aria-current={item.id === activeId ? "page" : undefined}
+              aria-current={!outputConsoleActive && item.id === activeId ? "page" : undefined}
               title={item.label}
               onClick={() => onSelect(item.id)}
             >

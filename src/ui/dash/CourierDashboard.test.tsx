@@ -30,6 +30,8 @@ describe("courier dashboard", () => {
     expect(html).toContain("My Deliveries");
     expect(html).toContain('aria-current="page" title="Overview"');
     expect(html).toContain('data-testid="courier-map" data-user-id="courier-1" data-user-name="Casey Courier" data-user-role="COURIER"');
+    expect(html).toContain('aria-label="Dashboard output console"');
+    expect(html).toContain('title="Output Console"');
     expect(html).not.toContain("Billing");
   });
 });

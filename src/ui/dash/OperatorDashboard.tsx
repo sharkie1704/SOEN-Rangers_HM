@@ -7,6 +7,7 @@ import BillingLedger from "../prc/BillingLedger";
 import OperatorOrdersPage from "../ord/OperatorOrdersPage";
 import OperatorDispatchQueuePage from "../ord/OperatorDispatchQueuePage";
 import DashboardLayout from "./DashboardLayout";
+import { useDashboardOutputConsoleActive } from "./DashboardOutputConsoleContext";
 import type { DashboardNavigationItem } from "./DashboardSidebar";
 import WelcomePage from "./WelcomePage";
 import "./dashboard-sidebar.css";
@@ -102,11 +103,74 @@ const billingItems: readonly (DashboardNavigationItem & { readonly id: "history"
   },
 ];
 
+interface OperatorNavigationProps {
+  activeSection: OperatorSection;
+  billingExpanded: boolean;
+  billingNavigationId: string;
+  onSelectSection: (id: string) => void;
+}
+
+function OperatorNavigation({
+  activeSection,
+  billingExpanded,
+  billingNavigationId,
+  onSelectSection,
+}: OperatorNavigationProps) {
+  const outputConsoleActive = useDashboardOutputConsoleActive();
+  const billingSelected = activeSection === "history" || activeSection === "ledger";
+
+  return (
+    <nav className="dashboard-sidebar operator-navigation" aria-label="Dashboard navigation">
+      <ul className="dashboard-sidebar__items">
+        {items.map((item) => (
+          <li key={item.id} className={item.id === "billing" ? "operator-navigation__group" : undefined}>
+            <button
+              type="button"
+              className="dashboard-sidebar__button"
+              aria-current={!outputConsoleActive && item.id === activeSection ? "page" : undefined}
+              aria-expanded={item.id === "billing" ? billingExpanded : undefined}
+              aria-controls={item.id === "billing" ? billingNavigationId : undefined}
+              data-child-selected={item.id === "billing" && billingSelected && !outputConsoleActive ? "true" : undefined}
+              title={item.label}
+              onClick={() => onSelectSection(item.id)}
+            >
+              <span className="dashboard-sidebar__icon" aria-hidden="true">{item.icon}</span>
+              <span className="dashboard-sidebar__label">{item.label}</span>
+              {item.id === "billing" && (
+                <svg className="operator-navigation__chevron" aria-hidden="true" focusable="false" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d={billingExpanded ? "m6 15 6-6 6 6" : "m6 9 6 6 6-6"} />
+                </svg>
+              )}
+            </button>
+            {item.id === "billing" && (
+              <ul id={billingNavigationId} className="operator-navigation__children" hidden={!billingExpanded}>
+                {billingItems.map((child) => (
+                  <li key={child.id}>
+                    <button
+                      type="button"
+                      className="dashboard-sidebar__button"
+                      aria-current={!outputConsoleActive && child.id === activeSection ? "page" : undefined}
+                      title={child.label}
+                      onClick={() => onSelectSection(child.id)}
+                    >
+                      <span className="dashboard-sidebar__icon" aria-hidden="true">{child.icon}</span>
+                      <span className="dashboard-sidebar__label">{child.label}</span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </li>
+        ))}
+      </ul>
+    </nav>
+  );
+}
+
 export default function OperatorDashboard({ user, onLogout }: OperatorDashboardProps) {
   const [activeSection, setActiveSection] = useState<OperatorSection>("overview");
   const [billingExpanded, setBillingExpanded] = useState(false);
   const billingNavigationId = useId();
-  const billingSelected = activeSection === "history" || activeSection === "ledger";
 
   const [restaurants, setRestaurants] = useState<OperatorRestaurant[]>([]);
   const [loading, setLoading] = useState(true);
@@ -177,50 +241,12 @@ export default function OperatorDashboard({ user, onLogout }: OperatorDashboardP
       user={user}
       onLogout={onLogout}
       sidebar={
-        <nav className="dashboard-sidebar operator-navigation" aria-label="Dashboard navigation">
-          <ul className="dashboard-sidebar__items">
-            {items.map((item) => (
-              <li key={item.id} className={item.id === "billing" ? "operator-navigation__group" : undefined}>
-                <button
-                  type="button"
-                  className="dashboard-sidebar__button"
-                  aria-current={item.id === activeSection ? "page" : undefined}
-                  aria-expanded={item.id === "billing" ? billingExpanded : undefined}
-                  aria-controls={item.id === "billing" ? billingNavigationId : undefined}
-                  data-child-selected={item.id === "billing" && billingSelected ? "true" : undefined}
-                  title={item.label}
-                  onClick={() => selectSection(item.id)}
-                >
-                  <span className="dashboard-sidebar__icon" aria-hidden="true">{item.icon}</span>
-                  <span className="dashboard-sidebar__label">{item.label}</span>
-                  {item.id === "billing" && (
-                    <svg className="operator-navigation__chevron" aria-hidden="true" focusable="false" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d={billingExpanded ? "m6 15 6-6 6 6" : "m6 9 6 6 6-6"} />
-                    </svg>
-                  )}
-                </button>
-                {item.id === "billing" && (
-                  <ul id={billingNavigationId} className="operator-navigation__children" hidden={!billingExpanded}>
-                    {billingItems.map((child) => (
-                      <li key={child.id}>
-                        <button
-                          type="button"
-                          className="dashboard-sidebar__button"
-                          aria-current={child.id === activeSection ? "page" : undefined}
-                          title={child.label}
-                          onClick={() => setActiveSection(child.id)}
-                        >
-                          <span className="dashboard-sidebar__icon" aria-hidden="true">{child.icon}</span>
-                          <span className="dashboard-sidebar__label">{child.label}</span>
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </li>
-            ))}
-          </ul>
-        </nav>
+        <OperatorNavigation
+          activeSection={activeSection}
+          billingExpanded={billingExpanded}
+          billingNavigationId={billingNavigationId}
+          onSelectSection={selectSection}
+        />
       }
     >
       {activeSection === "overview" && (
