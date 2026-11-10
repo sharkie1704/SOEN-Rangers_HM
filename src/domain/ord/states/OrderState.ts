@@ -32,6 +32,10 @@ export abstract class OrderState {
     return this.disallow("deliver");
   }
 
+  refund(): OrderState {
+    return this.disallow("refund");
+  }
+
   private disallow(action: OrderAction): never {
     throw new OrderError("INVALID_TRANSITION", `Cannot ${action} an order in ${this.status} state.`);
   }

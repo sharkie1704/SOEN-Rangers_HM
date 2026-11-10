@@ -105,6 +105,10 @@ export class Order {
     return this.transition(this.#state.deliver(), "deliver", actorId, eventId);
   }
 
+  refund(actorId: string, eventId: number): StateChangeEvent {
+    return this.transition(this.#state.refund(), "refund", actorId, eventId);
+  }
+
   private transition(nextState: OrderState, action: OrderAction, actorId: string, eventId: number, reason?: string): StateChangeEvent {
     const event: StateChangeEvent = Object.freeze({
       eventId: requireId(eventId, "Event ID"),

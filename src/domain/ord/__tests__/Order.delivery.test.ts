@@ -34,6 +34,15 @@ describe("Order pickup and delivery", () => {
     expect(event).toMatchObject({ eventId: 11, action: "deliver", from: "PickedUp", to: "Delivered" });
   });
 
+  it("moves a delivered order to refunded and records the event", () => {
+    const order = orderIn("Delivered");
+
+    const event = order.refund("operator-1", 12);
+
+    expect(order.status).toBe("Refunded");
+    expect(event).toMatchObject({ eventId: 12, actorId: "operator-1", action: "refund", from: "Delivered", to: "Refunded" });
+  });
+
   it.each<OrderStatus>(["Placed", "Accepted", "Preparing", "PickedUp", "Delivered", "Rejected", "Cancelled"])(
     "refuses pickup from %s",
     (status) => {
@@ -45,7 +54,7 @@ describe("Order pickup and delivery", () => {
     },
   );
 
-  it.each<OrderStatus>(["Placed", "Accepted", "Preparing", "Ready", "Delivered", "Rejected", "Cancelled"])(
+  it.each<OrderStatus>(["Placed", "Accepted", "Preparing", "Ready", "Refunded", "Rejected", "Cancelled"])(
     "refuses delivery from %s",
     (status) => {
       const order = orderIn(status);
@@ -56,9 +65,26 @@ describe("Order pickup and delivery", () => {
     },
   );
 
+  it.each<OrderStatus>(["Placed", "Accepted", "Preparing", "PickedUp", "Refunded", "Rejected", "Cancelled"])(
+    "refuses refund from %s",
+    (status) => {
+      const order = orderIn(status);
+
+      expect(() => order.refund("operator-1", 12)).toThrowError(expect.objectContaining({ code: "INVALID_TRANSITION" }));
+      expect(order.status).toBe(status);
+      expect(order.events).toHaveLength(0);
+    },
+  );
+
   it.each(["accept", "cancel", "startPreparing", "markReady"] as const)("refuses %s once delivered", (action) => {
     const order = orderIn("Delivered");
 
     expect(() => order[action]("actor-1", 12)).toThrowError(expect.objectContaining({ code: "INVALID_TRANSITION" }));
+  });
+
+  it("refuses a second refund", () => {
+    const order = orderIn("Refunded");
+
+    expect(() => order.refund("operator-1", 13)).toThrowError(expect.objectContaining({ code: "INVALID_TRANSITION" }));
   });
 });
