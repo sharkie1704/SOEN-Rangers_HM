@@ -66,69 +66,69 @@ export default function CustomerOrderHistory() {
   }, []);
 
   return (
-    <>
-    <OrderSummaryList />
-    <main className="my-orders-page" aria-label="My orders">
-      <header className="my-orders-heading">
-        <div>
-          <p className="my-orders-eyebrow">YOUR DESSERTDASH</p>
-          <h1>My Orders</h1>
-          <p className="my-orders-subtitle">Track current orders and revisit every order you’ve placed.</p>
-        </div>
-        <button className="orders-refresh-all" type="button" onClick={refreshOrders} disabled={loading || refreshingList}>
-          {refreshingList ? "Refreshing…" : "Refresh orders"}
-        </button>
-      </header>
-      <div className="orders-count">{orders.length} {orders.length === 1 ? "order" : "orders"}</div>
-      {loading && <div className="orders-message" role="status"><span className="orders-spinner" />Loading your orders…</div>}
-      {error && <div className="orders-error" role="alert"><span>{error}</span><button type="button" onClick={refreshOrders}>Try again</button></div>}
-      {!loading && !error && orders.length === 0 && (
-        <section className="orders-empty">
-          <span className="orders-empty-icon" aria-hidden="true">♡</span>
-          <h2>No orders yet</h2>
-          <p>Your placed, in progress, and cancelled orders will show up here.</p>
-        </section>
-      )}
-      <div className="orders-list">
-        {orders.map((order) => (
-          <article className="order-card" key={order.id}>
-            <div className="order-card-heading">
-              <div>
-                <p className="order-number-label">ORDER</p>
-                <h2>#{order.id}</h2>
+    <main className="customer-order-history" aria-label="Customer order history">
+      <OrderSummaryList />
+      <section className="my-orders-page" aria-labelledby="my-orders-heading">
+        <header className="my-orders-heading">
+          <div>
+            <p className="my-orders-eyebrow">YOUR DESSERTDASH</p>
+            <h1 id="my-orders-heading">My Orders</h1>
+            <p className="my-orders-subtitle">Track current orders and revisit every order you’ve placed.</p>
+          </div>
+          <button className="orders-refresh-all" type="button" onClick={refreshOrders} disabled={loading || refreshingList}>
+            {refreshingList ? "Refreshing…" : "Refresh orders"}
+          </button>
+        </header>
+        <div className="orders-count">{orders.length} {orders.length === 1 ? "order" : "orders"}</div>
+        {loading && <div className="orders-message" role="status"><span className="orders-spinner" />Loading your orders…</div>}
+        {error && <div className="orders-error" role="alert"><span>{error}</span><button type="button" onClick={refreshOrders}>Try again</button></div>}
+        {!loading && !error && orders.length === 0 && (
+          <section className="orders-empty">
+            <span className="orders-empty-icon" aria-hidden="true">♡</span>
+            <h2>No orders yet</h2>
+            <p>Your placed, in progress, and cancelled orders will show up here.</p>
+          </section>
+        )}
+        <div className="orders-list">
+          {orders.map((order) => (
+            <article className="order-card" key={order.id}>
+              <div className="order-card-heading">
+                <div>
+                  <p className="order-number-label">ORDER</p>
+                  <h2>#{order.id}</h2>
+                </div>
+                <span className={`order-status order-status-${order.status.toLowerCase()}`}>{order.status}</span>
               </div>
-              <span className={`order-status order-status-${order.status.toLowerCase()}`}>{order.status}</span>
-            </div>
-            <p className="order-placed-date">Placed {new Date(order.placedAt).toLocaleString()}</p>
-            <ul className="order-lines">
-              {order.lines.map((line, index) => <li key={`${line.name}-${index}`}><span>{line.quantity} × {line.name}</span></li>)}
-            </ul>
-            <div className="order-card-total">
-              <span>{order.fare ? "Total charged" : "Item subtotal"}</span>
-              <strong>${((order.fare?.totalCents ?? order.totalCents) / 100).toFixed(2)}</strong>
-            </div>
-            <div className="order-events" aria-label="Order event IDs">
-              {order.events.map((event) => <span key={event.eventId}>{event.action} <strong>#{event.eventId}</strong></span>)}
-            </div>
-            <div className="order-card-actions">
-              {order.status !== "Cancelled" && order.status !== "Rejected" && (
-                <button className="order-action order-action-secondary" type="button" disabled={busyOrderId === order.id} onClick={() => refreshOrder(order.id)}>
-                  {busyOrderId === order.id ? "Updating…" : "Refresh status"}
-                </button>
-              )}
-              {order.status === "Placed" && <button className="order-action order-action-cancel" type="button" disabled={busyOrderId === order.id} onClick={() => cancelOrder(order.id)}>
-                Cancel order
-              </button>}
-              {order.status === "Rejected" && (
-                <p className="order-comment order-rejection-reason">
-                  <u style={{ marginRight: "4px" }}>Rejection Reason:</u>{" "} {order.rejectionReason || "No reason provided."}
-                </p>
-              )}
-            </div>
-          </article>
-        ))}
-      </div>
+              <p className="order-placed-date">Placed {new Date(order.placedAt).toLocaleString()}</p>
+              <ul className="order-lines">
+                {order.lines.map((line, index) => <li key={`${line.name}-${index}`}><span>{line.quantity} × {line.name}</span></li>)}
+              </ul>
+              <div className="order-card-total">
+                <span>{order.fare ? "Total charged" : "Item subtotal"}</span>
+                <strong>${((order.fare?.totalCents ?? order.totalCents) / 100).toFixed(2)}</strong>
+              </div>
+              <div className="order-events" aria-label="Order event IDs">
+                {order.events.map((event) => <span key={event.eventId}>{event.action} <strong>#{event.eventId}</strong></span>)}
+              </div>
+              <div className="order-card-actions">
+                {order.status !== "Cancelled" && order.status !== "Rejected" && (
+                  <button className="order-action order-action-secondary" type="button" disabled={busyOrderId === order.id} onClick={() => refreshOrder(order.id)}>
+                    {busyOrderId === order.id ? "Updating…" : "Refresh status"}
+                  </button>
+                )}
+                {order.status === "Placed" && <button className="order-action order-action-cancel" type="button" disabled={busyOrderId === order.id} onClick={() => cancelOrder(order.id)}>
+                  Cancel order
+                </button>}
+                {order.status === "Rejected" && (
+                  <p className="order-comment order-rejection-reason">
+                    <u style={{ marginRight: "4px" }}>Rejection Reason:</u>{" "} {order.rejectionReason || "No reason provided."}
+                  </p>
+                )}
+              </div>
+            </article>
+          ))}
+        </div>
+      </section>
     </main>
-    </>
   );
 }

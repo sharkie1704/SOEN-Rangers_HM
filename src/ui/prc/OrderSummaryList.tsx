@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useId, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import { api, ApiError } from "../reg/api/client";
 import "./order-summaries.css";
 
@@ -158,42 +158,44 @@ export default function OrderSummaryList({ operatorView = false }: OrderSummaryL
                     </tr>
                   )}
                   {summaries.map((summary) => (
-                    <Fragment key={summary.orderId}>
-                      <tr>
-                        <th scope="row">#{summary.orderId}</th>
-                        <td>Delivered</td>
-                        <td>{money(summary.fare.totalCents)}</td>
-                        <td>
-                          <div className="order-summaries__table-actions">
-                            <button
-                              type="button"
-                              aria-label={`${expandedOrderId === summary.orderId ? "Hide" : "View"} details for order #${summary.orderId}`}
-                              aria-expanded={expandedOrderId === summary.orderId}
-                              aria-controls={`${detailsId}-${summary.orderId}`}
-                              onClick={() => setExpandedOrderId((current) => current === summary.orderId ? null : summary.orderId)}
-                            >
-                              {expandedOrderId === summary.orderId ? "Hide Details" : "View Details"}
-                            </button>
-                          </div>
-                        </td>
-                        <td>
-                          <div className="order-summaries__table-actions">
-                            <button type="button" disabled aria-describedby={refundDescriptionId}>
-                              Refund
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                      <tr id={`${detailsId}-${summary.orderId}`} hidden={expandedOrderId !== summary.orderId}>
-                        <td colSpan={5}>
-                          {expandedOrderId === summary.orderId && <SummaryDetails summary={summary} />}
-                        </td>
-                      </tr>
-                    </Fragment>
+                    <tr key={summary.orderId}>
+                      <th scope="row">#{summary.orderId}</th>
+                      <td>Delivered</td>
+                      <td>{money(summary.fare.totalCents)}</td>
+                      <td>
+                        <div className="order-summaries__table-actions">
+                          <button
+                            type="button"
+                            aria-label={`${expandedOrderId === summary.orderId ? "Hide" : "View"} details for order #${summary.orderId}`}
+                            aria-expanded={expandedOrderId === summary.orderId}
+                            aria-controls={`${detailsId}-${summary.orderId}`}
+                            onClick={() => setExpandedOrderId((current) => current === summary.orderId ? null : summary.orderId)}
+                          >
+                            {expandedOrderId === summary.orderId ? "Hide Details" : "View Details"}
+                          </button>
+                        </div>
+                      </td>
+                      <td>
+                        <div className="order-summaries__table-actions">
+                          <button type="button" disabled aria-describedby={refundDescriptionId}>
+                            Refund
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
                   ))}
                 </tbody>
               </table>
             </div>
+            {summaries.map((summary) => expandedOrderId === summary.orderId && (
+              <div
+                className="order-summaries__expanded-detail"
+                id={`${detailsId}-${summary.orderId}`}
+                key={summary.orderId}
+              >
+                <SummaryDetails summary={summary} />
+              </div>
+            ))}
           </>
         )
       ) : (
