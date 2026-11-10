@@ -69,13 +69,6 @@ export default function RestaurantStaffDashboard({ user, onLogout, restaurantId 
             name={user.name ?? ""}
             description="Your restaurant workspace is ready for today's orders and menu updates."
           />
-          <div className="restaurant-staff-dashboard__intro">
-            <span aria-hidden="true">✦</span>
-            <p>
-              Keep your shift running smoothly.
-              <span>Orders and menu updates are right here.</span>
-            </p>
-          </div>
           <DashboardRestaurantMap
             user={{
               id: user.id,

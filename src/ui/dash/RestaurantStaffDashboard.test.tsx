@@ -62,10 +62,6 @@ describe("restaurant staff dashboard", () => {
     expect(html).toContain("Your restaurant workspace is ready for today&#x27;s orders and menu updates.");
     expect(html).toContain("Restaurant Staff");
     expect(html).toContain(">Log out</button>");
-    expect(html).toContain('class="restaurant-staff-dashboard__intro"');
-    expect(html).toContain("Keep your shift running smoothly.");
-    expect(html).not.toContain("<strong>Keep your shift running smoothly.</strong>");
-    expect(html).toContain("Orders and menu updates are right here.");
     expect(html).toContain('data-testid="restaurant-map"');
     expect(html).not.toContain('data-testid="restaurant-orders"');
     expect(html).not.toContain('data-testid="restaurant-menu"');

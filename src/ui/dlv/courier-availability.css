@@ -90,7 +90,7 @@
   border: 1px solid var(--availability-caramel);
   border-radius: 18px;
   padding: clamp(22px, 4vw, 34px);
-  background: linear-gradient(115deg, #f3e4d1 0%, #fff8ed 66%, #f7e9d8 100%);
+  background: hsl(37, 88%, 94%);
   box-shadow: 0 12px 30px rgb(75 48 40 / 8%);
 }
 
