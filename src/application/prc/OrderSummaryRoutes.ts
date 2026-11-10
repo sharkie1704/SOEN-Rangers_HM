@@ -7,10 +7,11 @@ function toActor(req: Request): OrderSummaryActor | null {
   const user = req.user;
   if (!user || typeof user.id !== "string" || user.id.trim() === "") return null;
   const role = String(user.role).toUpperCase();
-  if (role === Role.CUSTOMER || role === Role.OPERATOR) {
-    return { userId: user.id, role };
-  }
-  return { userId: user.id, role: user.role };
+  if (role === Role.CUSTOMER) return { userId: user.id, role: Role.CUSTOMER };
+  if (role === Role.RESTAURANT) return { userId: user.id, role: Role.RESTAURANT, restaurantId: user.restaurantId };
+  if (role === Role.COURIER) return { userId: user.id, role: Role.COURIER };
+  if (role === Role.OPERATOR) return { userId: user.id, role: Role.OPERATOR };
+  return null;
 }
 
 export class OrderSummaryRoutes {

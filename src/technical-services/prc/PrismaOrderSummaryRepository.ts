@@ -19,6 +19,26 @@ export class PrismaOrderSummaryRepository implements OrderSummaryRepository {
     return rows.map(toSummary);
   }
 
+  async findByRestaurant(restaurantId: string): Promise<readonly OrderSummary[]> {
+    const rows = await prisma.orderSummary.findMany({
+      where: { restaurantId },
+      include: withOrderLines,
+      orderBy: { deliveredAt: "desc" },
+    });
+    return rows.map(toSummary);
+  }
+
+  async findByCourier(courierId: string): Promise<readonly OrderSummary[]> {
+    const rows = await prisma.orderSummary.findMany({
+      where: {
+        order: { assignments: { some: { courierId, status: "COMPLETED" } } },
+      },
+      include: withOrderLines,
+      orderBy: { deliveredAt: "desc" },
+    });
+    return rows.map(toSummary);
+  }
+
   async findAll(): Promise<readonly OrderSummary[]> {
     const rows = await prisma.orderSummary.findMany({
       include: withOrderLines,

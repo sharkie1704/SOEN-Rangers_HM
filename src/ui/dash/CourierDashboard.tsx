@@ -6,11 +6,12 @@ import DashboardLayout from "./DashboardLayout";
 import DashboardSidebar, { type DashboardNavigationItem } from "./DashboardSidebar";
 import WelcomePage from "./WelcomePage";
 import CourierDeliveriesPage from "./CourierDeliveriesPage";
+import OrderSummaryList from "../prc/OrderSummaryList";
 
 type CourierDashboardProps = Pick<ComponentProps<typeof DashboardLayout>, "onLogout"> & {
   user: AuthUser;
 };
-type CourierSection = "overview" | "availability" | "deliveries";
+type CourierSection = "overview" | "availability" | "deliveries" | "history";
 
 const items: readonly DashboardNavigationItem[] = [
   {
@@ -46,6 +47,16 @@ const items: readonly DashboardNavigationItem[] = [
       </svg>
     ),
   },
+  {
+    id: "history",
+    label: "History",
+    icon: (
+      <svg aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75">
+        <circle cx="12" cy="12" r="8" />
+        <path d="M12 7v5l3 2" />
+      </svg>
+    ),
+  },
 ];
 
 export default function CourierDashboard({ user, onLogout }: CourierDashboardProps) {
@@ -60,7 +71,7 @@ export default function CourierDashboard({ user, onLogout }: CourierDashboardPro
           items={items}
           activeId={activeSection}
           onSelect={(id) => {
-            if (id === "overview" || id === "availability" || id === "deliveries") setActiveSection(id);
+            if (id === "overview" || id === "availability" || id === "deliveries" || id === "history") setActiveSection(id);
           }}
         />
       }
@@ -87,6 +98,7 @@ export default function CourierDashboard({ user, onLogout }: CourierDashboardPro
       )}
       {activeSection === "availability" && <CourierAvailabilityPage />}
       {activeSection === "deliveries" && <CourierDeliveriesPage key={user.id} user={user} />}
+      {activeSection === "history" && <OrderSummaryList courierView />}
     </DashboardLayout>
   );
 }

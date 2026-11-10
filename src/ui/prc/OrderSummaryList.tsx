@@ -5,8 +5,8 @@ import "./order-summaries.css";
 type Summary = {
   orderId: number;
   restaurantName: string;
-  lines: { name: string; quantity: number; unitPriceCents: number }[];
-  fare: {
+  lines: { name: string; quantity: number; unitPriceCents?: number }[];
+  fare?: {
     subtotalCents: number;
     deliveryFeeCents: number;
     serviceFeeCents: number;
@@ -16,6 +16,12 @@ type Summary = {
   placedAt: string;
   deliveredAt: string;
   generatedAt: string;
+  ledger?: {
+    finalState: string;
+    epoch: number;
+    eventId: number;
+    totalChargeCents: number | null;
+  };
 };
 
 function money(cents: number): string {
@@ -42,26 +48,28 @@ function SummaryDetails({ summary }: { summary: Summary }) {
         {summary.lines.map((line, index) => (
           <li key={`${line.name}-${index}`}>
             <span>{line.quantity} × {line.name}</span>
-            <span>{money(line.quantity * line.unitPriceCents)}</span>
+            {line.unitPriceCents !== undefined && <span>{money(line.quantity * line.unitPriceCents)}</span>}
           </li>
         ))}
       </ul>
-      <dl className="order-summary__fare">
+      {summary.fare && <dl className="order-summary__fare">
         <div><dt>Subtotal</dt><dd>{money(summary.fare.subtotalCents)}</dd></div>
         <div><dt>Delivery fee</dt><dd>{money(summary.fare.deliveryFeeCents)}</dd></div>
         <div><dt>Service fee</dt><dd>{money(summary.fare.serviceFeeCents)}</dd></div>
         <div><dt>Small-order surcharge</dt><dd>{money(summary.fare.smallOrderSurchargeCents)}</dd></div>
         <div className="order-summary__total"><dt>Total charged</dt><dd>{money(summary.fare.totalCents)}</dd></div>
-      </dl>
+      </dl>}
     </article>
   );
 }
 
 interface OrderSummaryListProps {
   operatorView?: boolean;
+  restaurantView?: boolean;
+  courierView?: boolean;
 }
 
-export default function OrderSummaryList({ operatorView = false }: OrderSummaryListProps) {
+export default function OrderSummaryList({ operatorView = false, restaurantView = false, courierView = false }: OrderSummaryListProps) {
   const [expandedOrderId, setExpandedOrderId] = useState<number | null>(null);
   const refundDescriptionId = useId();
   const detailsId = useId();
@@ -106,8 +114,8 @@ export default function OrderSummaryList({ operatorView = false }: OrderSummaryL
     <section className={`order-summaries${operatorView ? " order-summaries--operator" : ""}`} aria-label="Delivered order summaries">
       <header className="order-summaries__heading">
         <p className="order-summaries__eyebrow">PRICING & HISTORY</p>
-        <h2>Delivered order summaries</h2>
-        <p>Final charges are saved from the time each order was placed.</p>
+        <h2>{courierView ? "Delivery history" : restaurantView ? "Restaurant order history" : "Delivered order summaries"}</h2>
+        <p>{courierView ? "Orders delivered by your courier account." : "Final charges are saved from the time each order was placed."}</p>
         <button type="button" onClick={loadSummaries} disabled={loading}>
           {loading ? "Loading…" : "Refresh summaries"}
         </button>
@@ -116,7 +124,7 @@ export default function OrderSummaryList({ operatorView = false }: OrderSummaryL
       {loading && <p role="status">Loading order summaries…</p>}
       {error && <p className="order-summaries__error" role="alert">{error}</p>}
       {!operatorView && !loading && !error && summaries.length === 0 && (
-        <p className="order-summaries__empty">No delivered order summaries yet.</p>
+        <p className="order-summaries__empty">No order history yet.</p>
       )}
 
       {summaries.length > 0 && (
@@ -147,6 +155,7 @@ export default function OrderSummaryList({ operatorView = false }: OrderSummaryL
                     <th scope="col">Order ID</th>
                     <th scope="col">Status</th>
                     <th scope="col">Total</th>
+                    <th scope="col">Ledger</th>
                     <th scope="col">Details</th>
                     <th scope="col">Refund</th>
                   </tr>
@@ -154,14 +163,15 @@ export default function OrderSummaryList({ operatorView = false }: OrderSummaryL
                 <tbody>
                   {summaries.length === 0 && (
                     <tr>
-                      <td colSpan={5} className="order-summaries__empty">No delivered orders yet.</td>
+                      <td colSpan={6} className="order-summaries__empty">No delivered orders yet.</td>
                     </tr>
                   )}
                   {summaries.map((summary) => (
                     <tr key={summary.orderId}>
                       <th scope="row">#{summary.orderId}</th>
                       <td>Delivered</td>
-                      <td>{money(summary.fare.totalCents)}</td>
+                      <td>{summary.fare ? money(summary.fare.totalCents) : "Hidden"}</td>
+                      <td>{summary.ledger ? `${summary.ledger.finalState} · #${summary.ledger.eventId}` : "Not recorded"}</td>
                       <td>
                         <div className="order-summaries__table-actions">
                           <button
