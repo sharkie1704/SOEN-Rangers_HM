@@ -176,6 +176,7 @@ export function createApp({
     app.get("/api/orders/all", orderRoutes.listAll);
     app.get("/api/orders/:orderId", orderRoutes.getOne);
     app.post("/api/orders/:orderId/cancel", orderRoutes.cancel);
+    app.post("/api/orders/:orderId/refund", orderRoutes.refund);
     app.post("/api/orders/:orderId/accept", orderRoutes.accept);
     app.post("/api/orders/:orderId/reject", orderRoutes.reject);
     app.post("/api/orders/:orderId/ready", orderRoutes.markReady);

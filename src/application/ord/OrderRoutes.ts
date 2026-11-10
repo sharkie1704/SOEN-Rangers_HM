@@ -52,6 +52,10 @@ export class OrderRoutes {
     res.json({ transition: await this.orders.cancel(toActor(req.user), Number(req.params.orderId)) });
   });
 
+  refund = (req: Request, res: Response) => this.respond(res, async () => {
+    res.json({ transition: await this.orders.refund(toActor(req.user), Number(req.params.orderId)) });
+  });
+
   // Restaurant staff: incoming orders, the preparation queue, and moving orders through it
   incoming = (req: Request, res: Response) => this.respond(res, async () => {
     res.json({ orders: await this.orders.incoming(toActor(req.user), String(req.params.restaurantId)) });
