@@ -2,7 +2,7 @@ import { OrderError } from "../ord/OrderError.ts";
 import type { Order } from "../ord/Order.ts";
 import type { StateChangeEvent } from "../ord/StateChangeEvent.ts";
 
-export type LedgerFinalState = "Delivered" | "Rejected" | "Cancelled";
+export type LedgerFinalState = "Delivered" | "Refunded" | "Rejected" | "Cancelled";
 
 export interface LedgerEntry {
   readonly eventId: number;
@@ -16,11 +16,12 @@ export interface LedgerEntry {
 }
 
 function isLedgerFinalState(status: string): status is LedgerFinalState {
-  return status === "Delivered" || status === "Rejected" || status === "Cancelled";
+  return status === "Delivered" || status === "Refunded" || status === "Rejected" || status === "Cancelled";
 }
 
 function isTerminalAction(event: StateChangeEvent): boolean {
   return (event.to === "Delivered" && event.action === "deliver")
+    || (event.to === "Refunded" && event.action === "refund")
     || (event.to === "Rejected" && event.action === "reject")
     || (event.to === "Cancelled" && event.action === "cancel");
 }
