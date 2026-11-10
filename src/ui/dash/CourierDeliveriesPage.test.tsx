@@ -2,50 +2,61 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import CourierDeliveriesPage, {
+  canAcceptOffer,
   canConfirmDelivery,
   canConfirmPickup,
-  type MockDeliveryOrder,
 } from "./CourierDeliveriesPage";
 
 const courier = { id: "courier-1", role: "COURIER" as const };
 
-function order(status: MockDeliveryOrder["status"], assignedCourierId = courier.id): MockDeliveryOrder {
+function delivery(
+  status: "Ready" | "PickedUp" | "Preparing",
+  assignmentStatus: "Offered" | "Accepted" = "Accepted",
+  courierId = courier.id,
+) {
   return {
-    id: 1042,
-    restaurant: "Demo Bakery",
-    itemSummary: "Chocolate brownie and cookies",
-    status,
-    assignedCourierId,
-    assignmentAccepted: true,
+    assignment: { orderId: 7, courierId, status: assignmentStatus },
+    order: {
+      id: 7,
+      restaurantName: "Dessert Shop",
+      status,
+      lines: [{ menuItemId: 1, name: "Brownie", quantity: 1, unitPriceCents: 450 }],
+    },
   };
 }
 
 describe("courier delivery command eligibility", () => {
-  it("allows pickup only for the assigned courier after the order is ready", () => {
-    expect(canConfirmPickup(order("READY"), courier)).toBe(true);
-    expect(canConfirmPickup(order("PREPARING"), courier)).toBe(false);
-    expect(canConfirmPickup(order("READY", "courier-2"), courier)).toBe(false);
-    expect(canConfirmPickup({ ...order("READY"), assignmentAccepted: false }, courier)).toBe(false);
-    expect(canConfirmPickup(order("READY"), { id: "customer-1", role: "CUSTOMER" })).toBe(false);
+  it("allows accepting only the current courier's pending offer", () => {
+    expect(canAcceptOffer(delivery("Ready", "Offered"), courier)).toBe(true);
+    expect(canAcceptOffer(delivery("Ready", "Accepted"), courier)).toBe(false);
+    expect(canAcceptOffer(delivery("Ready", "Offered", "courier-2"), courier)).toBe(false);
+    expect(canAcceptOffer(delivery("Ready", "Offered"), { id: "customer-1", role: "CUSTOMER" })).toBe(false);
   });
 
-  it("allows delivery only for the assigned courier after pickup", () => {
-    expect(canConfirmDelivery(order("PICKED_UP"), courier)).toBe(true);
-    expect(canConfirmDelivery(order("READY"), courier)).toBe(false);
-    expect(canConfirmDelivery(order("PICKED_UP", "courier-2"), courier)).toBe(false);
-    expect(canConfirmDelivery({ ...order("PICKED_UP"), assignmentAccepted: false }, courier)).toBe(false);
-    expect(canConfirmDelivery(order("PICKED_UP"), { id: "staff-1", role: "RESTAURANT" })).toBe(false);
+  it("allows pickup only for the assigned courier on an accepted ready order", () => {
+    expect(canConfirmPickup(delivery("Ready"), courier)).toBe(true);
+    expect(canConfirmPickup(delivery("Preparing"), courier)).toBe(false);
+    expect(canConfirmPickup(delivery("Ready", "Offered"), courier)).toBe(false);
+    expect(canConfirmPickup(delivery("Ready", "Accepted", "courier-2"), courier)).toBe(false);
+    expect(canConfirmPickup(delivery("Ready"), { id: "customer-1", role: "CUSTOMER" })).toBe(false);
   });
 
-  it("renders mock commands with pickup and delivery disabled according to status", () => {
+  it("allows delivery only for the assigned courier on an accepted picked-up order", () => {
+    expect(canConfirmDelivery(delivery("PickedUp"), courier)).toBe(true);
+    expect(canConfirmDelivery(delivery("Ready"), courier)).toBe(false);
+    expect(canConfirmDelivery(delivery("PickedUp", "Offered"), courier)).toBe(false);
+    expect(canConfirmDelivery(delivery("PickedUp", "Accepted", "courier-2"), courier)).toBe(false);
+    expect(canConfirmDelivery(delivery("PickedUp"), { id: "staff-1", role: "RESTAURANT" })).toBe(false);
+  });
+
+  it("loads real courier deliveries instead of rendering hardcoded example orders", () => {
     const html = renderToStaticMarkup(createElement(CourierDeliveriesPage, { user: courier }));
 
-    expect(html).toContain("Demo data");
-    expect(html).toContain("not sent to the server");
-    expect(html).toContain('<button type="button">Confirm Pickup</button>');
-    expect(html).toContain('<button type="button" disabled="">Confirm Delivery</button>');
-    expect(html).toContain('<button type="button" disabled="">Confirm Pickup</button>');
-    expect(html).toContain("Restaurant is preparing the order");
+    expect(html).toContain("Loading assigned deliveries…");
+    expect(html).toContain("Refresh deliveries");
+    expect(html).not.toContain("Demo data");
+    expect(html).not.toContain("1042");
+    expect(html).not.toContain("1043");
   });
 
   it("does not render courier commands for another role", () => {

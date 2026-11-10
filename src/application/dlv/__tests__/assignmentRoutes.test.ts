@@ -46,6 +46,26 @@ async function courierAgent(email: string) {
   return { agent, id };
 }
 
+async function addReadyOrder() {
+  await orders.add(Order.restore({
+    id: 7,
+    restaurantId: "rest-a",
+    restaurantName: "Dessert Shop",
+    customerId: "customer-1",
+    lines: [{ menuItemId: 1, name: "Brownie", quantity: 1, unitPriceCents: 450 }],
+    fare: {
+      subtotalCents: 450,
+      deliveryFeeCents: 300,
+      serviceFeeCents: 150,
+      smallOrderSurchargeCents: 200,
+      totalCents: 1100,
+    },
+    placedAt: new Date("2026-11-05T12:00:00Z"),
+    status: "Ready",
+    events: [],
+  }));
+}
+
 describe("Offer routes", () => {
   it("require a session", async () => {
     expect((await request(app).post("/api/orders/7/offer/accept")).status).toBe(401);
@@ -99,25 +119,69 @@ describe("Offer routes", () => {
   });
 });
 
+describe("Courier delivery listing route", () => {
+  it("requires a session", async () => {
+    expect((await request(app).get("/api/couriers/me/deliveries")).status).toBe(401);
+  });
+
+  it("returns no deliveries when the courier has no active assignment", async () => {
+    const { agent } = await courierAgent("casey@example.com");
+
+    expect((await agent.get("/api/couriers/me/deliveries")).body).toEqual({ deliveries: [] });
+  });
+
+  it("returns only the authenticated courier's active assignment and real order", async () => {
+    const owner = await courierAgent("owner@example.com");
+    const other = await courierAgent("other@example.com");
+    await addReadyOrder();
+    assignments.withAssignment(7, owner.id, "Accepted");
+
+    const ownResponse = await owner.agent.get("/api/couriers/me/deliveries");
+    expect(ownResponse.status).toBe(200);
+    expect(ownResponse.body.deliveries).toHaveLength(1);
+    expect(ownResponse.body.deliveries[0]).toMatchObject({
+      assignment: { orderId: 7, courierId: owner.id, status: "Accepted" },
+      order: {
+        id: 7,
+        restaurantName: "Dessert Shop",
+        status: "Ready",
+        lines: [{ name: "Brownie", quantity: 1 }],
+      },
+    });
+
+    expect((await other.agent.get("/api/couriers/me/deliveries")).body).toEqual({ deliveries: [] });
+  });
+
+  it("allows a courier to see their pending offer so they can accept it", async () => {
+    const { agent, id } = await courierAgent("casey@example.com");
+    await addReadyOrder();
+    assignments.withAssignment(7, id, "Offered");
+
+    const response = await agent.get("/api/couriers/me/deliveries");
+
+    expect(response.status).toBe(200);
+    expect(response.body.deliveries[0].assignment.status).toBe("Offered");
+    expect(response.body.deliveries[0].order.status).toBe("Ready");
+  });
+
+  it("denies non-courier accounts", async () => {
+    const customer = request.agent(app);
+    await customer.post("/api/auth/register").send({
+      role: "CUSTOMER",
+      name: "Customer",
+      email: "customer@example.com",
+      password: "password123",
+      address: { lat: 45.5, lng: -73.57 },
+    });
+    await customer.post("/api/auth/login").send({ email: "customer@example.com", password: "password123" });
+
+    expect((await customer.get("/api/couriers/me/deliveries")).status).toBe(403);
+  });
+});
+
 describe("Handoff routes", () => {
   async function readyOrderFor(courierId: string) {
-    await orders.add(Order.restore({
-      id: 7,
-      restaurantId: "rest-a",
-      restaurantName: "Dessert Shop",
-      customerId: "customer-1",
-      lines: [{ menuItemId: 1, name: "Brownie", quantity: 1, unitPriceCents: 450 }],
-      fare: {
-        subtotalCents: 450,
-        deliveryFeeCents: 300,
-        serviceFeeCents: 150,
-        smallOrderSurchargeCents: 200,
-        totalCents: 1100,
-      },
-      placedAt: new Date("2026-11-05T12:00:00Z"),
-      status: "Ready",
-      events: [],
-    }));
+    await addReadyOrder();
     assignments.withAssignment(7, courierId, "Accepted");
     couriers.withCourier(courierId, "ASSIGNED");
   }
@@ -138,6 +202,11 @@ describe("Handoff routes", () => {
     const delivered = await agent.post("/api/orders/7/deliver");
     expect(delivered.status).toBe(200);
     expect(delivered.body).toEqual({ order: { id: 7, status: "Delivered" }, courier: { id, status: "IDLE" } });
+    expect(assignments.summaries).toEqual([expect.objectContaining({
+      orderId: 7,
+      restaurantName: "Dessert Shop",
+      fare: { subtotalCents: 450, deliveryFeeCents: 300, serviceFeeCents: 150, smallOrderSurchargeCents: 200, totalCents: 1100 },
+    })]);
   });
 
   it("refuse another courier", async () => {
