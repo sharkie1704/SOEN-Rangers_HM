@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { Role } from "../../../domain/reg/Role.ts";
 import type { OrderSummary } from "../../../domain/prc/OrderSummary.ts";
+import type { LedgerRepository } from "../LedgerRepository.ts";
 import type { OrderSummaryRepository } from "../OrderSummaryRepository.ts";
 import { OrderSummaryService } from "../OrderSummaryService.ts";
 
@@ -61,6 +62,45 @@ describe("OrderSummaryService", () => {
 
     await expect(service.list({ userId: "operator-1", role: Role.OPERATOR }))
       .resolves.toEqual(repository.summaries);
+  });
+
+  it("shows the latest ledger state when a delivered order is refunded", async () => {
+    const ledger: LedgerRepository = {
+      async read() {
+        return {
+          currentEpoch: 0,
+          entries: [
+            {
+              eventId: 12,
+              orderId: 1,
+              finalState: "Refunded",
+              epoch: 0,
+              placedAt: customerSummary.placedAt,
+              finalizedAt: new Date("2026-11-07T11:00:00Z"),
+              deliveredAt: null,
+              totalChargeCents: 0,
+            },
+            {
+              eventId: 11,
+              orderId: 1,
+              finalState: "Delivered",
+              epoch: 0,
+              placedAt: customerSummary.placedAt,
+              finalizedAt: customerSummary.deliveredAt,
+              deliveredAt: customerSummary.deliveredAt,
+              totalChargeCents: 1000,
+            },
+          ],
+        };
+      },
+      async startNewEpoch() { return 1; },
+    };
+    const service = new OrderSummaryService(new InMemoryOrderSummaryRepository(), ledger);
+
+    const [result] = await service.list({ userId: "operator-1", role: Role.OPERATOR });
+
+    expect(result.ledger?.finalState).toBe("Refunded");
+    expect(result.ledger?.eventId).toBe(12);
   });
 
   it("returns only the restaurant's summaries", async () => {
