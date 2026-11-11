@@ -12,6 +12,12 @@ export interface ReassignmentResult {
   readonly offeredTo: string | null;
 }
 
+export interface StalledOrder {
+  readonly orderId: number;
+  readonly restaurantId: string;
+  readonly courierId: string;
+}
+
 export class ReassignmentService {
   constructor(
     private readonly assignments: AssignmentRepository,
@@ -20,10 +26,21 @@ export class ReassignmentService {
     private readonly dispatch: CourierIdleObserver,
   ) {}
 
-  async reassign(actor: AssignmentActor | null, orderId: number): Promise<ReassignmentResult> {
-    if (!actor || !hasPermission({ name: "reassignOrder" }, { ...actor, id: actor.userId })) {
-      throw new AssignmentError("FORBIDDEN", "Only an operator can reassign an order.");
+  async listStalled(actor: AssignmentActor | null): Promise<StalledOrder[]> {
+    this.requireOperator(actor);
+    const stalled: StalledOrder[] = [];
+    for (const assignment of await this.assignments.listAccepted()) {
+      const order = await this.orders.findById(assignment.orderId);
+      if (order?.status !== "Ready") continue;
+      const courier = await this.couriers.findByCourierId(assignment.courierId);
+      if (courier && courier.status !== "OFFLINE") continue;
+      stalled.push({ orderId: order.id, restaurantId: order.restaurantId, courierId: assignment.courierId });
     }
+    return stalled;
+  }
+
+  async reassign(actor: AssignmentActor | null, orderId: number): Promise<ReassignmentResult> {
+    this.requireOperator(actor);
     const assignment = await this.assignments.findActiveByOrderId(orderId);
     if (!assignment) {
       throw new AssignmentError("NOT_FOUND", "No courier is assigned to this order.");
@@ -52,6 +69,12 @@ export class ReassignmentService {
     });
 
     return { orderId, releasedCourierId: assignment.courierId, offeredTo: await this.dispatchAgain(orderId) };
+  }
+
+  private requireOperator(actor: AssignmentActor | null): void {
+    if (!actor || !hasPermission({ name: "reassignOrder" }, { ...actor, id: actor.userId })) {
+      throw new AssignmentError("FORBIDDEN", "Only an operator can reassign an order.");
+    }
   }
 
   private async dispatchAgain(orderId: number): Promise<string | null> {

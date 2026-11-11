@@ -46,6 +46,11 @@ export class PrismaAssignmentRepository implements AssignmentRepository {
     return rows.map((row) => row.orderId);
   }
 
+  async listAccepted(): Promise<Assignment[]> {
+    const rows = await prisma.assignment.findMany({ where: { status: "ACCEPTED" }, orderBy: { orderId: "asc" } });
+    return rows.map((row) => new Assignment(row.orderId, row.courierId, fromDbStatus[row.status]));
+  }
+
   async saveOffer(assignment: Assignment, event: AssignmentChangeEvent): Promise<void> {
     try {
       await prisma.$transaction(async (tx) => {

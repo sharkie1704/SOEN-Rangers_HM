@@ -16,6 +16,7 @@ export interface AssignmentRepository {
   findActiveByOrderId(orderId: number): Promise<Assignment | undefined>;
   findActiveByCourierId(courierId: string): Promise<Assignment | undefined>;
   findDeclinedOrderIds(courierId: string): Promise<number[]>;
+  listAccepted(): Promise<Assignment[]>;
   saveOffer(assignment: Assignment, event: AssignmentChangeEvent): Promise<void>;
   saveAccepted(assignment: Assignment, event: AssignmentChangeEvent, courier: CourierAvailability, courierEvent: CourierStatusEvent): Promise<void>;
   saveDeclined(assignment: Assignment, event: AssignmentChangeEvent): Promise<void>;

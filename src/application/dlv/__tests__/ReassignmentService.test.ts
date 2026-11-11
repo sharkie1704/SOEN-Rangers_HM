@@ -126,3 +126,43 @@ describe("ReassignmentService.reassign", () => {
     await expect(service.reassign(null, 7)).rejects.toMatchObject({ code: "FORBIDDEN" });
   });
 });
+
+describe("ReassignmentService.listStalled", () => {
+  it("lists accepted orders that are ready while their courier is offline", async () => {
+    await stalled();
+
+    expect(await service.listStalled(operator)).toEqual([{ orderId: 7, restaurantId: "rest-a", courierId: "courier-1" }]);
+  });
+
+  it.each<CourierStatus>(["IDLE", "ASSIGNED"])("leaves out an order whose courier is still %s", async (status) => {
+    await stalled(status);
+
+    expect(await service.listStalled(operator)).toEqual([]);
+  });
+
+  it("leaves out an order already picked up", async () => {
+    await stalled("OFFLINE", "PickedUp");
+
+    expect(await service.listStalled(operator)).toEqual([]);
+  });
+
+  it("leaves out an offer that was never accepted", async () => {
+    await addOrder(7, "Ready");
+    couriers.withCourier("courier-1", "OFFLINE");
+    assignments.withAssignment(7, "courier-1", "Offered");
+
+    expect(await service.listStalled(operator)).toEqual([]);
+  });
+
+  it("drops the order once it is reassigned", async () => {
+    await stalled();
+
+    await service.reassign(operator, 7);
+
+    expect(await service.listStalled(operator)).toEqual([]);
+  });
+
+  it.each([Role.CUSTOMER, Role.RESTAURANT, Role.COURIER])("refuses a %s account", async (role) => {
+    await expect(service.listStalled({ userId: "user-1", role })).rejects.toMatchObject({ code: "FORBIDDEN" });
+  });
+});

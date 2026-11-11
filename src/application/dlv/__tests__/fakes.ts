@@ -73,6 +73,10 @@ export class InMemoryAssignmentRepository implements AssignmentRepository {
     return [...this.declinedPairs].filter((pair) => pair.endsWith(`:${courierId}`)).map((pair) => Number(pair.split(":")[0]));
   }
 
+  async listAccepted(): Promise<Assignment[]> {
+    return [...this.assignments.values()].filter((a) => a.status === "Accepted").sort((a, b) => a.orderId - b.orderId);
+  }
+
   async saveOffer(assignment: Assignment, event: AssignmentChangeEvent): Promise<void> {
     if (await this.findActiveByOrderId(assignment.orderId) || await this.findActiveByCourierId(assignment.courierId)) {
       throw new AssignmentError("CONFLICT", "This order or courier already has an active offer.");
