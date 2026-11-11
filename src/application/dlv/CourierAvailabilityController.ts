@@ -29,7 +29,10 @@ export class CourierAvailabilityController {
   });
 
   restaurantMap = (req: Request, res: Response) => this.respond(res, async () => {
-    const couriers = await this.service.mapForRestaurant(toActor(req.user), req.params.restaurantId);
+    const restaurantId = Array.isArray(req.params.restaurantId)
+      ? req.params.restaurantId[0]
+      : req.params.restaurantId;
+    const couriers = await this.service.mapForRestaurant(toActor(req.user), restaurantId);
     res.json({ couriers });
   });
 
