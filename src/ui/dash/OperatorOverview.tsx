@@ -24,6 +24,7 @@ export default function OperatorOverview({ restaurants, loading, error, onRefres
     counts: Map<string, number>;
     failed: string[];
   } | null>(null);
+  const [dispatchQueue, setDispatchQueue] = useState<{ count: number | null; error: string }>({ count: null, error: "" });
 
   useEffect(() => {
     let cancelled = false;
@@ -80,6 +81,30 @@ export default function OperatorOverview({ restaurants, loading, error, onRefres
     return () => { cancelled = true; };
   }, []);
 
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadDispatchQueue() {
+      try {
+        const response = await api<unknown>("/api/dispatch/queue");
+        if (typeof response !== "object" || response === null
+          || !("waiting" in response) || !Array.isArray(response.waiting)) {
+          throw new Error("Invalid dispatch queue response.");
+        }
+        if (!cancelled) setDispatchQueue({ count: response.waiting.length, error: "" });
+      } catch (e) {
+        if (!cancelled) {
+          setDispatchQueue({ count: null, error: e instanceof ApiError
+            ? `Could not load orders waiting for courier: ${e.message}`
+            : "Could not load orders waiting for courier. Please try reopening Overview." });
+        }
+      }
+    }
+
+    void loadDispatchQueue();
+    return () => { cancelled = true; };
+  }, []);
+
   // All three order counts use the same authorized platform-wide response.
   const orderCounts = {
     total: orders.length,
@@ -98,7 +123,7 @@ export default function OperatorOverview({ restaurants, loading, error, onRefres
     { label: "Delivered Orders", value: orderValue(orderCounts.delivered), note: "All orders with Delivered status." },
     { label: "Open Restaurants", value: restaurantValue(counts.open), note: "Currently accepting orders." },
     { label: "Paused Restaurants", value: restaurantValue(counts.paused), note: "Ordering is temporarily paused." },
-    { label: "Available Couriers", value: "N/A", note: "Not available yet." },
+    { label: "Orders Waiting for Courier", value: dispatchQueue.error ? "Unable to load" : dispatchQueue.count ?? "Loading…", note: "READY orders waiting for an available courier." },
   ];
 
   const currentQueues = queueSnapshot?.restaurants === restaurants ? queueSnapshot : null;
@@ -141,6 +166,7 @@ export default function OperatorOverview({ restaurants, loading, error, onRefres
         </div>
       )}
       {ordersError && <p role="alert">{ordersError}</p>}
+      {dispatchQueue.error && <p role="alert">{dispatchQueue.error}</p>}
       <dl className="operator-overview__cards" aria-label="Platform summary">
         {cards.map(({ label, value, note }) => (
           <div className="operator-overview__card" key={label}>

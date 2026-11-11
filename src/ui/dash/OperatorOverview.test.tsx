@@ -30,19 +30,23 @@ afterEach(() => {
 function renderOverview(
   data: readonly OperatorRestaurant[] = restaurants,
   snapshot: unknown = null,
+  dispatchQueue: unknown = { count: null, error: "" },
 ) {
   const setSnapshot = vi.fn();
+  const setDispatchQueue = vi.fn();
   const effects: (() => void | (() => void))[] = [];
   let stateIndex = 0;
   vi.mocked(useState).mockImplementation(((initial: unknown) => {
     const index = stateIndex++;
-    return index === 4 ? [snapshot, setSnapshot] : [initial, () => {}];
+    if (index === 4) return [snapshot, setSnapshot];
+    if (index === 5) return [dispatchQueue, setDispatchQueue];
+    return [initial, () => {}];
   }) as unknown as typeof useState);
   vi.mocked(useEffect).mockImplementation((effect) => { effects.push(effect); });
   const html = renderToStaticMarkup(createElement(OperatorOverview, {
     restaurants: data, loading: false, error: "", onRefresh: () => {}, onNavigate: () => {},
   }));
-  return { html, setSnapshot, runQueueEffect: effects[0] };
+  return { html, setSnapshot, runQueueEffect: effects[0], setDispatchQueue, runDispatchEffect: effects[2] };
 }
 
 const restaurants = [
@@ -66,8 +70,8 @@ describe("operator overview", () => {
     expect(html).toContain("Delivered Orders");
     expect(html).toContain("Open Restaurants");
     expect(html).toContain("Paused Restaurants");
-    expect(html).toContain("Available Couriers");
-    expect(html).toContain("N/A");
+    expect(html).toContain("Orders Waiting for Courier");
+    expect(html).toContain('<dt>Orders Waiting for Courier</dt><dd><span class="operator-overview__value operator-overview__value--text">Loading…</span>');
     expect(html).toContain("<dt>Open Restaurants</dt><dd><span class=\"operator-overview__value\">1</span>");
     expect(html).toContain("<dt>Paused Restaurants</dt><dd><span class=\"operator-overview__value\">1</span>");
     expect(html).toContain("View orders");
@@ -90,6 +94,50 @@ describe("operator overview", () => {
     expect(html).toContain("Could not load restaurants.");
     expect(html).toContain("Try again");
     expect(html).not.toContain('data-testid="overview-map"');
+  });
+
+  it.each([3, 0])("displays %i waiting orders from the authenticated dispatch response", async (count) => {
+    const fetch = vi.fn().mockResolvedValue({
+      ok: true, status: 200, json: async () => ({ waiting: Array.from({ length: count }, (_, index) => ({ orderId: index + 1 })) }),
+    });
+    vi.stubGlobal("fetch", fetch);
+    const view = renderOverview();
+    view.runDispatchEffect();
+    expect(fetch).toHaveBeenCalledTimes(1);
+    expect(fetch).toHaveBeenCalledWith("/api/dispatch/queue", expect.objectContaining({ credentials: "include" }));
+    await vi.waitFor(() => expect(view.setDispatchQueue).toHaveBeenCalledWith({ count, error: "" }));
+    const html = renderOverview(restaurants, null, view.setDispatchQueue.mock.calls[0][0]).html;
+    expect(html).toContain(`<dt>Orders Waiting for Courier</dt><dd><span class="operator-overview__value">${count}</span>`);
+    expect(html).toContain("READY orders waiting for an available courier.");
+  });
+
+  it.each([
+    { ok: false, status: 500, body: { error: "Service unavailable" } },
+    { ok: true, status: 200, body: { waiting: null } },
+    { ok: true, status: 200, body: {} },
+  ])("shows an accessible failure instead of zero for an unsuccessful or invalid response: $body", async ({ ok, status, body }) => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok, status, json: async () => body }));
+    const view = renderOverview();
+    view.runDispatchEffect();
+    await vi.waitFor(() => expect(view.setDispatchQueue).toHaveBeenCalledTimes(1));
+    const state = view.setDispatchQueue.mock.calls[0][0];
+    expect(state.count).toBeNull();
+    expect(state.error).toContain("Could not load orders waiting for courier");
+    const html = renderOverview(restaurants, null, state).html;
+    expect(html).toContain('role="alert">Could not load orders waiting for courier');
+    expect(html).toContain('<dt>Orders Waiting for Courier</dt><dd><span class="operator-overview__value operator-overview__value--text">Unable to load</span>');
+    expect(html).toContain('<dt>Open Restaurants</dt><dd><span class="operator-overview__value">1</span>');
+  });
+
+  it("ignores dispatch responses after unmounting", async () => {
+    let resolve!: (response: unknown) => void;
+    vi.stubGlobal("fetch", vi.fn().mockReturnValue(new Promise((done) => { resolve = done; })));
+    const view = renderOverview();
+    const cleanup = view.runDispatchEffect();
+    cleanup?.();
+    resolve({ ok: true, status: 200, json: async () => ({ waiting: [] }) });
+    await new Promise((done) => setTimeout(done, 0));
+    expect(view.setDispatchQueue).not.toHaveBeenCalled();
   });
 
   it("requests real counts concurrently only for valid mapped restaurants and displays their bands", async () => {
