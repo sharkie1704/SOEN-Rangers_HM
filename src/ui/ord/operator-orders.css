@@ -37,7 +37,7 @@
   background: #eadbc8;
 }
 
-.operator-orders__heading button:disabled {
+.operator-orders button:disabled {
   opacity: 0.6;
   cursor: wait;
 }
@@ -69,6 +69,57 @@
 
 .operator-orders__table thead {
   background: #eadbc8;
+}
+
+.operator-orders__table tbody {
+  background: #fff;
+}
+
+.operator-orders__table tbody > tr:hover {
+  background: #fff9f2;
+}
+
+.operator-orders__status {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: #edf0f2;
+  color: #414a52;
+  font-size: 0.85rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.operator-orders__status--accepted,
+.operator-orders__status--preparing {
+  background: #e5f0fa;
+  color: #245579;
+}
+
+.operator-orders__status--ready {
+  background: #fff0d6;
+  color: #805000;
+}
+
+.operator-orders__status--pickedup {
+  background: #e0f2ef;
+  color: #245e57;
+}
+
+.operator-orders__status--delivered {
+  background: #e3f2e6;
+  color: #28633a;
+}
+
+.operator-orders__status--cancelled,
+.operator-orders__status--rejected {
+  background: #fbe7e4;
+  color: #8a3832;
+}
+
+.operator-orders__status--refunded {
+  background: #f0e7f8;
+  color: #68408a;
 }
 
 .operator-orders__table thead th:last-child,
@@ -136,9 +187,22 @@
 .operator-orders__search {
   display: grid;
   gap: 6px;
-  max-width: 480px;
-  margin-bottom: 16px;
+  width: 100%;
+  max-width: 360px;
+  min-width: 0;
+  margin-left: auto;
   font-weight: 600;
+}
+
+.operator-orders__refresh {
+  margin-left: auto;
+}
+
+@media (max-width: 700px) {
+  .operator-orders__search {
+    max-width: none;
+    flex-basis: 100%;
+  }
 }
 
 .operator-orders__search input {
@@ -180,7 +244,9 @@
   margin: 4px 0;
 }
 
-.operator-dispatch__heading button {
+.operator-dispatch__heading button,
+.operator-dispatch__tabs button,
+.operator-dispatch__stalled button {
   min-height: 42px;
   padding: 8px 14px;
   border: 1px solid #c89f7a;
@@ -192,12 +258,15 @@
   cursor: pointer;
 }
 
-.operator-dispatch__heading button:disabled {
+.operator-dispatch__heading button:disabled,
+.operator-dispatch__stalled button:disabled {
   opacity: 0.6;
   cursor: wait;
 }
 
-.operator-dispatch__heading button:focus-visible {
+.operator-dispatch__heading button:focus-visible,
+.operator-dispatch__tabs button:focus-visible,
+.operator-dispatch__stalled button:focus-visible {
   outline: 3px solid #4b3028;
   outline-offset: 2px;
 }
@@ -234,6 +303,40 @@
 
 .operator-dispatch__entry > span:first-child {
   font-weight: 700;
+}
+
+.operator-dispatch__stalled {
+  margin-top: 0;
+}
+
+.operator-dispatch__tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 24px;
+}
+
+.operator-dispatch__tabs button[aria-selected="true"] {
+  background: #eadbc8;
+  border-color: #c66b32;
+  font-weight: 700;
+}
+
+.operator-dispatch__tabs button:hover {
+  background: #eadbc8;
+}
+
+.operator-dispatch [role="tabpanel"]:focus-visible {
+  outline: 2px solid #4b3028;
+  outline-offset: 4px;
+}
+
+.operator-dispatch__stalled-entry > span {
+  overflow-wrap: anywhere;
+}
+
+.operator-dispatch__stalled button:not(:disabled):hover {
+  background: #eadbc8;
 }
 
 @media (max-width: 700px) {

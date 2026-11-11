@@ -255,10 +255,12 @@ export default function OperatorDashboard({ user, onLogout }: OperatorDashboardP
     >
       {activeSection === "overview" && (
         <>
-          <WelcomePage
-            name={user.name ?? ""}
-            description="Review activity and keep DessertDash running smoothly."
-          />
+          <div className="operator-welcome">
+            <WelcomePage
+              name={user.name ?? ""}
+              description="Review activity and keep DessertDash running smoothly."
+            />
+          </div>
           <OperatorOverview
             restaurants={restaurants}
             loading={loading}
