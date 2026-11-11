@@ -112,16 +112,16 @@ function DeliveryPinMarker({ point }: { point: GeoPoint }) {
   const icon = useMemo(
     () =>
       L.divIcon({
-        className: "map-view__delivery-icon",
-        html: "<span>🏠</span>",
-        iconSize: [28, 28],
-        iconAnchor: [14, 14],
+        className: "map-view__home-icon",
+        html: '<span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 10 9-7 9 7M5 9v11h5v-6h4v6h5V9"/></svg></span>',
+        iconSize: [32, 32],
+        iconAnchor: [16, 16],
       }),
     [],
   );
   return (
-    <Marker position={[point.lat, point.lng]} icon={icon} alt="Your delivery address">
-      <Tooltip>Your delivery address</Tooltip>
+    <Marker position={[point.lat, point.lng]} icon={icon} alt="Your home location">
+      <Tooltip>Your home location</Tooltip>
     </Marker>
   );
 }

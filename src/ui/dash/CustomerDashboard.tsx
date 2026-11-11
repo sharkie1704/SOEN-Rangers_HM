@@ -70,6 +70,8 @@ export default function CustomerDashboard({ user, onLogout }: CustomerDashboardP
               name: user.name ?? "User",
               role: user.role,
               restaurantId: user.restaurantId,
+              deliveryLat: user.address?.lat,
+              deliveryLng: user.address?.lng,
             }}
             onViewMenu={setMapRestaurantToOpen}
           />
