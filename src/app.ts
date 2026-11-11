@@ -46,6 +46,8 @@ import { DispatchQueueService } from "./application/dlv/DispatchQueueService";
 import { DispatchQueueController } from "./application/dlv/DispatchQueueController";
 import { CourierIdleSubject } from "./application/dlv/CourierIdleSubject";
 import { DispatchQueueObserver } from "./application/dlv/DispatchQueueObserver";
+import { ReassignmentService } from "./application/dlv/ReassignmentService";
+import { ReassignmentController } from "./application/dlv/ReassignmentController";
 import { OrderSummaryRoutes } from "./application/prc/OrderSummaryRoutes";
 import { OrderSummaryService } from "./application/prc/OrderSummaryService";
 import type { OrderSummaryRepository } from "./application/prc/OrderSummaryRepository";
@@ -154,8 +156,8 @@ export function createApp({
   // Offers an order to a courier when it becomes ready, and again when a courier declines it
   const dispatcher = orders && assignments && dispatch ? new DispatchService(orders, assignments, dispatch) : undefined;
   const courierIdle = new CourierIdleSubject();
-  if (dispatchQueue && assignments && couriers) {
-    courierIdle.subscribe(new DispatchQueueObserver(new DispatchQueueService(dispatchQueue), assignments, couriers));
+  if (dispatchQueue && dispatcher) {
+    courierIdle.subscribe(new DispatchQueueObserver(new DispatchQueueService(dispatchQueue), dispatcher));
   }
   if (orderSummaries) {
     const summaryRoutes = new OrderSummaryRoutes(new OrderSummaryService(orderSummaries, ledger));
@@ -186,7 +188,7 @@ export function createApp({
     app.get("/api/restaurants/:restaurantId/orders/all", orderRoutes.allForRestaurant);
   }
   if (couriers) {
-    const courierController = new CourierAvailabilityController(new CourierAvailabilityService(couriers, courierIdle));
+    const courierController = new CourierAvailabilityController(new CourierAvailabilityService(couriers, courierIdle, assignments));
     app.get("/api/couriers/me/availability", courierController.get);
     app.patch("/api/couriers/me/availability", courierController.update);
   }
@@ -207,6 +209,11 @@ export function createApp({
   if (dispatchQueue) {
     const dispatchQueueController = new DispatchQueueController(new DispatchQueueService(dispatchQueue));
     app.get("/api/dispatch/queue", dispatchQueueController.view);
+  }
+  if (dispatcher && assignments && couriers && orders) {
+    const reassignmentController = new ReassignmentController(new ReassignmentService(assignments, couriers, orders, dispatcher));
+    app.get("/api/dispatch/stalled", reassignmentController.stalled);
+    app.post("/api/orders/:orderId/reassign", reassignmentController.reassign);
   }
   app.get("/api/restaurants", requirePermission({ name: "browseRestaurants" }), restaurantController.listRestaurants);
   app.get("/api/restaurants/:restaurantId", requirePermission({ name: "browseRestaurants" }), restaurantController.getRestaurant);

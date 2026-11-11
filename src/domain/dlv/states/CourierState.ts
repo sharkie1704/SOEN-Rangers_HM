@@ -14,6 +14,10 @@ export abstract class CourierState {
     return this.disallow("go off duty");
   }
 
+  resumeDelivery(): CourierState {
+    return this.disallow("resume an accepted delivery");
+  }
+
   assign(): CourierState {
     return this.disallow("be assigned an order");
   }

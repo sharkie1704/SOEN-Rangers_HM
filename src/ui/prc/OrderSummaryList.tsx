@@ -146,19 +146,6 @@ export default function OrderSummaryList({ operatorView = false, restaurantView 
         <p className="order-summaries__empty">No order history yet.</p>
       )}
 
-      {summaries.length > 0 && (
-        <section className="order-summaries__console" aria-label="Order summary output console" aria-live="polite">
-          <h3>Output console</h3>
-          <ul>
-            {summaries.map((summary) => (
-              <li key={summary.orderId}>
-                [{new Date(summary.generatedAt).toLocaleString()}] PRC created summary for order #{summary.orderId}.
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
-
       {operatorView ? (
         !loading && !error && (
           <>

@@ -26,10 +26,6 @@ export class InMemoryCourierAvailabilityRepository implements CourierAvailabilit
     return status ? new CourierAvailability(courierId, status) : undefined;
   }
 
-  async listIdleCourierIds(): Promise<string[]> {
-    return [...this.statuses].filter(([, status]) => status === "IDLE").map(([id]) => id);
-  }
-
   async save(courier: CourierAvailability, event: CourierStatusEvent): Promise<void> {
     if (this.statuses.get(courier.courierId) !== event.fromStatus) {
       throw new CourierError("CONFLICT", "Courier status just changed. Reload it and try again.");
@@ -73,7 +69,14 @@ export class InMemoryAssignmentRepository implements AssignmentRepository {
     return [...this.declinedPairs].filter((pair) => pair.endsWith(`:${courierId}`)).map((pair) => Number(pair.split(":")[0]));
   }
 
+  async listAccepted(): Promise<Assignment[]> {
+    return [...this.assignments.values()].filter((a) => a.status === "Accepted").sort((a, b) => a.orderId - b.orderId);
+  }
+
   async saveOffer(assignment: Assignment, event: AssignmentChangeEvent): Promise<void> {
+    if (this.couriers.statuses.get(assignment.courierId) !== "IDLE") {
+      throw new AssignmentError("CONFLICT", "This courier is no longer free.");
+    }
     if (await this.findActiveByOrderId(assignment.orderId) || await this.findActiveByCourierId(assignment.courierId)) {
       throw new AssignmentError("CONFLICT", "This order or courier already has an active offer.");
     }

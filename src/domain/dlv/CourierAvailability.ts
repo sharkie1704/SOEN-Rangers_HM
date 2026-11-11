@@ -24,6 +24,10 @@ export class CourierAvailability {
     return this.moveTo(this.#state.goOnDuty());
   }
 
+  resumeDelivery(): CourierStatus {
+    return this.moveTo(this.#state.resumeDelivery());
+  }
+
   goOffDuty(): CourierStatus {
     return this.moveTo(this.#state.goOffDuty());
   }

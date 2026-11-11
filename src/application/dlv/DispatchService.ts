@@ -6,9 +6,13 @@ import type { OrderRepository } from "../ord/OrderRepository.ts";
 import type { AssignmentRepository } from "./AssignmentRepository.ts";
 import type { DispatchRepository } from "./DispatchRepository.ts";
 
+export interface OrderOffers {
+  offer(orderId: number): Promise<Assignment | undefined>;
+}
+
 // Applies the dispatch rule: a ready order is offered to the nearest free courier.
 // An order no courier can take stays ready with no offer, which is the dispatch queue.
-export class DispatchService implements OrderReadyListener {
+export class DispatchService implements OrderReadyListener, OrderOffers {
   constructor(
     private readonly orders: OrderRepository,
     private readonly assignments: AssignmentRepository,

@@ -2,7 +2,8 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { CourierAvailability } from "../../../domain/dlv/CourierAvailability.ts";
 import { Role } from "../../../domain/reg/Role.ts";
 import { CourierAvailabilityService, type CourierActor } from "../CourierAvailabilityService.ts";
-import { InMemoryCourierAvailabilityRepository } from "./fakes.ts";
+import { CourierIdleSubject } from "../CourierIdleSubject.ts";
+import { InMemoryAssignmentRepository, InMemoryCourierAvailabilityRepository } from "./fakes.ts";
 
 const courier: CourierActor = { userId: "courier-1", role: Role.COURIER };
 
@@ -72,5 +73,44 @@ describe("Courier availability (US-DLV-01)", () => {
 
   it("reports a courier that does not exist", async () => {
     await expectCode(service.get({ userId: "missing", role: Role.COURIER }), "NOT_FOUND");
+  });
+});
+
+describe("Going back on duty with an accepted delivery", () => {
+  let assignments: InMemoryAssignmentRepository;
+  let idle: CourierIdleSubject;
+  let announced: string[];
+
+  beforeEach(() => {
+    assignments = new InMemoryAssignmentRepository(repository);
+    idle = new CourierIdleSubject();
+    announced = [];
+    idle.subscribe({ courierBecameIdle: async (id) => { announced.push(id); } });
+    service = new CourierAvailabilityService(repository, idle, assignments);
+  });
+
+  it("returns to ASSIGNED so the courier can still pick up the order", async () => {
+    assignments.withAssignment(7, "courier-1", "Accepted");
+
+    const { courier: updated } = await service.goOnDuty(courier);
+
+    expect(updated.status).toBe("ASSIGNED");
+    expect(repository.events.at(-1)).toEqual(expect.objectContaining({ fromStatus: "OFFLINE", toStatus: "ASSIGNED" }));
+    expect(announced).toEqual([]);
+  });
+
+  it("goes IDLE and announces it when the order was reassigned meanwhile", async () => {
+    assignments.withAssignment(7, "courier-1", "Released");
+
+    const { courier: updated } = await service.goOnDuty(courier);
+
+    expect(updated.status).toBe("IDLE");
+    expect(announced).toEqual(["courier-1"]);
+  });
+
+  it("goes IDLE with an offer still waiting to be answered", async () => {
+    assignments.withAssignment(7, "courier-1", "Offered");
+
+    expect((await service.goOnDuty(courier)).courier.status).toBe("IDLE");
   });
 });

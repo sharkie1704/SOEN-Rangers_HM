@@ -13,7 +13,6 @@ export interface CourierStatusEvent {
 export interface CourierAvailabilityRepository {
   nextEventId(): Promise<number>;
   findByCourierId(courierId: string): Promise<CourierAvailability | undefined>;
-  listIdleCourierIds(): Promise<string[]>;
   // Saves the new status with its event; fails if the status changed since the courier was loaded
   save(courier: CourierAvailability, event: CourierStatusEvent): Promise<void>;
 }
