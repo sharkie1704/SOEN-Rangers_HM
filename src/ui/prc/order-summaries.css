@@ -153,29 +153,6 @@
   letter-spacing: 0.12em;
 }
 
-.order-summaries__console {
-  margin: 0 0 20px;
-  border-radius: 10px;
-  padding: 14px 16px;
-  background: #4b3028;
-  color: #fff9f2;
-  font-family: ui-monospace, Consolas, monospace;
-  font-size: 0.82rem;
-}
-
-.order-summaries__console h3 {
-  margin: 0 0 8px;
-  font-family: Poppins, sans-serif;
-  font-size: 0.9rem;
-}
-
-.order-summaries__console ul {
-  display: grid;
-  gap: 5px;
-  margin: 0;
-  padding-left: 18px;
-}
-
 .order-summaries__list {
   display: grid;
   gap: 14px;
