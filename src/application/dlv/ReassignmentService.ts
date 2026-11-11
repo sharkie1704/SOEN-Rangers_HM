@@ -4,7 +4,7 @@ import type { OrderRepository } from "../ord/OrderRepository.ts";
 import type { AssignmentRepository } from "./AssignmentRepository.ts";
 import type { AssignmentActor } from "./AssignmentService.ts";
 import type { CourierAvailabilityRepository } from "./CourierAvailabilityRepository.ts";
-import type { CourierIdleObserver } from "./CourierIdleSubject.ts";
+import type { OrderOffers } from "./DispatchService.ts";
 
 export interface ReassignmentResult {
   readonly orderId: number;
@@ -23,7 +23,7 @@ export class ReassignmentService {
     private readonly assignments: AssignmentRepository,
     private readonly couriers: CourierAvailabilityRepository,
     private readonly orders: OrderRepository,
-    private readonly dispatch: CourierIdleObserver,
+    private readonly offers: OrderOffers,
   ) {}
 
   async listStalled(actor: AssignmentActor | null): Promise<StalledOrder[]> {
@@ -79,14 +79,10 @@ export class ReassignmentService {
 
   private async dispatchAgain(orderId: number): Promise<string | null> {
     try {
-      for (const courierId of await this.couriers.listIdleCourierIds()) {
-        await this.dispatch.courierBecameIdle(courierId);
-        const offer = await this.assignments.findActiveByOrderId(orderId);
-        if (offer) return offer.courierId;
-      }
+      return (await this.offers.offer(orderId))?.courierId ?? null;
     } catch (error) {
       console.error("Dispatch after reassignment failed:", error);
+      return null;
     }
-    return null;
   }
 }

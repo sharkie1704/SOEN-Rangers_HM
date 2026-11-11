@@ -1,29 +1,14 @@
 import request from "supertest";
-import { beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createApp } from "../../../app";
-import type { WaitingOrder } from "../../../domain/dlv/DispatchQueue.ts";
 import { Order } from "../../../domain/ord/Order.ts";
 import { OperatorRegistrar } from "../../../domain/reg/OperatorRegistrar";
 import { FakePasswordHasher, InMemoryUserRepository } from "../../../domain/reg/__tests__/fakes";
 import { JwtSessionTokenService } from "../../../technical-services/reg/JwtSessionTokenService";
 import { InMemoryMenuRepository, InMemoryOrderRepository, InMemoryRestaurantStatusRepository } from "../../ord/__tests__/fakes";
 import type { RestaurantReadRepository } from "../../ord/RestaurantReadRepository";
-import type { DispatchQueueRepository } from "../DispatchQueueRepository";
+import { InMemoryDispatchRepository } from "./dispatchFakes";
 import { InMemoryAssignmentRepository, InMemoryCourierAvailabilityRepository } from "./fakes";
-
-class ReadyOrdersQueue implements DispatchQueueRepository {
-  constructor(private readonly orders: InMemoryOrderRepository, private readonly assignments: InMemoryAssignmentRepository) {}
-
-  async listWaiting(): Promise<WaitingOrder[]> {
-    const waiting: WaitingOrder[] = [];
-    for (const order of await this.orders.findByRestaurant("rest-a")) {
-      if (order.status === "Ready" && !(await this.assignments.findActiveByOrderId(order.id))) {
-        waiting.push({ orderId: order.id, restaurantId: order.restaurantId, restaurantName: "Sweet Spot", readyAt: order.placedAt });
-      }
-    }
-    return waiting;
-  }
-}
 
 let app: ReturnType<typeof createApp>;
 let users: InMemoryUserRepository;
@@ -41,6 +26,10 @@ beforeEach(async () => {
   couriers = new InMemoryCourierAvailabilityRepository();
   assignments = new InMemoryAssignmentRepository(couriers);
   orders = new InMemoryOrderRepository();
+  vi.spyOn(console, "info").mockImplementation(() => {});
+  const dispatch = new InMemoryDispatchRepository(couriers, assignments)
+    .withRestaurant("rest-a", 45.5131, -73.5683)
+    .withCourierAt("courier-2", 45.5100, -73.5683);
   app = createApp({
     users,
     hasher: new FakePasswordHasher(),
@@ -51,7 +40,7 @@ beforeEach(async () => {
     couriers,
     assignments,
     orders,
-    dispatchQueue: new ReadyOrdersQueue(orders, assignments),
+    dispatch,
   });
   await orders.add(Order.restore({
     id: 7,
@@ -64,6 +53,10 @@ beforeEach(async () => {
   }));
   couriers.withCourier("courier-1", "OFFLINE").withCourier("courier-2", "IDLE");
   assignments.withAssignment(7, "courier-1", "Accepted");
+});
+
+afterEach(() => {
+  vi.restoreAllMocks();
 });
 
 async function operatorAgent() {

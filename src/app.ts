@@ -156,10 +156,9 @@ export function createApp({
   // Offers an order to a courier when it becomes ready, and again when a courier declines it
   const dispatcher = orders && assignments && dispatch ? new DispatchService(orders, assignments, dispatch) : undefined;
   const courierIdle = new CourierIdleSubject();
-  const queueObserver = dispatchQueue && assignments && couriers
-    ? new DispatchQueueObserver(new DispatchQueueService(dispatchQueue), assignments, couriers)
-    : undefined;
-  if (queueObserver) courierIdle.subscribe(queueObserver);
+  if (dispatchQueue && dispatcher) {
+    courierIdle.subscribe(new DispatchQueueObserver(new DispatchQueueService(dispatchQueue), dispatcher));
+  }
   if (orderSummaries) {
     const summaryRoutes = new OrderSummaryRoutes(new OrderSummaryService(orderSummaries, ledger));
     app.get("/api/order-summaries", summaryRoutes.list);
@@ -211,8 +210,8 @@ export function createApp({
     const dispatchQueueController = new DispatchQueueController(new DispatchQueueService(dispatchQueue));
     app.get("/api/dispatch/queue", dispatchQueueController.view);
   }
-  if (queueObserver && assignments && couriers && orders) {
-    const reassignmentController = new ReassignmentController(new ReassignmentService(assignments, couriers, orders, queueObserver));
+  if (dispatcher && assignments && couriers && orders) {
+    const reassignmentController = new ReassignmentController(new ReassignmentService(assignments, couriers, orders, dispatcher));
     app.get("/api/dispatch/stalled", reassignmentController.stalled);
     app.post("/api/orders/:orderId/reassign", reassignmentController.reassign);
   }

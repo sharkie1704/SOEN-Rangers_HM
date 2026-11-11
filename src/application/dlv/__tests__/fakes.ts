@@ -26,10 +26,6 @@ export class InMemoryCourierAvailabilityRepository implements CourierAvailabilit
     return status ? new CourierAvailability(courierId, status) : undefined;
   }
 
-  async listIdleCourierIds(): Promise<string[]> {
-    return [...this.statuses].filter(([, status]) => status === "IDLE").map(([id]) => id);
-  }
-
   async save(courier: CourierAvailability, event: CourierStatusEvent): Promise<void> {
     if (this.statuses.get(courier.courierId) !== event.fromStatus) {
       throw new CourierError("CONFLICT", "Courier status just changed. Reload it and try again.");
