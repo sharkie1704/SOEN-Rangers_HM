@@ -74,6 +74,9 @@ export class InMemoryAssignmentRepository implements AssignmentRepository {
   }
 
   async saveOffer(assignment: Assignment, event: AssignmentChangeEvent): Promise<void> {
+    if (this.couriers.statuses.get(assignment.courierId) !== "IDLE") {
+      throw new AssignmentError("CONFLICT", "This courier is no longer free.");
+    }
     if (await this.findActiveByOrderId(assignment.orderId) || await this.findActiveByCourierId(assignment.courierId)) {
       throw new AssignmentError("CONFLICT", "This order or courier already has an active offer.");
     }

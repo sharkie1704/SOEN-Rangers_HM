@@ -167,6 +167,21 @@ describe("DispatchService.offer", () => {
     vi.spyOn(assignments, "saveOffer").mockRejectedValueOnce(new Error("database is down"));
     await expect(service.offer(7)).rejects.toThrow("database is down");
   });
+  it("skips a courier who went off duty after being picked, and offers the next nearest", async () => {
+    courierAt("near", 45.5125, -73.5690);
+    courierAt("far", 45.5017, -73.5673);
+    const findCandidates = dispatch.findCandidates.bind(dispatch);
+    vi.spyOn(dispatch, "findCandidates").mockImplementation(async (orderId) => {
+      const candidates = await findCandidates(orderId);
+      couriers.withCourier("near", "OFFLINE");
+      return candidates;
+    });
+
+    const assignment = await service.offer(7);
+
+    expect(assignment).toMatchObject({ orderId: 7, courierId: "far" });
+    expect(await assignments.findActiveByCourierId("near")).toBeUndefined();
+  });
 });
 
 describe("DispatchService.orderReady", () => {

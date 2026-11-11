@@ -54,6 +54,13 @@ export class PrismaAssignmentRepository implements AssignmentRepository {
   async saveOffer(assignment: Assignment, event: AssignmentChangeEvent): Promise<void> {
     try {
       await prisma.$transaction(async (tx) => {
+        const { count } = await tx.user.updateMany({
+          where: { id: assignment.courierId, role: "COURIER", courierStatus: "IDLE" },
+          data: { courierStatus: "IDLE" },
+        });
+        if (count === 0) {
+          throw new AssignmentError("CONFLICT", "This courier is no longer free.");
+        }
         const row = await tx.assignment.create({
           data: { orderId: assignment.orderId, courierId: assignment.courierId, status: toDbStatus[assignment.status] },
         });
