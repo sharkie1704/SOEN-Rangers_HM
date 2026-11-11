@@ -24,7 +24,8 @@ export class CourierAvailabilityController {
   constructor(private readonly service: CourierAvailabilityService) {}
 
   get = (req: Request, res: Response) => this.respond(res, async () => {
-    res.json({ courier: toDTO(await this.service.get(toActor(req.user))) });
+    const actor = toActor(req.user);
+    res.json({ courier: { ...toDTO(await this.service.get(actor)), location: await this.service.location(actor) } });
   });
 
   // Couriers only choose on or off duty; ASSIGNED and CARRYING come from the delivery flow

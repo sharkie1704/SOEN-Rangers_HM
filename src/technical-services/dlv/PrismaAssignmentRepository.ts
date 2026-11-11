@@ -94,7 +94,13 @@ export class PrismaAssignmentRepository implements AssignmentRepository {
   async savePickup(order: Order, courier: CourierAvailability, courierEvent: CourierStatusEvent): Promise<void> {
     await prisma.$transaction(async (tx) => {
       await new PrismaOrderRepository(tx).save(order);
-      await this.moveCourier(tx, courier, courierEvent);
+      const restaurant = await tx.restaurant.findUnique({
+        where: { id: order.restaurantId },
+        select: { lat: true, lng: true },
+      });
+      await this.moveCourier(tx, courier, courierEvent, restaurant?.lat != null && restaurant.lng != null
+        ? { lat: restaurant.lat, lng: restaurant.lng }
+        : undefined);
     });
   }
 
@@ -108,7 +114,13 @@ export class PrismaAssignmentRepository implements AssignmentRepository {
   ): Promise<void> {
     await prisma.$transaction(async (tx) => {
       await new PrismaOrderRepository(tx).save(order);
-      await this.moveCourier(tx, courier, courierEvent);
+      const customer = await tx.user.findFirst({
+        where: { id: order.customerId, role: "CUSTOMER" },
+        select: { deliveryLat: true, deliveryLng: true },
+      });
+      await this.moveCourier(tx, courier, courierEvent, customer?.deliveryLat != null && customer.deliveryLng != null
+        ? { lat: customer.deliveryLat, lng: customer.deliveryLng }
+        : undefined);
       await this.changeStatus(tx, assignment, event, "ACCEPTED", "COMPLETE");
       if (summary) {
         await tx.orderSummary.create({
@@ -151,10 +163,18 @@ export class PrismaAssignmentRepository implements AssignmentRepository {
     });
   }
 
-  private async moveCourier(tx: Tx, courier: CourierAvailability, courierEvent: CourierStatusEvent): Promise<void> {
+  private async moveCourier(
+    tx: Tx,
+    courier: CourierAvailability,
+    courierEvent: CourierStatusEvent,
+    location?: { lat: number; lng: number },
+  ): Promise<void> {
     const { count } = await tx.user.updateMany({
       where: { id: courier.courierId, role: "COURIER", courierStatus: courierEvent.fromStatus },
-      data: { courierStatus: courier.status },
+      data: {
+        courierStatus: courier.status,
+        ...(location ? { courierLat: location.lat, courierLng: location.lng } : {}),
+      },
     });
     if (count === 0) {
       throw new AssignmentError("CONFLICT", "Courier status just changed. Reload it and try again.");

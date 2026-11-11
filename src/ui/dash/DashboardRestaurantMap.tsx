@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { api } from "../reg/api/client";
-import MapView, { type MapRestaurant } from "./MapView";
+import MapView, { type MapCourier, type MapRestaurant } from "./MapView";
 import RestaurantDetails from "./map-popup/RestaurantDetails";
 import { buildRoleMapView, type SessionUser } from "./roles";
 import type { PanelOrder } from "./map-popup/PopupInfoTypes";
@@ -22,6 +22,7 @@ export default function DashboardRestaurantMap({ user, onViewMenu }: Props) {
   const [restaurants, setRestaurants] = useState<MapRestaurant[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [error, setError] = useState("");
+  const [couriers, setCouriers] = useState<MapCourier[]>([]);
 
   useEffect(() => {
     let cancelled = false;
@@ -30,6 +31,13 @@ export default function DashboardRestaurantMap({ user, onViewMenu }: Props) {
       try {
         const { restaurants: summaries } = await api<{ restaurants: RestaurantSummary[] }>("/api/restaurants");
         const queueCounts = new Map<string, number>();
+
+        if (user.role === "COURIER") {
+          const response = await api<{ courier: { status: MapCourier["status"]; location?: { lat: number; lng: number } } }>("/api/couriers/me/availability");
+          if (response.courier.location) {
+            setCouriers([{ id: user.id, name: user.name, status: response.courier.status, ...response.courier.location }]);
+          }
+        }
 
         if (user.role !== "COURIER") {
           const queueResults = await Promise.all(summaries.map(async (restaurant) => {
@@ -76,7 +84,7 @@ export default function DashboardRestaurantMap({ user, onViewMenu }: Props) {
     };
   }, [user.role, user.restaurantId]);
 
-  const view = buildRoleMapView(user.role)({ user, restaurants, couriers: [] });
+  const view = buildRoleMapView(user.role)({ user, restaurants, couriers });
   const selectedOrders: PanelOrder[] = [];
 
   return (
@@ -92,6 +100,7 @@ export default function DashboardRestaurantMap({ user, onViewMenu }: Props) {
           highlightedRestaurantId={view.highlightedRestaurantId}
           highlightedCourierId={view.highlightedCourierId}
           deliveryPin={view.deliveryPin}
+          route={view.route}
           renderDetails={(restaurant) => (
             <RestaurantDetails
               restaurant={restaurant}

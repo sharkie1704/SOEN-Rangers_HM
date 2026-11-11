@@ -198,7 +198,7 @@ export function createApp({
     app.post("/api/orders/:orderId/offer/decline", assignmentController.decline);
   }
   if (assignments && orders) {
-    const deliveriesController = new CourierDeliveriesController(new CourierDeliveriesService(assignments, orders));
+    const deliveriesController = new CourierDeliveriesController(new CourierDeliveriesService(assignments, orders, restaurants, users));
     app.get("/api/couriers/me/deliveries", deliveriesController.list);
   }
   if (assignments && couriers && orders) {

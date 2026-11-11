@@ -31,6 +31,11 @@ export class CourierAvailabilityService {
     return this.loadOwn(actor);
   }
 
+  async location(actor: CourierActor | null): Promise<{ lat: number; lng: number } | undefined> {
+    const courier = await this.loadOwn(actor);
+    return this.repository.findCourierLocation?.(courier.courierId);
+  }
+
   async goOnDuty(actor: CourierActor | null): Promise<{ courier: CourierAvailability; eventId: number }> {
     const courier = await this.loadOwn(actor);
     const active = await this.assignments?.findActiveByCourierId(courier.courierId);

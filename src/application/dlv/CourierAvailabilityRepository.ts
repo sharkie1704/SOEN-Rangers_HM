@@ -15,4 +15,5 @@ export interface CourierAvailabilityRepository {
   findByCourierId(courierId: string): Promise<CourierAvailability | undefined>;
   // Saves the new status with its event; fails if the status changed since the courier was loaded
   save(courier: CourierAvailability, event: CourierStatusEvent): Promise<void>;
+  findCourierLocation?(courierId: string): Promise<{ lat: number; lng: number } | undefined>;
 }

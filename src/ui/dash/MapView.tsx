@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, type ReactNode } from "react";
-import { MapContainer, Marker, TileLayer, Tooltip, useMap } from "react-leaflet";
+import { MapContainer, Marker, Polyline, TileLayer, Tooltip, useMap } from "react-leaflet";
 import L, { type LatLngTuple } from "leaflet";
 import type { RestaurantStatus } from "../../domain/ord/Restaurant";
 import { BAND_COLOURS, queueBand } from "./QueueBand";
@@ -31,6 +31,7 @@ interface Props {
   highlightedRestaurantId?: string;
   highlightedCourierId?: string;
   deliveryPin?: GeoPoint;
+  route?: readonly [GeoPoint, GeoPoint];
   // role-specific drawer content. it falls back to the public panel 
   renderDetails?: (restaurant: MapRestaurant) => ReactNode;
 }
@@ -155,6 +156,7 @@ export default function MapView({
   highlightedRestaurantId,
   highlightedCourierId,
   deliveryPin,
+  route,
   renderDetails,
 }: Props) {
   // R-DASH-02: only on-duty couriers are drawn
@@ -164,8 +166,8 @@ export default function MapView({
   );
 
   const points = useMemo<GeoPoint[]>(
-    () => [...restaurants, ...onDutyCouriers, ...(deliveryPin ? [deliveryPin] : [])],
-    [restaurants, onDutyCouriers, deliveryPin],
+    () => [...restaurants, ...onDutyCouriers, ...(deliveryPin ? [deliveryPin] : []), ...(route ? [...route] : [])],
+    [restaurants, onDutyCouriers, deliveryPin, route],
   );
 
   const fitKey = useMemo(
@@ -174,8 +176,9 @@ export default function MapView({
         ...restaurants.map((r) => `${r.id}:${r.lat},${r.lng}`),
         ...onDutyCouriers.map((courier) => courier.id),
         deliveryPin ? `pin:${deliveryPin.lat},${deliveryPin.lng}` : "",
+        route ? `route:${route.map((point) => `${point.lat},${point.lng}`).join(";")}` : "",
       ].join("|"),
-    [restaurants, onDutyCouriers, deliveryPin],
+    [restaurants, onDutyCouriers, deliveryPin, route],
   );
 
   const isEmpty = points.length === 0;
@@ -213,6 +216,12 @@ export default function MapView({
           <CourierMapMarker key={courier.id} courier={courier} highlighted={courier.id === highlightedCourierId} />
         ))}
         {deliveryPin && <DeliveryPinMarker point={deliveryPin} />}
+        {route && (
+          <Polyline
+            positions={route.map((point) => [point.lat, point.lng] as LatLngTuple)}
+            pathOptions={{ color: "#4B3028", weight: 3, dashArray: "8 8" }}
+          />
+        )}
       </MapContainer>
 
       {isEmpty && (

@@ -17,6 +17,8 @@ vi.mock("./DashboardRestaurantMap", () => ({
     }),
 }));
 
+vi.mock("./MapView", () => ({ default: () => null }));
+
 describe("courier dashboard", () => {
   it("shows a personalized welcome and only implemented courier sections", () => {
     const html = renderToStaticMarkup(createElement(CourierDashboard, {

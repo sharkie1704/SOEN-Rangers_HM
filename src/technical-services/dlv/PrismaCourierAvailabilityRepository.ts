@@ -4,6 +4,16 @@ import { CourierError } from "../../domain/dlv/CourierError.ts";
 import type { CourierAvailabilityRepository, CourierStatusEvent } from "../../application/dlv/CourierAvailabilityRepository.ts";
 
 export class PrismaCourierAvailabilityRepository implements CourierAvailabilityRepository {
+  async findCourierLocation(courierId: string): Promise<{ lat: number; lng: number } | undefined> {
+    const row = await prisma.user.findFirst({
+      where: { id: courierId, role: "COURIER", courierLat: { not: null }, courierLng: { not: null } },
+      select: { courierLat: true, courierLng: true },
+    });
+    return row?.courierLat === null || row?.courierLng === null || !row
+      ? undefined
+      : { lat: row.courierLat, lng: row.courierLng };
+  }
+
   async nextEventId(): Promise<number> {
     const [row] = await prisma.$queryRaw<{ id: bigint }[]>`SELECT nextval('"CourierStatusEvent_id_seq"') AS id`;
     return Number(row.id);
