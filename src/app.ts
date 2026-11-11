@@ -188,7 +188,7 @@ export function createApp({
     app.get("/api/restaurants/:restaurantId/orders/all", orderRoutes.allForRestaurant);
   }
   if (couriers) {
-    const courierController = new CourierAvailabilityController(new CourierAvailabilityService(couriers, courierIdle));
+    const courierController = new CourierAvailabilityController(new CourierAvailabilityService(couriers, courierIdle, assignments));
     app.get("/api/couriers/me/availability", courierController.get);
     app.patch("/api/couriers/me/availability", courierController.update);
   }

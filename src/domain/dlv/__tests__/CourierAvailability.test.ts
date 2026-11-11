@@ -2,10 +2,11 @@ import { describe, expect, it } from "vitest";
 import { CourierAvailability } from "../CourierAvailability.ts";
 import type { CourierStatus } from "../states/CourierState.ts";
 
-type Action = "goOnDuty" | "goOffDuty" | "assign" | "unassign" | "pickUp" | "completeDelivery";
+type Action = "goOnDuty" | "resumeDelivery" | "goOffDuty" | "assign" | "unassign" | "pickUp" | "completeDelivery";
 
 const allowed: [CourierStatus, Action, CourierStatus][] = [
   ["OFFLINE", "goOnDuty", "IDLE"],
+  ["OFFLINE", "resumeDelivery", "ASSIGNED"],
   ["IDLE", "goOffDuty", "OFFLINE"],
   ["IDLE", "assign", "ASSIGNED"],
   ["ASSIGNED", "unassign", "IDLE"],
@@ -15,7 +16,7 @@ const allowed: [CourierStatus, Action, CourierStatus][] = [
 ];
 
 const statuses: CourierStatus[] = ["OFFLINE", "IDLE", "ASSIGNED", "CARRYING"];
-const actions: Action[] = ["goOnDuty", "goOffDuty", "assign", "unassign", "pickUp", "completeDelivery"];
+const actions: Action[] = ["goOnDuty", "resumeDelivery", "goOffDuty", "assign", "unassign", "pickUp", "completeDelivery"];
 const refused = statuses.flatMap((status) => actions
   .filter((action) => !allowed.some(([from, allowedAction]) => from === status && allowedAction === action))
   .map((action): [CourierStatus, Action] => [status, action]));

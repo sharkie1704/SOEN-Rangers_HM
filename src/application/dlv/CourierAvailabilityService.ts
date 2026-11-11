@@ -3,6 +3,7 @@ import { CourierError } from "../../domain/dlv/CourierError.ts";
 import type { CourierStatus } from "../../domain/dlv/states/CourierState.ts";
 import { hasPermission } from "../../domain/reg/permissions";
 import type { Role } from "../../domain/reg/Role.ts";
+import type { AssignmentRepository } from "./AssignmentRepository.ts";
 import type { CourierAvailabilityRepository } from "./CourierAvailabilityRepository.ts";
 import type { CourierIdleSubject } from "./CourierIdleSubject.ts";
 
@@ -14,10 +15,16 @@ export interface CourierActor {
 export class CourierAvailabilityService {
   private readonly repository: CourierAvailabilityRepository;
   private readonly idle?: CourierIdleSubject;
+  private readonly assignments?: Pick<AssignmentRepository, "findActiveByCourierId">;
 
-  constructor(repository: CourierAvailabilityRepository, idle?: CourierIdleSubject) {
+  constructor(
+    repository: CourierAvailabilityRepository,
+    idle?: CourierIdleSubject,
+    assignments?: Pick<AssignmentRepository, "findActiveByCourierId">,
+  ) {
     this.repository = repository;
     this.idle = idle;
+    this.assignments = assignments;
   }
 
   async get(actor: CourierActor | null): Promise<CourierAvailability> {
@@ -26,6 +33,10 @@ export class CourierAvailabilityService {
 
   async goOnDuty(actor: CourierActor | null): Promise<{ courier: CourierAvailability; eventId: number }> {
     const courier = await this.loadOwn(actor);
+    const active = await this.assignments?.findActiveByCourierId(courier.courierId);
+    if (courier.status === "OFFLINE" && active?.status === "Accepted") {
+      return this.record(courier, courier.resumeDelivery());
+    }
     const result = await this.record(courier, courier.goOnDuty());
     await this.idle?.notify(courier.courierId);
     return result;
