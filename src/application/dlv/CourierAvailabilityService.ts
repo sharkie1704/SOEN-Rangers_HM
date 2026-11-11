@@ -10,6 +10,7 @@ import type { CourierIdleSubject } from "./CourierIdleSubject.ts";
 export interface CourierActor {
   readonly userId: string;
   readonly role: Role;
+  readonly restaurantId?: string;
 }
 
 export class CourierAvailabilityService {
@@ -29,6 +30,18 @@ export class CourierAvailabilityService {
 
   async get(actor: CourierActor | null): Promise<CourierAvailability> {
     return this.loadOwn(actor);
+  }
+
+  async location(actor: CourierActor | null): Promise<{ lat: number; lng: number } | undefined> {
+    const courier = await this.loadOwn(actor);
+    return this.repository.findCourierLocation?.(courier.courierId);
+  }
+
+  async mapForRestaurant(actor: CourierActor | null, restaurantId: string) {
+    if (!actor || actor.role !== "RESTAURANT" || actor.restaurantId !== restaurantId) {
+      throw new CourierError("FORBIDDEN", "Only staff for this restaurant can view its on-duty couriers.");
+    }
+    return this.repository.findForRestaurantMap?.(restaurantId) ?? [];
   }
 
   async goOnDuty(actor: CourierActor | null): Promise<{ courier: CourierAvailability; eventId: number }> {

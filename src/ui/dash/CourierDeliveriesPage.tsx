@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import type { OrderDTO } from "../../application/ord/OrderDTO.ts";
 import { api, ApiError } from "../reg/api/client";
 import type { AuthUser } from "../reg/auth/AuthContext";
+import MapView, { type MapCourier, type MapRestaurant } from "./MapView";
 import "./courier-deliveries.css";
 
 type AssignmentStatus = "Offered" | "Accepted" | "Declined" | "Completed" | "Released";
@@ -14,6 +15,8 @@ interface CourierDelivery {
     readonly status: AssignmentStatus;
   };
   readonly order: Pick<OrderDTO, "id" | "restaurantName" | "status" | "lines">;
+  readonly restaurantLocation?: { lat: number; lng: number };
+  readonly customerLocation?: { lat: number; lng: number };
 }
 
 type DeliveryAction = "accept" | "decline" | "pickup" | "deliver";
@@ -57,6 +60,7 @@ export default function CourierDeliveriesPage({ user }: { user: AuthUser }) {
   const [pendingAction, setPendingAction] = useState<{ orderId: number; action: DeliveryAction } | null>(null);
   const [loadError, setLoadError] = useState("");
   const [actionError, setActionError] = useState("");
+  const [courierLocation, setCourierLocation] = useState<MapCourier | null>(null);
 
   useEffect(() => {
     if (user.role !== "COURIER") {
@@ -69,8 +73,16 @@ export default function CourierDeliveriesPage({ user }: { user: AuthUser }) {
       setLoading(true);
       setLoadError("");
       try {
-        const response = await api<{ deliveries: CourierDelivery[] }>("/api/couriers/me/deliveries");
-        if (!cancelled) setDeliveries(response.deliveries);
+        const [response, availability] = await Promise.all([
+          api<{ deliveries: CourierDelivery[] }>("/api/couriers/me/deliveries"),
+          api<{ courier: { status: MapCourier["status"]; location?: { lat: number; lng: number } } }>("/api/couriers/me/availability"),
+        ]);
+        if (!cancelled) {
+          setDeliveries(response.deliveries);
+          if (availability.courier.location) {
+            setCourierLocation({ id: user.id, name: user.name ?? "You", status: availability.courier.status, ...availability.courier.location });
+          }
+        }
       } catch (cause) {
         if (!cancelled) {
           setLoadError(cause instanceof ApiError ? cause.message : "Could not load your assigned deliveries.");
@@ -124,6 +136,18 @@ export default function CourierDeliveriesPage({ user }: { user: AuthUser }) {
             }
             : entry
         )));
+        if (action === "pickup" || action === "deliver") {
+          try {
+            const availability = await api<{
+              courier: { status: MapCourier["status"]; location?: { lat: number; lng: number } };
+            }>("/api/couriers/me/availability");
+            setCourierLocation(availability.courier.location
+              ? { id: user.id, name: user.name ?? "You", status: availability.courier.status, ...availability.courier.location }
+              : null);
+          } catch {
+            // The handoff already succeeded; keep the current marker if its refresh fails.
+          }
+        }
       }
     } catch (cause) {
       setActionError(cause instanceof ApiError ? cause.message : "The delivery action could not be completed.");
@@ -131,6 +155,21 @@ export default function CourierDeliveriesPage({ user }: { user: AuthUser }) {
       setPendingAction(null);
     }
   }
+
+  const activeDelivery = deliveries.find((delivery) =>
+    delivery.assignment.status === "Accepted" && delivery.order.status !== "Delivered",
+  );
+  const activeRestaurant: MapRestaurant | null = activeDelivery?.restaurantLocation
+    ? {
+      id: `pickup-${activeDelivery.order.id}`,
+      name: activeDelivery.order.restaurantName,
+      lat: activeDelivery.restaurantLocation.lat,
+      lng: activeDelivery.restaurantLocation.lng,
+      status: "OPEN",
+      queue: { length: 0 },
+    }
+    : null;
+  const pickedUp = activeDelivery?.order.status === "PickedUp";
 
   if (user.role !== "COURIER") {
     return (
@@ -156,6 +195,21 @@ export default function CourierDeliveriesPage({ user }: { user: AuthUser }) {
           Refresh deliveries
         </button>
       </header>
+      {activeRestaurant && (
+        <div style={{ height: "360px", marginBottom: "24px", border: "1px solid #EADBC8", borderRadius: "12px", overflow: "hidden" }}>
+          <MapView
+            restaurants={[activeRestaurant]}
+            couriers={courierLocation ? [courierLocation] : []}
+            showLabels
+            selectedRestaurantId={null}
+            onSelectRestaurant={() => undefined}
+            deliveryPin={pickedUp ? activeDelivery?.customerLocation : undefined}
+            route={pickedUp && activeDelivery?.customerLocation
+              ? [activeRestaurant, activeDelivery.customerLocation]
+              : undefined}
+          />
+        </div>
+      )}
       {loadError && (
         <div className="courier-deliveries__error" role="alert">
           <span>{loadError}</span>

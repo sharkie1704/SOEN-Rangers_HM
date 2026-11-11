@@ -9,6 +9,7 @@ export interface AuthUser {
   name?: string; // only present right after login/register
   email?: string;
   restaurantId?: string;
+  address?: { lat: number; lng: number };
 }
 
 type Base = { name: string; email: string; password: string };

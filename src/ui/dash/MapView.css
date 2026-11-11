@@ -18,7 +18,8 @@
 }
 
 .map-view__restaurant-icon,
-.map-view__courier-icon {
+.map-view__courier-icon,
+.map-view__home-icon {
   border: 0;
   background: transparent;
 }
@@ -53,12 +54,37 @@
   font-weight: 700;
 }
 
+.map-view__home-icon span {
+  display: grid;
+  width: 30px;
+  height: 30px;
+  place-items: center;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  background: #35577c;
+  box-shadow: 0 1px 5px rgb(34 34 34 / 50%);
+}
+
+.map-view__home-icon svg {
+  width: 17px;
+  height: 17px;
+  fill: none;
+  stroke: #fff;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2;
+}
+
 .map-view__courier-icon--assigned span {
   background: #765f53;
 }
 
 .map-view__courier-icon--carrying span {
   background: #c66b32;
+}
+
+.map-view__courier-icon--delivery span {
+  background: #c0392b;
 }
 
 .map-view__empty {

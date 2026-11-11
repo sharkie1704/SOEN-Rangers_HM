@@ -9,13 +9,15 @@ export class CourierDeliveriesController {
   list = (req: Request, res: Response) => respond(res, async () => {
     const deliveries = await this.service.current(toActor(req.user));
     res.json({
-      deliveries: deliveries.map(({ assignment, order }) => ({
+      deliveries: deliveries.map(({ assignment, order, restaurantLocation, customerLocation }) => ({
         assignment: {
           orderId: assignment.orderId,
           courierId: assignment.courierId,
           status: assignment.status,
         },
         order: toOrderDTO(order),
+        restaurantLocation,
+        customerLocation,
       })),
     });
   });

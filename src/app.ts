@@ -191,6 +191,7 @@ export function createApp({
     const courierController = new CourierAvailabilityController(new CourierAvailabilityService(couriers, courierIdle, assignments));
     app.get("/api/couriers/me/availability", courierController.get);
     app.patch("/api/couriers/me/availability", courierController.update);
+    app.get("/api/restaurants/:restaurantId/couriers/on-duty", courierController.restaurantMap);
   }
   if (assignments && couriers) {
     const assignmentController = new AssignmentController(new AssignmentService(assignments, couriers, dispatcher));
@@ -198,7 +199,7 @@ export function createApp({
     app.post("/api/orders/:orderId/offer/decline", assignmentController.decline);
   }
   if (assignments && orders) {
-    const deliveriesController = new CourierDeliveriesController(new CourierDeliveriesService(assignments, orders));
+    const deliveriesController = new CourierDeliveriesController(new CourierDeliveriesService(assignments, orders, restaurants, users));
     app.get("/api/couriers/me/deliveries", deliveriesController.list);
   }
   if (assignments && couriers && orders) {

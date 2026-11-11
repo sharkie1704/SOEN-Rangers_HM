@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, type ReactNode } from "react";
-import { MapContainer, Marker, TileLayer, Tooltip, useMap } from "react-leaflet";
+import { MapContainer, Marker, Polyline, TileLayer, Tooltip, useMap } from "react-leaflet";
 import L, { type LatLngTuple } from "leaflet";
 import type { RestaurantStatus } from "../../domain/ord/Restaurant";
 import { BAND_COLOURS, queueBand } from "./QueueBand";
@@ -19,6 +19,7 @@ export type MapCourier = GeoPoint & {
   id: string;
   name: string;
   status: "OFFLINE" | "IDLE" | "ASSIGNED" | "CARRYING";
+  hasDelivery?: boolean;
 };
 
 interface Props {
@@ -31,6 +32,7 @@ interface Props {
   highlightedRestaurantId?: string;
   highlightedCourierId?: string;
   deliveryPin?: GeoPoint;
+  route?: readonly [GeoPoint, GeoPoint];
   // role-specific drawer content. it falls back to the public panel 
   renderDetails?: (restaurant: MapRestaurant) => ReactNode;
 }
@@ -91,6 +93,7 @@ function CourierMapMarker({ courier, highlighted }: { courier: MapCourier; highl
         className: [
           "map-view__courier-icon",
           `map-view__courier-icon--${courier.status.toLowerCase()}`,
+          courier.hasDelivery ? "map-view__courier-icon--delivery" : "",
           highlighted ? "map-view__courier-icon--own" : "",
         ].filter(Boolean).join(" "),
         html: "<span>C</span>",
@@ -102,7 +105,10 @@ function CourierMapMarker({ courier, highlighted }: { courier: MapCourier; highl
 
   return (
     <Marker position={[courier.lat, courier.lng]} icon={icon} alt={`${courier.name}, ${courier.status}`}>
-      <Tooltip>{highlighted ? "You" : courier.name} · {courier.status.toLowerCase()}</Tooltip>
+      <Tooltip>
+        {highlighted ? "You" : courier.name}
+        {courier.hasDelivery ? " · delivering for your restaurant" : ` · ${courier.status.toLowerCase()}`}
+      </Tooltip>
     </Marker>
   );
 }
@@ -111,16 +117,16 @@ function DeliveryPinMarker({ point }: { point: GeoPoint }) {
   const icon = useMemo(
     () =>
       L.divIcon({
-        className: "map-view__delivery-icon",
-        html: "<span>🏠</span>",
-        iconSize: [28, 28],
-        iconAnchor: [14, 14],
+        className: "map-view__home-icon",
+        html: '<span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 10 9-7 9 7M5 9v11h5v-6h4v6h5V9"/></svg></span>',
+        iconSize: [32, 32],
+        iconAnchor: [16, 16],
       }),
     [],
   );
   return (
-    <Marker position={[point.lat, point.lng]} icon={icon} alt="Your delivery address">
-      <Tooltip>Your delivery address</Tooltip>
+    <Marker position={[point.lat, point.lng]} icon={icon} alt="Your home location">
+      <Tooltip>Your home location</Tooltip>
     </Marker>
   );
 }
@@ -155,6 +161,7 @@ export default function MapView({
   highlightedRestaurantId,
   highlightedCourierId,
   deliveryPin,
+  route,
   renderDetails,
 }: Props) {
   // R-DASH-02: only on-duty couriers are drawn
@@ -164,8 +171,8 @@ export default function MapView({
   );
 
   const points = useMemo<GeoPoint[]>(
-    () => [...restaurants, ...onDutyCouriers, ...(deliveryPin ? [deliveryPin] : [])],
-    [restaurants, onDutyCouriers, deliveryPin],
+    () => [...restaurants, ...onDutyCouriers, ...(deliveryPin ? [deliveryPin] : []), ...(route ? [...route] : [])],
+    [restaurants, onDutyCouriers, deliveryPin, route],
   );
 
   const fitKey = useMemo(
@@ -174,8 +181,9 @@ export default function MapView({
         ...restaurants.map((r) => `${r.id}:${r.lat},${r.lng}`),
         ...onDutyCouriers.map((courier) => courier.id),
         deliveryPin ? `pin:${deliveryPin.lat},${deliveryPin.lng}` : "",
+        route ? `route:${route.map((point) => `${point.lat},${point.lng}`).join(";")}` : "",
       ].join("|"),
-    [restaurants, onDutyCouriers, deliveryPin],
+    [restaurants, onDutyCouriers, deliveryPin, route],
   );
 
   const isEmpty = points.length === 0;
@@ -213,6 +221,12 @@ export default function MapView({
           <CourierMapMarker key={courier.id} courier={courier} highlighted={courier.id === highlightedCourierId} />
         ))}
         {deliveryPin && <DeliveryPinMarker point={deliveryPin} />}
+        {route && (
+          <Polyline
+            positions={route.map((point) => [point.lat, point.lng] as LatLngTuple)}
+            pathOptions={{ color: "#4B3028", weight: 3, dashArray: "8 8" }}
+          />
+        )}
       </MapContainer>
 
       {isEmpty && (

@@ -123,7 +123,7 @@ export const users = [
     email: "customer@dessertdash.test",
     password: "Demo123!",
     role: "CUSTOMER",
-    deliveryLat: 45.5017,
+    deliveryLat: 45.5027,
     deliveryLng: -73.5673,
   },
   {

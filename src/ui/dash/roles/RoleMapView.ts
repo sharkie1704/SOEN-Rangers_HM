@@ -26,6 +26,7 @@ export interface RoleMapView {
   highlightedRestaurantId?: string;
   highlightedCourierId?: string;
   deliveryPin?: GeoPoint;
+  route?: readonly [GeoPoint, GeoPoint];
   // which drawer a click on this restaurant opens
   panelFor(restaurantId: string): PanelKind;
 }

@@ -13,7 +13,7 @@ const statusByCode: Record<CourierErrorCode, number> = {
 };
 
 function toActor(user: AuthenticatedUser | undefined): CourierActor | null {
-  return user ? { userId: user.id, role: user.role } : null;
+  return user ? { userId: user.id, role: user.role, restaurantId: user.restaurantId } : null;
 }
 
 function toDTO(courier: CourierAvailability) {
@@ -24,7 +24,16 @@ export class CourierAvailabilityController {
   constructor(private readonly service: CourierAvailabilityService) {}
 
   get = (req: Request, res: Response) => this.respond(res, async () => {
-    res.json({ courier: toDTO(await this.service.get(toActor(req.user))) });
+    const actor = toActor(req.user);
+    res.json({ courier: { ...toDTO(await this.service.get(actor)), location: await this.service.location(actor) } });
+  });
+
+  restaurantMap = (req: Request, res: Response) => this.respond(res, async () => {
+    const restaurantId = Array.isArray(req.params.restaurantId)
+      ? req.params.restaurantId[0]
+      : req.params.restaurantId;
+    const couriers = await this.service.mapForRestaurant(toActor(req.user), restaurantId);
+    res.json({ couriers });
   });
 
   // Couriers only choose on or off duty; ASSIGNED and CARRYING come from the delivery flow

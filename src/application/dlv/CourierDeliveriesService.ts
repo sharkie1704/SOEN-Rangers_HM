@@ -6,16 +6,28 @@ import { Role } from "../../domain/reg/Role.ts";
 import type { OrderRepository } from "../ord/OrderRepository.ts";
 import type { AssignmentActor } from "./AssignmentService.ts";
 import type { AssignmentRepository } from "./AssignmentRepository.ts";
+import type { RestaurantReadRepository } from "../ord/RestaurantReadRepository.ts";
+import type { UserRepository } from "../../domain/reg/ports/UserRepository.ts";
+import { Customer } from "../../domain/reg/Customer.ts";
+
+export interface DeliveryLocation {
+  readonly lat: number;
+  readonly lng: number;
+}
 
 export interface CourierDelivery {
   readonly assignment: Assignment;
   readonly order: Order;
+  readonly restaurantLocation?: DeliveryLocation;
+  readonly customerLocation?: DeliveryLocation;
 }
 
 export class CourierDeliveriesService {
   constructor(
     private readonly assignments: AssignmentRepository,
     private readonly orders: OrderRepository,
+    private readonly restaurants?: RestaurantReadRepository,
+    private readonly users?: UserRepository,
   ) {}
 
   async current(actor: AssignmentActor | null): Promise<readonly CourierDelivery[]> {
@@ -35,6 +47,15 @@ export class CourierDeliveriesService {
     const order = await this.orders.findById(assignment.orderId);
     if (!order) throw new AssignmentError("NOT_FOUND", "The assigned order was not found.");
 
-    return [{ assignment, order }];
+    const restaurant = await this.restaurants?.findRestaurantById(order.restaurantId);
+    const customer = await this.users?.findById(order.customerId);
+    return [{
+      assignment,
+      order,
+      ...(restaurant?.lat != null && restaurant.lng != null
+        ? { restaurantLocation: { lat: restaurant.lat, lng: restaurant.lng } }
+        : {}),
+      ...(customer instanceof Customer ? { customerLocation: customer.address } : {}),
+    }];
   }
 }

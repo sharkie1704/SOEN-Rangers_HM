@@ -1,9 +1,49 @@
 import { prisma } from "../db/PrismaClient.ts";
 import { CourierAvailability } from "../../domain/dlv/CourierAvailability.ts";
 import { CourierError } from "../../domain/dlv/CourierError.ts";
-import type { CourierAvailabilityRepository, CourierStatusEvent } from "../../application/dlv/CourierAvailabilityRepository.ts";
+import type { CourierAvailabilityRepository, CourierStatusEvent, RestaurantMapCourier } from "../../application/dlv/CourierAvailabilityRepository.ts";
 
 export class PrismaCourierAvailabilityRepository implements CourierAvailabilityRepository {
+  async findForRestaurantMap(restaurantId: string): Promise<RestaurantMapCourier[]> {
+    const activeAssignments = await prisma.assignment.findMany({
+      where: { status: "ACCEPTED", order: { restaurantId } },
+      select: { courierId: true },
+      distinct: ["courierId"],
+    });
+    const deliveryCourierIds = activeAssignments.map(({ courierId }) => courierId);
+    const rows = await prisma.user.findMany({
+      where: {
+        role: "COURIER",
+        courierStatus: { not: "OFFLINE" },
+        courierLat: { not: null },
+        courierLng: { not: null },
+        OR: [{ courierStatus: "IDLE" }, { id: { in: deliveryCourierIds } }],
+      },
+      select: { id: true, name: true, courierLat: true, courierLng: true, courierStatus: true },
+    });
+    const deliveryCourierSet = new Set(deliveryCourierIds);
+    return rows.flatMap((row) => row.courierLat != null && row.courierLng != null && row.courierStatus != null
+      ? [{
+        id: row.id,
+        name: row.name,
+        lat: row.courierLat,
+        lng: row.courierLng,
+        status: row.courierStatus,
+        hasDelivery: deliveryCourierSet.has(row.id),
+      }]
+      : []);
+  }
+
+  async findCourierLocation(courierId: string): Promise<{ lat: number; lng: number } | undefined> {
+    const row = await prisma.user.findFirst({
+      where: { id: courierId, role: "COURIER", courierLat: { not: null }, courierLng: { not: null } },
+      select: { courierLat: true, courierLng: true },
+    });
+    return row?.courierLat === null || row?.courierLng === null || !row
+      ? undefined
+      : { lat: row.courierLat, lng: row.courierLng };
+  }
+
   async nextEventId(): Promise<number> {
     const [row] = await prisma.$queryRaw<{ id: bigint }[]>`SELECT nextval('"CourierStatusEvent_id_seq"') AS id`;
     return Number(row.id);

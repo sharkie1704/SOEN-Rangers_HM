@@ -9,8 +9,6 @@ export async function resetDatabase(): Promise<void> {
       await tx.assignmentEvent.deleteMany();
       await tx.assignment.deleteMany();
       await tx.orderSummary.deleteMany();
-      await tx.$executeRaw`DELETE FROM "LedgerEntry"`;
-      await tx.$executeRaw`DELETE FROM "LedgerState"`;
       await tx.orderEvent.deleteMany();
       await tx.orderLine.deleteMany();
       await tx.order.deleteMany();
@@ -21,6 +19,13 @@ export async function resetDatabase(): Promise<void> {
       await tx.restaurant.deleteMany();
       await tx.pricingSettings.deleteMany();
       await tx.user.deleteMany();
+
+      // Ledger entries are immutable audit history. A reset only starts a new
+      // visible epoch; keep the singleton state row for future ledger writes.
+      await tx.ledgerState.update({
+        where: { id: "default" },
+        data: { epoch: { increment: 1 } },
+      });
 
       await seedDatabase(tx, prepared);
     },
