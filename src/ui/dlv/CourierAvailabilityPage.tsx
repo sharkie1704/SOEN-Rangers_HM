@@ -18,7 +18,7 @@ const statusContent: Record<CourierStatus, { label: string; detail: string; tone
   },
   ASSIGNED: {
     label: "Delivery assigned",
-    detail: "You have an accepted delivery. Finish it before going off duty.",
+    detail: "You have an accepted delivery. If you go off duty before pickup, an operator can reassign it.",
     tone: "assigned",
   },
   CARRYING: {
@@ -90,7 +90,7 @@ export default function CourierAvailabilityPage() {
   }
 
   const content = status ? statusContent[status] : null;
-  const canToggleDuty = status === "OFFLINE" || status === "IDLE";
+  const canToggleDuty = status !== null && status !== "CARRYING";
 
   return (
     <section className="courier-availability" aria-label="Courier availability" aria-busy={loading || saving}>
@@ -144,7 +144,7 @@ export default function CourierAvailabilityPage() {
                 {canToggleDuty ? (
                   <button
                     type="button"
-                    className={`courier-availability__action${status === "IDLE" ? " courier-availability__action--secondary" : ""}`}
+                    className={`courier-availability__action${status !== "OFFLINE" ? " courier-availability__action--secondary" : ""}`}
                     disabled={saving || loading}
                     onClick={() => void changeStatus(status === "OFFLINE" ? "IDLE" : "OFFLINE")}
                   >
@@ -168,8 +168,8 @@ export default function CourierAvailabilityPage() {
           </article>
 
           <p className="courier-availability__footnote">
-            {(status === "ASSIGNED" || status === "CARRYING")
-              && "To protect active deliveries, you can’t change your duty status while an order is assigned."}
+            {status === "CARRYING"
+              && "To protect active deliveries, you can’t change your duty status while carrying an order."}
           </p>
         </>
       )}
