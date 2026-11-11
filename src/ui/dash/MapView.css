@@ -83,6 +83,10 @@
   background: #c66b32;
 }
 
+.map-view__courier-icon--delivery span {
+  background: #c0392b;
+}
+
 .map-view__empty {
   position: absolute;
   top: 50%;

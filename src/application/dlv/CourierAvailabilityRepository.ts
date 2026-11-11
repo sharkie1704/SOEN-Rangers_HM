@@ -10,10 +10,20 @@ export interface CourierStatusEvent {
   readonly occurredAt: Date;
 }
 
+export interface RestaurantMapCourier {
+  readonly id: string;
+  readonly name: string;
+  readonly lat: number;
+  readonly lng: number;
+  readonly status: CourierStatus;
+  readonly hasDelivery: boolean;
+}
+
 export interface CourierAvailabilityRepository {
   nextEventId(): Promise<number>;
   findByCourierId(courierId: string): Promise<CourierAvailability | undefined>;
   // Saves the new status with its event; fails if the status changed since the courier was loaded
   save(courier: CourierAvailability, event: CourierStatusEvent): Promise<void>;
   findCourierLocation?(courierId: string): Promise<{ lat: number; lng: number } | undefined>;
+  findForRestaurantMap?(restaurantId: string): Promise<RestaurantMapCourier[]>;
 }

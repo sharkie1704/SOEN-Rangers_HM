@@ -31,12 +31,18 @@ export default function DashboardRestaurantMap({ user, onViewMenu }: Props) {
       try {
         const { restaurants: summaries } = await api<{ restaurants: RestaurantSummary[] }>("/api/restaurants");
         const queueCounts = new Map<string, number>();
+        let mapCouriers: MapCourier[] = [];
 
         if (user.role === "COURIER") {
           const response = await api<{ courier: { status: MapCourier["status"]; location?: { lat: number; lng: number } } }>("/api/couriers/me/availability");
           if (response.courier.location) {
-            setCouriers([{ id: user.id, name: user.name, status: response.courier.status, ...response.courier.location }]);
+            mapCouriers = [{ id: user.id, name: user.name, status: response.courier.status, ...response.courier.location }];
           }
+        } else if (user.role === "RESTAURANT" && user.restaurantId) {
+          const response = await api<{ couriers: MapCourier[] }>(
+            `/api/restaurants/${encodeURIComponent(user.restaurantId)}/couriers/on-duty`,
+          );
+          mapCouriers = response.couriers;
         }
 
         if (user.role !== "COURIER") {
@@ -66,6 +72,7 @@ export default function DashboardRestaurantMap({ user, onViewMenu }: Props) {
 
         if (!cancelled) {
           setRestaurants(mapRestaurants);
+          setCouriers(mapCouriers);
           setError("");
         }
       } catch {
@@ -82,7 +89,7 @@ export default function DashboardRestaurantMap({ user, onViewMenu }: Props) {
       cancelled = true;
       events?.close();
     };
-  }, [user.role, user.restaurantId]);
+  }, [user.id, user.name, user.role, user.restaurantId]);
 
   const view = buildRoleMapView(user.role)({ user, restaurants, couriers });
   const selectedOrders: PanelOrder[] = [];

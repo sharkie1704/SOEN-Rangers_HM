@@ -19,6 +19,7 @@ export type MapCourier = GeoPoint & {
   id: string;
   name: string;
   status: "OFFLINE" | "IDLE" | "ASSIGNED" | "CARRYING";
+  hasDelivery?: boolean;
 };
 
 interface Props {
@@ -92,6 +93,7 @@ function CourierMapMarker({ courier, highlighted }: { courier: MapCourier; highl
         className: [
           "map-view__courier-icon",
           `map-view__courier-icon--${courier.status.toLowerCase()}`,
+          courier.hasDelivery ? "map-view__courier-icon--delivery" : "",
           highlighted ? "map-view__courier-icon--own" : "",
         ].filter(Boolean).join(" "),
         html: "<span>C</span>",
@@ -103,7 +105,10 @@ function CourierMapMarker({ courier, highlighted }: { courier: MapCourier; highl
 
   return (
     <Marker position={[courier.lat, courier.lng]} icon={icon} alt={`${courier.name}, ${courier.status}`}>
-      <Tooltip>{highlighted ? "You" : courier.name} · {courier.status.toLowerCase()}</Tooltip>
+      <Tooltip>
+        {highlighted ? "You" : courier.name}
+        {courier.hasDelivery ? " · delivering for your restaurant" : ` · ${courier.status.toLowerCase()}`}
+      </Tooltip>
     </Marker>
   );
 }
