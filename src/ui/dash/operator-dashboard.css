@@ -1,3 +1,7 @@
+.operator-welcome .welcome-page::after {
+  background: #c89f7a;
+}
+
 .operator-navigation__chevron {
   flex-shrink: 0;
   margin-left: auto;
@@ -160,7 +164,7 @@
   padding: 20px;
   border: 1px solid rgb(200 159 122 / 65%);
   border-radius: 14px;
-  background: linear-gradient(145deg, #fff9f2, #f3e6d6);
+  background: #fff9f2;
   overflow-wrap: anywhere;
   box-shadow: 0 5px 16px rgb(75 48 40 / 5%);
 }

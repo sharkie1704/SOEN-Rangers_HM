@@ -85,19 +85,16 @@ export default function OperatorOrdersPage({ restaurants }: Props) {
           <h1 id="operator-orders-heading">All Orders</h1>
           <p>Orders across all restaurants and customers.</p>
         </div>
-        <button type="button" disabled={loading} onClick={() => setRefreshCount((count) => count + 1)}>
-          Refresh orders
-        </button>
+        <label className="operator-orders__search">
+          <span>Search orders</span>
+          <input
+            type="search"
+            value={search}
+            onChange={(event) => setSearch(event.currentTarget.value)}
+            placeholder="Order number, restaurant, or item"
+          />
+        </label>
       </header>
-      <label className="operator-orders__search">
-        <span>Search orders</span>
-        <input
-          type="search"
-          value={search}
-          onChange={(event) => setSearch(event.currentTarget.value)}
-          placeholder="Order number, restaurant, or item"
-        />
-      </label>
       <div className="operator-orders__filters" role="group" aria-label="Filter orders by status">
         {([
           ["all", "All Orders"],
@@ -114,6 +111,9 @@ export default function OperatorOrdersPage({ restaurants }: Props) {
             {label}
           </button>
         ))}
+        <button className="operator-orders__refresh" type="button" disabled={loading} onClick={() => setRefreshCount((count) => count + 1)}>
+          Refresh orders
+        </button>
       </div>
       {error && <p className="operator-orders__error" role="alert">{error}</p>}
       <div className="operator-orders__table-wrap" role="region" aria-label="All orders table" tabIndex={0}>
@@ -144,7 +144,7 @@ export default function OperatorOrdersPage({ restaurants }: Props) {
                   <tr>
                     <th scope="row">#{order.id}</th>
                     <td>{restaurantName}</td>
-                    <td>{order.status}</td>
+                    <td><span className={`operator-orders__status operator-orders__status--${order.status.toLowerCase()}`}>{order.status}</span></td>
                     <td>
                       <button
                         type="button"
