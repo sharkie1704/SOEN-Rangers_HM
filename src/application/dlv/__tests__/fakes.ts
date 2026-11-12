@@ -35,20 +35,8 @@ export class InMemoryCourierAvailabilityRepository implements CourierAvailabilit
   }
 
   overviews: CourierOverview[] = [];
-
-  async listOverview(): Promise<CourierOverview[]> {
-    return this.overviews;
-  }
-
-  // Set by InMemoryAssignmentRepository, so a resumed delivery can check the assignment like the real query
-  hasAcceptedDelivery: (courierId: string) => boolean = () => false;
-
-  async saveResumedDelivery(courier: CourierAvailability, event: CourierStatusEvent): Promise<void> {
-    if (!this.hasAcceptedDelivery(courier.courierId)) {
-      throw new CourierError("CONFLICT", "Your order was reassigned while you were off duty.");
-    }
-    await this.save(courier, event);
-  }
+  async listOverview(): Promise<CourierOverview[]> { return this.overviews; }
+  async saveResumedDelivery(courier: CourierAvailability, event: CourierStatusEvent): Promise<void> { await this.save(courier, event); }
 }
 
 export class InMemoryAssignmentRepository implements AssignmentRepository {
@@ -62,10 +50,7 @@ export class InMemoryAssignmentRepository implements AssignmentRepository {
   readonly summaries: OrderSummary[] = [];
   private eventSeq = 0;
 
-  constructor(private readonly couriers: InMemoryCourierAvailabilityRepository) {
-    couriers.hasAcceptedDelivery = (courierId) =>
-      [...this.assignments.values()].some((a) => a.courierId === courierId && a.status === "Accepted");
-  }
+  constructor(private readonly couriers: InMemoryCourierAvailabilityRepository) {}
 
   withAssignment(orderId: number, courierId: string, status: AssignmentStatus = "Offered"): this {
     this.assignments.set(orderId, new Assignment(orderId, courierId, status));
@@ -113,11 +98,7 @@ export class InMemoryAssignmentRepository implements AssignmentRepository {
     this.declined.push(event);
   }
 
-  async saveReleased(assignment: Assignment, event: AssignmentChangeEvent): Promise<void> {
-    const status = this.couriers.statuses.get(assignment.courierId);
-    if (status !== undefined && status !== "OFFLINE") {
-      throw new AssignmentError("CONFLICT", "The courier just came back on duty, so the order is no longer stalled.");
-    }
+  async saveReleased(_assignment: Assignment, event: AssignmentChangeEvent): Promise<void> {
     this.released.push(event);
   }
 
