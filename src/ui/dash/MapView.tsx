@@ -2,9 +2,8 @@ import { useEffect, useMemo, useRef, type ReactNode } from "react";
 import { MapContainer, Marker, Polyline, TileLayer, Tooltip, useMap } from "react-leaflet";
 import L, { type LatLngTuple } from "leaflet";
 import type { RestaurantStatus } from "../../domain/ord/Restaurant";
-import { BAND_COLOURS, queueBand } from "./QueueBand";
 import type { GeoPoint } from "./MapProjection";
-import PublicRestaurantPanel from "./map-popup/PublicRestaurantPopup";
+import PublicRestaurantPanel, { getQueuePresentation } from "./map-popup/PublicRestaurantPopup";
 import "leaflet/dist/leaflet.css";
 import "./MapView.css";
 
@@ -12,7 +11,8 @@ export type MapRestaurant = GeoPoint & {
   id: string;
   name: string;
   status: RestaurantStatus;
-  queue: { length: number };
+  queue: { length: number; availability?: "known" }
+    | { availability: "loading" | "unavailable"; length?: never };
 };
 
 export type MapCourier = GeoPoint & {
@@ -53,7 +53,7 @@ function RestaurantMapMarker({
   highlighted: boolean;
   onSelect: (id: string) => void;
 }) {
-  const band = queueBand({ status: restaurant.status, queue: restaurant.queue });
+  const { band, color, label } = getQueuePresentation(restaurant);
   const icon = useMemo(
     () =>
       L.divIcon({
@@ -63,11 +63,11 @@ function RestaurantMapMarker({
           selected ? "map-view__restaurant-icon--selected" : "",
           highlighted ? "map-view__restaurant-icon--own" : "",
         ].filter(Boolean).join(" "),
-        html: `<span class="map-view__restaurant-pin" style="background-color:${BAND_COLOURS[band]}"></span>`,
+        html: `<span class="map-view__restaurant-pin" style="background-color:${color}"></span>`,
         iconSize: [28, 36],
         iconAnchor: [14, 34],
       }),
-    [band, selected, highlighted],
+    [band, color, selected, highlighted],
   );
 
   return (
@@ -75,11 +75,11 @@ function RestaurantMapMarker({
       position={[restaurant.lat, restaurant.lng]}
       icon={icon}
       eventHandlers={{ click: () => onSelect(restaurant.id) }}
-      alt={`${restaurant.name}, ${restaurant.queue.length} queued`}
+      alt={`${restaurant.name}, ${label}`}
     >
       {showLabel && (
         <Tooltip direction="top" offset={[0, -28]} permanent>
-          {restaurant.name} · {restaurant.queue.length} queued
+          {restaurant.name} · {label}
         </Tooltip>
       )}
     </Marker>
