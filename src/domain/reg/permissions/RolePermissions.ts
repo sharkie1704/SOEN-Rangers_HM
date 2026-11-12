@@ -3,7 +3,7 @@ import type { Role } from "../Role";
 // Resource IDs come from loaded domain objects or validated route context,
 // never from client-supplied claims about the current user's identity.
 export type PermissionCommand =
-  | { name: "placeOrder" | "customerOrders" | "createOperator" | "browseRestaurants" | "browseMenu" | "viewProfile" | "viewDispatchQueue" | "reassignOrder" }
+  | { name: "placeOrder" | "customerOrders" | "createOperator" | "browseRestaurants" | "browseMenu" | "viewProfile" | "viewDispatchQueue" | "reassignOrder" | "viewCouriers" }
   | { name: "viewOrder"; customerId: string; restaurantId: string }
   | { name: "cancelOrder"; customerId: string }
   | { name: "manageOrders" | "manageMenu" | "changeRestaurantStatus"; restaurantId: string }

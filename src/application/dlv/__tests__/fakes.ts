@@ -5,7 +5,7 @@ import type { Order } from "../../../domain/ord/Order.ts";
 import type { AssignmentChangeEvent, AssignmentRepository } from "../AssignmentRepository.ts";
 import { CourierError } from "../../../domain/dlv/CourierError.ts";
 import type { CourierStatus } from "../../../domain/dlv/states/CourierState.ts";
-import type { CourierAvailabilityRepository, CourierStatusEvent } from "../CourierAvailabilityRepository.ts";
+import type { CourierAvailabilityRepository, CourierOverview, CourierStatusEvent } from "../CourierAvailabilityRepository.ts";
 import type { OrderSummary } from "../../../domain/prc/OrderSummary.ts";
 
 // Stores statuses rather than live objects, so save() can refuse stale changes like the real repository
@@ -32,6 +32,12 @@ export class InMemoryCourierAvailabilityRepository implements CourierAvailabilit
     }
     this.statuses.set(courier.courierId, courier.status);
     this.events.push(event);
+  }
+
+  overviews: CourierOverview[] = [];
+
+  async listOverview(): Promise<CourierOverview[]> {
+    return this.overviews;
   }
 
   // Set by InMemoryAssignmentRepository, so a resumed delivery can check the assignment like the real query

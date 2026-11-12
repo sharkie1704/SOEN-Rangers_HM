@@ -19,6 +19,19 @@ export interface RestaurantMapCourier {
   readonly hasDelivery: boolean;
 }
 
+// One courier as the operator's map and dashboard see them
+export interface CourierOverview {
+  readonly id: string;
+  readonly name: string;
+  readonly status: CourierStatus;
+  readonly onDuty: boolean;
+  // Could be offered an order right now: idle, holding no offer or delivery, and with a position
+  readonly available: boolean;
+  readonly location: { readonly lat: number; readonly lng: number } | null;
+  // The order the courier has been offered or is delivering, if any
+  readonly activeOrderId: number | null;
+}
+
 export interface CourierAvailabilityRepository {
   nextEventId(): Promise<number>;
   findByCourierId(courierId: string): Promise<CourierAvailability | undefined>;
@@ -29,4 +42,6 @@ export interface CourierAvailabilityRepository {
   saveResumedDelivery(courier: CourierAvailability, event: CourierStatusEvent): Promise<void>;
   findCourierLocation?(courierId: string): Promise<{ lat: number; lng: number } | undefined>;
   findForRestaurantMap?(restaurantId: string): Promise<RestaurantMapCourier[]>;
+  // Every courier, on duty or not, ordered by name
+  listOverview(): Promise<CourierOverview[]>;
 }

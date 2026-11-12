@@ -28,6 +28,10 @@ export class CourierAvailabilityController {
     res.json({ courier: { ...toDTO(await this.service.get(actor)), location: await this.service.location(actor) } });
   });
 
+  overview = (req: Request, res: Response) => this.respond(res, async () => {
+    res.json({ couriers: await this.service.overview(toActor(req.user)) });
+  });
+
   restaurantMap = (req: Request, res: Response) => this.respond(res, async () => {
     const restaurantId = Array.isArray(req.params.restaurantId)
       ? req.params.restaurantId[0]

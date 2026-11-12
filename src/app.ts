@@ -192,6 +192,7 @@ export function createApp({
     app.get("/api/couriers/me/availability", courierController.get);
     app.patch("/api/couriers/me/availability", courierController.update);
     app.get("/api/restaurants/:restaurantId/couriers/on-duty", courierController.restaurantMap);
+    app.get("/api/couriers", courierController.overview);
   }
   if (assignments && couriers) {
     const assignmentController = new AssignmentController(new AssignmentService(assignments, couriers, dispatcher));

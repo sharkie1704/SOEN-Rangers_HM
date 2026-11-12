@@ -26,6 +26,7 @@ const cases: [PermissionCommand, Role[]][] = [
   [{ name: "createOperator" }, [Role.OPERATOR]],
   [{ name: "manageCourierAvailability", courierId: "user-1" }, [Role.COURIER]],
   [{ name: "manageCourierAvailability", courierId: "other" }, []],
+  [{ name: "viewCouriers" }, [Role.OPERATOR]],
   [{ name: "browseRestaurants" }, roles],
   [{ name: "browseMenu" }, roles],
   [{ name: "viewProfile" }, roles],

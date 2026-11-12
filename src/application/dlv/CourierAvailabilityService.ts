@@ -4,7 +4,7 @@ import type { CourierStatus } from "../../domain/dlv/states/CourierState.ts";
 import { hasPermission } from "../../domain/reg/permissions";
 import type { Role } from "../../domain/reg/Role.ts";
 import type { AssignmentRepository } from "./AssignmentRepository.ts";
-import type { CourierAvailabilityRepository } from "./CourierAvailabilityRepository.ts";
+import type { CourierAvailabilityRepository, CourierOverview } from "./CourierAvailabilityRepository.ts";
 import type { CourierIdleSubject } from "./CourierIdleSubject.ts";
 
 export interface CourierActor {
@@ -42,6 +42,14 @@ export class CourierAvailabilityService {
       throw new CourierError("FORBIDDEN", "Only staff for this restaurant can view its on-duty couriers.");
     }
     return this.repository.findForRestaurantMap?.(restaurantId) ?? [];
+  }
+
+  // For the operator's map and dashboard: every courier's status, availability and position
+  async overview(actor: CourierActor | null): Promise<CourierOverview[]> {
+    if (!actor || !hasPermission({ name: "viewCouriers" }, { ...actor, id: actor.userId })) {
+      throw new CourierError("FORBIDDEN", "Only an operator can view every courier.");
+    }
+    return this.repository.listOverview();
   }
 
   async goOnDuty(actor: CourierActor | null): Promise<{ courier: CourierAvailability; eventId: number }> {

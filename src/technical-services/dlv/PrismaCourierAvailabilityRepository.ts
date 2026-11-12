@@ -1,7 +1,7 @@
 import { prisma } from "../db/PrismaClient.ts";
 import { CourierAvailability } from "../../domain/dlv/CourierAvailability.ts";
 import { CourierError } from "../../domain/dlv/CourierError.ts";
-import type { CourierAvailabilityRepository, CourierStatusEvent, RestaurantMapCourier } from "../../application/dlv/CourierAvailabilityRepository.ts";
+import type { CourierAvailabilityRepository, CourierOverview, CourierStatusEvent, RestaurantMapCourier } from "../../application/dlv/CourierAvailabilityRepository.ts";
 import { lockCourier, type Tx } from "./lockCourier.ts";
 
 export class PrismaCourierAvailabilityRepository implements CourierAvailabilityRepository {
@@ -33,6 +33,35 @@ export class PrismaCourierAvailabilityRepository implements CourierAvailabilityR
         hasDelivery: deliveryCourierSet.has(row.id),
       }]
       : []);
+  }
+
+  async listOverview(): Promise<CourierOverview[]> {
+    const [rows, active] = await Promise.all([
+      prisma.user.findMany({
+        where: { role: "COURIER" },
+        select: { id: true, name: true, courierStatus: true, courierLat: true, courierLng: true },
+        orderBy: [{ name: "asc" }, { id: "asc" }],
+      }),
+      prisma.assignment.findMany({
+        where: { status: { in: ["OFFERED", "ACCEPTED"] } },
+        select: { courierId: true, orderId: true },
+      }),
+    ]);
+    const activeOrder = new Map(active.map((row) => [row.courierId, row.orderId]));
+    return rows.flatMap((row) => {
+      if (!row.courierStatus) return [];
+      const location = row.courierLat != null && row.courierLng != null ? { lat: row.courierLat, lng: row.courierLng } : null;
+      const activeOrderId = activeOrder.get(row.id) ?? null;
+      return [{
+        id: row.id,
+        name: row.name,
+        status: row.courierStatus,
+        onDuty: row.courierStatus !== "OFFLINE",
+        available: row.courierStatus === "IDLE" && activeOrderId === null && location !== null,
+        location,
+        activeOrderId,
+      }];
+    });
   }
 
   async findCourierLocation(courierId: string): Promise<{ lat: number; lng: number } | undefined> {
