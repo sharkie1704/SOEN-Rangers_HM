@@ -8,8 +8,7 @@ import type { AssignmentRepository, AssignmentChangeEvent } from "../../applicat
 import type { CourierStatusEvent } from "../../application/dlv/CourierAvailabilityRepository.ts";
 import type { OrderSummary } from "../../domain/prc/OrderSummary.ts";
 import { PrismaOrderRepository } from "../ord/PrismaOrderRepository.ts";
-
-type Tx = Parameters<Parameters<typeof prisma.$transaction>[0]>[0];
+import { lockCourier, type Tx } from "./lockCourier.ts";
 
 const toDbStatus: Record<AssignmentStatus, DbAssignmentStatus> = {
   Offered: "OFFERED",
@@ -88,7 +87,14 @@ export class PrismaAssignmentRepository implements AssignmentRepository {
   }
 
   async saveReleased(assignment: Assignment, event: AssignmentChangeEvent): Promise<void> {
-    await prisma.$transaction((tx) => this.changeStatus(tx, assignment, event, "ACCEPTED", "RELEASE"));
+    await prisma.$transaction(async (tx) => {
+      // The courier may have come back on duty since the operator's check; if so, they keep the order
+      const status = await lockCourier(tx, assignment.courierId);
+      if (status !== undefined && status !== "OFFLINE") {
+        throw new AssignmentError("CONFLICT", "The courier just came back on duty, so the order is no longer stalled.");
+      }
+      await this.changeStatus(tx, assignment, event, "ACCEPTED", "RELEASE");
+    });
   }
 
   async savePickup(order: Order, courier: CourierAvailability, courierEvent: CourierStatusEvent): Promise<void> {

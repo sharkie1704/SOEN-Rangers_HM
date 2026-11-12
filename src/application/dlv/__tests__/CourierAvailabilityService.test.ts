@@ -76,6 +76,11 @@ describe("Courier availability (US-DLV-01)", () => {
   });
 });
 
+it("shows every courier to operators only", async () => {
+  await expect(service.overview({ userId: "op-1", role: Role.OPERATOR })).resolves.toEqual([]);
+  await expectCode(service.overview(courier), "FORBIDDEN");
+});
+
 describe("Going back on duty with an accepted delivery", () => {
   let assignments: InMemoryAssignmentRepository;
   let idle: CourierIdleSubject;
