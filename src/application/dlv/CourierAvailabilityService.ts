@@ -48,8 +48,18 @@ export class CourierAvailabilityService {
     const courier = await this.loadOwn(actor);
     const active = await this.assignments?.findActiveByCourierId(courier.courierId);
     if (courier.status === "OFFLINE" && active?.status === "Accepted") {
-      return this.record(courier, courier.resumeDelivery());
+      try {
+        return await this.record(courier, courier.resumeDelivery(), true);
+      } catch (error) {
+        if (!(error instanceof CourierError && error.code === "CONFLICT")) throw error;
+        // An operator reassigned the order meanwhile, so come back as an idle courier instead
+        return this.becomeIdle(await this.loadOwn(actor));
+      }
     }
+    return this.becomeIdle(courier);
+  }
+
+  private async becomeIdle(courier: CourierAvailability): Promise<{ courier: CourierAvailability; eventId: number }> {
     const result = await this.record(courier, courier.goOnDuty());
     await this.idle?.notify(courier.courierId);
     return result;
@@ -60,16 +70,17 @@ export class CourierAvailabilityService {
     return this.record(courier, courier.goOffDuty());
   }
 
-  private async record(courier: CourierAvailability, fromStatus: CourierStatus) {
+  private async record(courier: CourierAvailability, fromStatus: CourierStatus, resumingDelivery = false) {
     const eventId = await this.repository.nextEventId();
-    await this.repository.save(courier, {
+    const event = {
       eventId,
       courierId: courier.courierId,
       actorId: courier.courierId,
       fromStatus,
       toStatus: courier.status,
       occurredAt: new Date(),
-    });
+    };
+    await (resumingDelivery ? this.repository.saveResumedDelivery(courier, event) : this.repository.save(courier, event));
     return { courier, eventId };
   }
 

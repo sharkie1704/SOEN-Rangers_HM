@@ -20,6 +20,7 @@ export interface AssignmentRepository {
   saveOffer(assignment: Assignment, event: AssignmentChangeEvent): Promise<void>;
   saveAccepted(assignment: Assignment, event: AssignmentChangeEvent, courier: CourierAvailability, courierEvent: CourierStatusEvent): Promise<void>;
   saveDeclined(assignment: Assignment, event: AssignmentChangeEvent): Promise<void>;
+  // Fails with CONFLICT if the courier is no longer offline, e.g. they came back on duty meanwhile
   saveReleased(assignment: Assignment, event: AssignmentChangeEvent): Promise<void>;
   savePickup(order: Order, courier: CourierAvailability, courierEvent: CourierStatusEvent): Promise<void>;
   saveDelivery(

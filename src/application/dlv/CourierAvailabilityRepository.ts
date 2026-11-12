@@ -24,6 +24,9 @@ export interface CourierAvailabilityRepository {
   findByCourierId(courierId: string): Promise<CourierAvailability | undefined>;
   // Saves the new status with its event; fails if the status changed since the courier was loaded
   save(courier: CourierAvailability, event: CourierStatusEvent): Promise<void>;
+  // Like save, but also fails with CONFLICT if the courier no longer has an accepted delivery,
+  // e.g. an operator reassigned it while the courier was coming back on duty
+  saveResumedDelivery(courier: CourierAvailability, event: CourierStatusEvent): Promise<void>;
   findCourierLocation?(courierId: string): Promise<{ lat: number; lng: number } | undefined>;
   findForRestaurantMap?(restaurantId: string): Promise<RestaurantMapCourier[]>;
 }
