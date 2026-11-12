@@ -2,9 +2,17 @@
   box-sizing: border-box;
   display: grid;
   gap: 20px;
-  width: min(100% - 32px, 920px);
+  width: 100%;
   min-width: 0;
-  margin: 20px auto 48px;
+  margin: 0;
+  padding: clamp(16px, 3vw, 32px);
+  color: #4b3028;
+  font-family: Poppins, sans-serif;
+  --orders-cream: #fff9f2;
+  --orders-beige: #eadbc8;
+  --orders-caramel: #c89f7a;
+  --orders-chocolate: #4b3028;
+  --orders-orange: #c66b32;
 }
 
 .customer-order-history > .order-summaries,
@@ -342,4 +350,26 @@
   }
 
   .orders-spinner { animation: none; }
+}
+
+.customer-order-history .customer-history-filters { display: flex; flex-wrap: wrap; gap: 8px; margin: 16px 0; }
+.customer-order-history .customer-history-filters button { border: 1px solid #c89f7a; border-radius: 8px; padding: 8px 14px; background: #fff9f2; color: #4b3028; font: inherit; cursor: pointer; }
+.customer-order-history .customer-history-filters button[aria-pressed="true"] { background: #eadbc8; font-weight: 700; border-width: 2px; }
+.customer-order-history .customer-history-filters button:hover { background: #eadbc8; }
+.customer-order-history .customer-history-filters button:focus-visible,
+.customer-order-history details summary:focus-visible { outline: 2px solid #4b3028; outline-offset: 3px; }
+.customer-order-history .order-status-refunded { background: #eee3f5; color: #603679; }
+.customer-order-history details { margin-top: 16px; min-width: 0; }
+.customer-order-history details summary { cursor: pointer; color: #4b3028; font-weight: 600; }
+.customer-order-history .customer-history-fare { margin: 16px 0; padding-inline: 24px; }
+.customer-order-history .order-placed-date,
+.customer-order-history .order-lines { margin-inline: 24px; }
+.customer-order-history .customer-history-fare > div { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px; margin: 8px 0; color: #4b3028; }
+.customer-order-history .customer-history-fare dd { margin: 0; }
+.customer-order-history .customer-history-fare__total { border-top: 1px solid #c89f7a; padding-top: 12px; font-weight: 700; }
+
+@media (max-width: 600px) {
+  .customer-order-history .customer-history-fare { padding-inline: 16px; }
+  .customer-order-history .order-placed-date,
+  .customer-order-history .order-lines { margin-inline: 16px; }
 }

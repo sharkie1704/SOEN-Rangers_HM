@@ -2,7 +2,7 @@ import { useEffect, useId, useState } from "react";
 import { api, ApiError } from "../reg/api/client";
 import "./order-summaries.css";
 
-type Summary = {
+export type Summary = {
   orderId: number;
   restaurantName: string;
   lines: { name: string; quantity: number; unitPriceCents?: number }[];
@@ -28,7 +28,7 @@ function money(cents: number): string {
   return `$${(cents / 100).toFixed(2)}`;
 }
 
-function SummaryDetails({ summary }: { summary: Summary }) {
+export function SummaryDetails({ summary }: { summary: Summary }) {
   return (
     <article className="order-summary">
       <header className="order-summary__header">

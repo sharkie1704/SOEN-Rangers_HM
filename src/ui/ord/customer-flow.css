@@ -52,3 +52,7 @@
     transition: none;
   }
 }
+
+.customer-flow-empty { padding: 24px; color: #4b3028; background: #fff9f2; }
+.customer-flow-notice { text-align: center; color: #923c32; }
+.customer-tabs { flex-wrap: wrap; }

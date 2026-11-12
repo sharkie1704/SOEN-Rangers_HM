@@ -45,7 +45,6 @@ export default function PlaceOrderPage({
     cartItems,
     restaurantId,
     onCartChange,
-    onBack,
     onBackToRestaurants,
 }: PlaceOrderPageInputs) {
     const restaurantName = restaurantNames[restaurantId] ?? "Restaurant";
@@ -241,29 +240,25 @@ export default function PlaceOrderPage({
         );
     }
 
+    if (!hasItems) {
+        return (
+            <main style={pageStyle}>
+                <h1 style={{ color: "#4B3028", textAlign: "center" }}>Your Cart</h1>
+                <div role="status" style={{ textAlign: "center", color: "#4B3028", padding: "48px 16px" }}>
+                    <svg aria-hidden="true" focusable="false" width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="#C89F7A" strokeWidth="1.5">
+                        <path d="M2 3h3l3 12h11l3-9H6" />
+                        <circle cx="9" cy="20" r="1" /><circle cx="18" cy="20" r="1" />
+                    </svg>
+                    <p>Your cart is empty.</p>
+                </div>
+            </main>
+        );
+    }
+
     // ---------- Cart view ----------
     return (
         <main style={pageStyle}>
             <div style={{ maxWidth: "800px", margin: "0 auto" }}>
-                {/* Back navigation */}
-                <button
-                    type="button"
-                    className="interactive-button"
-                    onClick={onBack}
-                    style={{
-                        background: "none",
-                        border: "none",
-                        color: "#C66B32",
-                        cursor: "pointer",
-                        fontFamily: "inherit",
-                        fontWeight: 600,
-                        marginBottom: "32px",
-                        padding: 0,
-                    }}
-                >
-                    ← Back to menu
-                </button>
-
                 <header style={{ textAlign: "center", marginBottom: "40px" }}>
                     <h1 style={{ color: "#4B3028", fontSize: "32px", margin: "0 0 16px" }}>
                         Your Cart
@@ -273,11 +268,6 @@ export default function PlaceOrderPage({
                     </p>
                 </header>
 
-                {cartItems.length === 0 ? (
-                    <p style={{ color: "#4B3028", textAlign: "center" }}>
-                        Your cart is empty. Head back to the menu to add something sweet!
-                    </p>
-                ) : (
                     <section
                         aria-label="Items in your cart"
                         style={{ display: "grid", gap: "16px" }}
@@ -295,7 +285,6 @@ export default function PlaceOrderPage({
                             />
                         ))}
                     </section>
-                )}
 
                 {/* Order summary */}
                 <section aria-label="Order summary" style={{ ...cardStyle, marginTop: "32px" }}>
