@@ -67,6 +67,21 @@ describe("OrderService customer permissions", () => {
 });
 
 describe("OrderService restaurant permissions", () => {
+  it("lists own restaurant history across statuses and preserves operator access", async () => {
+    const rejected = await service.place(alice, { restaurantId: "rest-a", lines: [{ menuItemId: 1, quantity: 1 }] });
+    await service.reject(staffA, rejected.id, "Sold out");
+    await service.cancel(alice, order.id);
+    const history = await service.allForRestaurant(staffA, "rest-a");
+    expect(history.map((item) => item.status)).toEqual(["Cancelled", "Rejected"]);
+    expect(await service.allForRestaurant({ userId: "operator", role: Role.OPERATOR }, "rest-a")).toEqual(history);
+  });
+
+  it("rejects cross-restaurant, customer, courier and unauthenticated history requests", async () => {
+    for (const actor of [staffB, alice, { userId: "courier", role: Role.COURIER } as unknown as OrderActor, null]) {
+      await expectForbidden(service.allForRestaurant(actor, "rest-a"));
+    }
+  });
+
   it("staff manage orders for their own restaurant only", async () => {
     await expectForbidden(service.get(staffB, order.id));
     await expectForbidden(service.accept(staffB, order.id));
