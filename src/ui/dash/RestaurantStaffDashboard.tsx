@@ -1,7 +1,7 @@
 import { useState, type ComponentProps } from "react";
 import MenuEditorPage from "../ord/MenuEditorPage";
 import RestaurantConsolePage from "../ord/RestaurantConsolePage";
-import OrderSummaryList from "../prc/OrderSummaryList";
+import RestaurantOrderHistory from "../ord/RestaurantOrderHistory";
 import DashboardRestaurantMap from "./DashboardRestaurantMap";
 import DashboardLayout from "./DashboardLayout";
 import DashboardSidebar, { type DashboardNavigationItem } from "./DashboardSidebar";
@@ -91,7 +91,7 @@ export default function RestaurantStaffDashboard({ user, onLogout, restaurantId 
         </>
       )}
       {activeSection === "orders" && <RestaurantConsolePage restaurantId={restaurantId} />}
-      {activeSection === "history" && <OrderSummaryList restaurantView />}
+      {activeSection === "history" && <RestaurantOrderHistory restaurantId={restaurantId} />}
       {activeSection === "menu" && <MenuEditorPage restaurantId={restaurantId} />}
     </DashboardLayout>
   );

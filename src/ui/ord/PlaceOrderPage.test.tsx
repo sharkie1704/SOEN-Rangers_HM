@@ -78,13 +78,15 @@ describe("place order eligibility", () => {
     expect(html).toContain('<button type="button" class="interactive-button" disabled=""');
   });
 
-  it("keeps checkout disabled for an empty cart without showing the sold-out warning", () => {
+  it("shows a simple empty cart without checkout controls", () => {
     const html = renderCart([]);
 
     expect(html).toContain("Your cart is empty.");
     expect(html).not.toContain("All selected items are sold out.");
     expect(html).not.toContain("Updating your fare…");
-    expect(html).toContain('<button type="button" class="interactive-button" disabled=""');
+    expect(html).not.toContain("Place Order");
+    expect(html).not.toContain('aria-label="Order summary"');
+    expect(html).toContain("<svg");
   });
 
   it("renders cart quantities, item prices, and a known restaurant name", () => {
@@ -98,10 +100,10 @@ describe("place order eligibility", () => {
     expect(html).toContain("Order summary");
   });
 
-  it("keeps cart navigation available while the order button is disabled", () => {
+  it("omits the back-to-menu link while preserving a populated cart", () => {
     const html = renderCart([soldOutTart], "2");
 
-    expect(html).toContain("← Back to menu");
+    expect(html).not.toContain("← Back to menu");
     expect(html).toContain("Ordering from Chocolate Heaven");
     expect(html).toContain("Place Order");
     expect(html).toContain("disabled=\"\"");

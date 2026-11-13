@@ -1,5 +1,5 @@
 import { useState, type ComponentProps } from "react";
-import CustomerFlow from "../ord/CustomerFlow";
+import CustomerFlow, { type CustomerView } from "../ord/CustomerFlow";
 import DashboardRestaurantMap from "./DashboardRestaurantMap";
 import DashboardLayout from "./DashboardLayout";
 import DashboardSidebar, { type DashboardNavigationItem } from "./DashboardSidebar";
@@ -7,7 +7,7 @@ import WelcomePage from "./WelcomePage";
 import "./customer-dashboard.css";
 
 type CustomerDashboardProps = Pick<ComponentProps<typeof DashboardLayout>, "user" | "onLogout">;
-type CustomerSection = "browse" | "orders";
+type CustomerSection = CustomerView;
 
 const items: readonly DashboardNavigationItem[] = [
   {
@@ -18,6 +18,11 @@ const items: readonly DashboardNavigationItem[] = [
         <path d="M4 10v11h16V10M3 10l2-7h14l2 7M3 10h18M9 21v-7h6v7" />
       </svg>
     ),
+  },
+  {
+    id: "cart",
+    label: "My Cart",
+    icon: <svg aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75"><path d="M2 3h3l3 12h11l3-9H6M9 20h.01M18 20h.01" /></svg>,
   },
   {
     id: "orders",
@@ -42,9 +47,9 @@ export default function CustomerDashboard({ user, onLogout }: CustomerDashboardP
       sidebar={
         <DashboardSidebar
           items={items}
-          activeId={activeSection}
+          activeId={activeSection === "menu" ? "browse" : activeSection}
           onSelect={(id) => {
-            if (id === "browse" || id === "orders") setActiveSection(id);
+            if (id === "browse" || id === "cart" || id === "orders") setActiveSection(id);
           }}
         />
       }
@@ -79,6 +84,7 @@ export default function CustomerDashboard({ user, onLogout }: CustomerDashboardP
       )}
       <CustomerFlow
         activeView={activeSection}
+        onNavigate={setActiveSection}
         openRestaurantId={mapRestaurantToOpen}
         onRestaurantOpened={() => setMapRestaurantToOpen(null)}
       />

@@ -121,8 +121,12 @@ export class OrderService {
   }
 
   async allForRestaurant(actor: OrderActor | null, restaurantId: string): Promise<readonly OrderDTO[]> {
-    if (actor?.role !== Role.OPERATOR) {
-      throw new OrderError("FORBIDDEN", "Only operators can view all restaurant orders.");
+    if (actor?.role === Role.OPERATOR) {
+      if (!actor.userId.trim()) {
+        throw new OrderError("FORBIDDEN", "An authenticated operator is required.");
+      }
+    } else {
+      this.requireRestaurantActor(actor, restaurantId);
     }
     requireStringId(restaurantId, "Restaurant ID");
     return (await this.repository.findByRestaurant(restaurantId)).map(toOrderDTO);

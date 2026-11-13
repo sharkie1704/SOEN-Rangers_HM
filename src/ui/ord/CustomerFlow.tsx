@@ -1,25 +1,32 @@
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useState } from "react";
 import RestaurantListPage from "./RestaurantListPage";
 import RestaurantMenuPage from "./RestaurantMenuPage";
 import PlaceOrderPage, { type CartItem } from "./PlaceOrderPage";
 import CustomerOrderHistory from "./CustomerOrderHistory";
 import "./customer-flow.css";
 
+export type CustomerView = "browse" | "menu" | "cart" | "orders";
+
 interface Props {
-  activeView?: "browse" | "orders";
+  activeView?: CustomerView;
+  onNavigate?: (view: CustomerView) => void;
   openRestaurantId?: string | null;
   onRestaurantOpened?: () => void;
 }
 
-export default function CustomerFlow({ activeView, openRestaurantId, onRestaurantOpened }: Props) {
+export default function CustomerFlow({ activeView, onNavigate, openRestaurantId, onRestaurantOpened }: Props) {
   const [selectedRestaurantId, setSelectedRestaurantId] = useState<string | null>(null);
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [cartRestaurantId, setCartRestaurantId] = useState<string | null>(null);
   const [cartNotice, setCartNotice] = useState("");
-  const [showCart, setShowCart] = useState(false);
-  const [showHistory, setShowHistory] = useState(false);
+  const [localView, setLocalView] = useState<CustomerView>("browse");
   const [historyVisited, setHistoryVisited] = useState(false);
-  const showingHistory = activeView ? activeView === "orders" : showHistory;
+  const view = activeView ?? localView;
+
+  function navigate(next: CustomerView) {
+    setLocalView(next);
+    onNavigate?.(next);
+  }
 
   function updateCart(items: CartItem[]) {
     setCartItems(items);
@@ -34,6 +41,7 @@ export default function CustomerFlow({ activeView, openRestaurantId, onRestauran
     setCartNotice("");
     if (cartItems.length === 0) setCartRestaurantId(restaurantId);
     setSelectedRestaurantId(restaurantId);
+    navigate("menu");
   }
 
   useEffect(() => {
@@ -43,61 +51,50 @@ export default function CustomerFlow({ activeView, openRestaurantId, onRestauran
   }, [openRestaurantId]);
 
   useEffect(() => {
-    if (showingHistory) setHistoryVisited(true);
-  }, [showingHistory]);
-
-  let browseContent: ReactNode;
-  if (showCart) {
-    browseContent = (
-      <PlaceOrderPage
-        cartItems={cartItems}
-        restaurantId={selectedRestaurantId ?? ""}
-        onCartChange={updateCart}
-        onBack={() => setShowCart(false)}
-        onBackToRestaurants={() => {
-          setShowCart(false);
-          setSelectedRestaurantId(null);
-        }}
-      />
-    );
-  } else if (selectedRestaurantId !== null) {
-    browseContent = (
-      <RestaurantMenuPage
-        restaurantId={selectedRestaurantId}
-        onBack={() => setSelectedRestaurantId(null)}
-        onViewCart={() => setShowCart(true)}
-        cartCount={cartItems.reduce((sum, item) => sum + item.quantity, 0)}
-        onAddToCart={(item) => {
-          setCartRestaurantId(selectedRestaurantId);
-          setCartItems((current) => {
-            const existing = current.find((c) => c.id === item.id);
-            return existing
-              ? current.map((c) => (c.id === item.id ? { ...c, quantity: c.quantity + 1 } : c))
-              : [...current, { ...item, quantity: 1 }];
-          });
-        }}
-      />
-    );
-  } else {
-    browseContent = (
-      <>
-        {cartNotice && <p role="status" style={{ textAlign: "center", color: "#923C32" }}>{cartNotice}</p>}
-        <RestaurantListPage onSelectRestaurant={selectRestaurant} />
-      </>
-    );
-  }
+    if (view === "orders") setHistoryVisited(true);
+  }, [view]);
 
   return (
     <>
       {activeView === undefined && (
         <nav className="customer-tabs" aria-label="Customer pages">
-          <button className="customer-tab" type="button" onClick={() => setShowHistory(false)} aria-current={!showHistory ? "page" : undefined}>Browse restaurants</button>
-          <button className="customer-tab" type="button" onClick={() => { setShowHistory(true); setHistoryVisited(true); }} aria-current={showHistory ? "page" : undefined}>Pricing &amp; History</button>
+          {([ ["browse", "Browse Restaurants"], ["cart", "My Cart"], ["orders", "My Orders"] ] as const).map(([id, label]) => (
+            <button key={id} className="customer-tab" type="button" onClick={() => navigate(id)} aria-current={(view === "menu" ? "browse" : view) === id ? "page" : undefined}>{label}</button>
+          ))}
         </nav>
       )}
-      <div hidden={showingHistory}>{browseContent}</div>
-      <div hidden={!showingHistory}>
-        {(showingHistory || historyVisited) && <CustomerOrderHistory />}
+      {view === "browse" && <>
+        {cartNotice && <p role="status" className="customer-flow-notice">{cartNotice}</p>}
+        <RestaurantListPage onSelectRestaurant={selectRestaurant} />
+      </>}
+      {view === "menu" && (selectedRestaurantId ? (
+        <RestaurantMenuPage
+          restaurantId={selectedRestaurantId}
+          onBack={() => navigate("browse")}
+          onViewCart={() => navigate("cart")}
+          cartCount={cartItems.reduce((sum, item) => sum + item.quantity, 0)}
+          onAddToCart={(item) => {
+            setCartRestaurantId(selectedRestaurantId);
+            setCartItems((current) => {
+              const existing = current.find((entry) => entry.id === item.id);
+              return existing
+                ? current.map((entry) => entry.id === item.id ? { ...entry, quantity: entry.quantity + 1 } : entry)
+                : [...current, { ...item, quantity: 1 }];
+            });
+          }}
+        />
+      ) : <section className="customer-flow-empty"><h1>Restaurant Menu</h1><p>Select a restaurant to see its menu.</p><button type="button" onClick={() => navigate("browse")}>Browse Restaurants</button></section>)}
+      <div hidden={view !== "cart"}>
+        {view === "cart" && <PlaceOrderPage
+          cartItems={cartItems}
+          restaurantId={cartRestaurantId ?? selectedRestaurantId ?? ""}
+          onCartChange={updateCart}
+          onBack={() => navigate(selectedRestaurantId ? "menu" : "browse")}
+          onBackToRestaurants={() => navigate("browse")}
+        />}
+      </div>
+      <div hidden={view !== "orders"}>
+        {(view === "orders" || historyVisited) && <CustomerOrderHistory />}
       </div>
     </>
   );
