@@ -55,7 +55,7 @@ import { LedgerRoutes } from "./application/prc/LedgerRoutes";
 import { LedgerService } from "./application/prc/LedgerService";
 import type { LedgerRepository } from "./application/prc/LedgerRepository";
 import { toUserDto } from "./technical-services/http/UserDTO";
-import { subscribeToCommandEvents, subscribeToOutputEvents } from "./application/http/CommandEvents";
+import { subscribeToCommandEvents, subscribeToUserOutputEvents } from "./application/http/CommandEvents";
 import { Role } from "./domain/reg/Role";
 
 export interface AppDeps {
@@ -138,6 +138,12 @@ export function createApp({
     }
   });
   app.get("/api/command-events", (req, res) => {
+    const user = req.user;
+    if (!user) {
+      res.status(401).json({ error: "Authentication required" });
+      return;
+    }
+
     res.setHeader("Content-Type", "text/event-stream");
     res.setHeader("Cache-Control", "no-cache");
     res.setHeader("Connection", "keep-alive");
@@ -145,7 +151,7 @@ export function createApp({
     const unsubscribe = subscribeToCommandEvents(() => {
       res.write("event: command\ndata: {\"changed\":true}\n\n");
     });
-    const unsubscribeOutput = subscribeToOutputEvents((event) => {
+    const unsubscribeOutput = subscribeToUserOutputEvents(user.id, user.role === Role.OPERATOR, (event) => {
       res.write(`event: output\ndata: ${JSON.stringify(event)}\n\n`);
     });
     req.on("close", () => {

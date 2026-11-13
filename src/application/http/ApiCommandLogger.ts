@@ -10,7 +10,7 @@ export const apiCommandLogger: RequestHandler = (req, res, next) => {
     const outcome = res.statusCode >= 400 ? " ERROR" : "";
     console.info(`[API] ${req.method} ${path} -> ${res.statusCode}${outcome}`);
     publishCommandEvent(req.method, res.statusCode);
-    publishOutputEvent({ method: req.method, path, status: res.statusCode });
+    publishOutputEvent({ method: req.method, path, status: res.statusCode, userId: req.user?.id });
   });
 
   next();

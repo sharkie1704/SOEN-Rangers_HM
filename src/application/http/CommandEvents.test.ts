@@ -1,5 +1,11 @@
 import { describe, expect, it, vi } from "vitest";
-import { publishCommandEvent, publishOutputEvent, subscribeToCommandEvents, subscribeToOutputEvents } from "./CommandEvents";
+import {
+  publishCommandEvent,
+  publishOutputEvent,
+  subscribeToCommandEvents,
+  subscribeToOutputEvents,
+  subscribeToUserOutputEvents,
+} from "./CommandEvents";
 
 describe("command event streams", () => {
   it("notifies existing refresh subscribers only for successful commands", () => {
@@ -38,5 +44,34 @@ describe("command event streams", () => {
       status: 400,
     }));
     unsubscribe();
+  });
+
+  it("isolates concurrent same-role and cross-role users while operators retain the global view", () => {
+    const customerOne = vi.fn();
+    const customerTwo = vi.fn();
+    const courier = vi.fn();
+    const operator = vi.fn();
+    const unsubscribe = [
+      subscribeToUserOutputEvents("customer-1", false, customerOne),
+      subscribeToUserOutputEvents("customer-2", false, customerTwo),
+      subscribeToUserOutputEvents("courier-1", false, courier),
+      subscribeToUserOutputEvents("operator-1", true, operator),
+    ];
+
+    publishOutputEvent({ method: "POST", path: "/api/orders", status: 201, userId: "customer-1" });
+    publishOutputEvent({ method: "PATCH", path: "/api/couriers/me/availability", status: 200, userId: "courier-1" });
+    publishOutputEvent({ method: "POST", path: "/api/orders", status: 201, userId: "customer-2" });
+
+    expect(customerOne).toHaveBeenCalledTimes(1);
+    expect(customerOne).toHaveBeenCalledWith(expect.objectContaining({ path: "/api/orders" }));
+    expect(customerTwo).toHaveBeenCalledTimes(1);
+    expect(customerTwo.mock.calls[0][0]).toEqual(expect.objectContaining({ path: "/api/orders" }));
+    expect(customerTwo.mock.calls[0][0]).not.toHaveProperty("userId");
+    expect(courier).toHaveBeenCalledTimes(1);
+    expect(courier).toHaveBeenCalledWith(expect.objectContaining({ path: "/api/couriers/me/availability" }));
+    expect(operator).toHaveBeenCalledTimes(3);
+    expect(operator.mock.calls.flat().every((event) => !("userId" in event))).toBe(true);
+
+    unsubscribe.forEach((removeListener) => removeListener());
   });
 });
