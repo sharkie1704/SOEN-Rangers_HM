@@ -3,9 +3,14 @@ import { describe, expect, it, vi } from "vitest";
 import { apiCommandLogger } from "./ApiCommandLogger";
 import { subscribeToOutputEvents } from "./CommandEvents";
 
-function runLogger(method: string, path: string, statusCode: number) {
+function runLogger(method: string, path: string, statusCode: number, userId?: string) {
   let finish: (() => void) | undefined;
-  const request = { method, originalUrl: `${path}?safe=false`, path } as Request;
+  const request = {
+    method,
+    originalUrl: `${path}?safe=false`,
+    path,
+    user: userId ? { id: userId } : undefined,
+  } as Request;
   const response = {
     statusCode,
     on: (_event: string, listener: () => void) => {
@@ -24,14 +29,15 @@ describe("API command logger output", () => {
     const unsubscribe = subscribeToOutputEvents(listener);
     const log = vi.spyOn(console, "info").mockImplementation(() => {});
 
-    runLogger("POST", "/api/orders", 201);
-    runLogger("GET", "/api/orders", 200);
+    runLogger("POST", "/api/orders", 201, "customer-1");
+    runLogger("GET", "/api/orders", 200, "customer-1");
 
     expect(listener).toHaveBeenCalledTimes(2);
     expect(listener).toHaveBeenNthCalledWith(1, expect.objectContaining({
       method: "POST",
       path: "/api/orders",
       status: 201,
+      userId: "customer-1",
     }));
     expect(listener).toHaveBeenNthCalledWith(2, expect.objectContaining({
       method: "GET",

@@ -6,6 +6,7 @@ export interface OutputEvent {
   path: string;
   status: number;
   timestamp: string;
+  userId?: string;
 }
 
 export function publishCommandEvent(method: string, status: number): void {
@@ -16,6 +17,27 @@ export function publishCommandEvent(method: string, status: number): void {
 export function publishOutputEvent(event: Omit<OutputEvent, "timestamp">): void {
   const outputEvent: OutputEvent = { ...event, timestamp: new Date().toISOString() };
   for (const listener of outputListeners) listener(outputEvent);
+}
+
+export function getOutputEventForUser(
+  event: OutputEvent,
+  userId: string | undefined,
+  isOperator: boolean,
+): Omit<OutputEvent, "userId"> | null {
+  if (!isOperator && (!userId || event.userId !== userId)) return null;
+  const { userId: _userId, ...visibleEvent } = event;
+  return visibleEvent;
+}
+
+export function subscribeToUserOutputEvents(
+  userId: string,
+  isOperator: boolean,
+  listener: (event: Omit<OutputEvent, "userId">) => void,
+): () => void {
+  return subscribeToOutputEvents((event) => {
+    const visibleEvent = getOutputEventForUser(event, userId, isOperator);
+    if (visibleEvent) listener(visibleEvent);
+  });
 }
 
 export function subscribeToCommandEvents(listener: () => void): () => void {
