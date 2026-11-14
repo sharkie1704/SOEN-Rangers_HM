@@ -24,24 +24,29 @@ export type Summary = {
   };
 };
 
+export type HistoryRecord = Omit<Summary, "deliveredAt" | "generatedAt"> & {
+  deliveredAt: string | null;
+  generatedAt: string | null;
+};
+
 function money(cents: number): string {
   return `$${(cents / 100).toFixed(2)}`;
 }
 
-export function SummaryDetails({ summary }: { summary: Summary }) {
+export function SummaryDetails({ summary }: { summary: HistoryRecord }) {
   return (
     <article className="order-summary">
       <header className="order-summary__header">
         <div>
-          <p>ORDER SUMMARY</p>
+          <p>{summary.generatedAt ? "ORDER SUMMARY" : "DELIVERY RECORD"}</p>
           <h3>Order #{summary.orderId}</h3>
         </div>
         <strong>{summary.restaurantName}</strong>
       </header>
       <dl className="order-summary__times">
         <div><dt>Placed</dt><dd>{new Date(summary.placedAt).toLocaleString()}</dd></div>
-        <div><dt>Delivered</dt><dd>{new Date(summary.deliveredAt).toLocaleString()}</dd></div>
-        <div><dt>Summary created</dt><dd>{new Date(summary.generatedAt).toLocaleString()}</dd></div>
+        <div><dt>Delivered</dt><dd>{summary.deliveredAt ? new Date(summary.deliveredAt).toLocaleString() : "Unavailable"}</dd></div>
+        {summary.generatedAt && <div><dt>Summary created</dt><dd>{new Date(summary.generatedAt).toLocaleString()}</dd></div>}
       </dl>
       <h4>Items</h4>
       <ul className="order-summary__lines">
@@ -73,17 +78,19 @@ export default function OrderSummaryList({ operatorView = false, restaurantView 
   const [expandedOrderId, setExpandedOrderId] = useState<number | null>(null);
   const refundDescriptionId = useId();
   const detailsId = useId();
-  const [summaries, setSummaries] = useState<Summary[]>([]);
+  const [summaries, setSummaries] = useState<HistoryRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const [refundingOrderId, setRefundingOrderId] = useState<number | null>(null);
 
+  const historyEndpoint = courierView ? "/api/couriers/me/history" : "/api/order-summaries";
+
   async function loadSummaries() {
     setLoading(true);
     setError("");
     try {
-      const result = await api<{ summaries: Summary[] }>("/api/order-summaries");
+      const result = await api<{ summaries: HistoryRecord[] }>(historyEndpoint);
       setSummaries(result.summaries);
     } catch (cause) {
       setError(cause instanceof ApiError ? cause.message : "Could not load order summaries.");
@@ -113,7 +120,7 @@ export default function OrderSummaryList({ operatorView = false, restaurantView 
 
     async function loadInitialSummaries() {
       try {
-        const result = await api<{ summaries: Summary[] }>("/api/order-summaries");
+        const result = await api<{ summaries: HistoryRecord[] }>(historyEndpoint);
         if (!cancelled) setSummaries(result.summaries);
       } catch (cause) {
         if (!cancelled) {
@@ -126,7 +133,7 @@ export default function OrderSummaryList({ operatorView = false, restaurantView 
 
     void loadInitialSummaries();
     return () => { cancelled = true; };
-  }, []);
+  }, [historyEndpoint]);
 
   return (
     <section className={`order-summaries${operatorView ? " order-summaries--operator" : ""}`} aria-label="Delivered order summaries">
