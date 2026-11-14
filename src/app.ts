@@ -1,3 +1,5 @@
+import { CourierHistoryService, type CourierHistoryRepository } from "./application/dlv/CourierHistoryService";
+import { respond as respondDelivery, toActor as deliveryActor } from "./application/dlv/DeliveryHttp";
 import express, { type RequestHandler } from "express";
 import { hasPermission, type PermissionCommand } from "./domain/reg/permissions";
 import cookieParser from "cookie-parser";
@@ -70,6 +72,7 @@ export interface AppDeps {
   pricing?: PricingSettingsRepository;
   orderSummaries?: OrderSummaryRepository;
   ledger?: LedgerRepository;
+  courierHistory?: CourierHistoryRepository;
   couriers?: CourierAvailabilityRepository;
   assignments?: AssignmentRepository;
   dispatch?: DispatchRepository;
@@ -89,7 +92,7 @@ function requirePermission(command: PermissionCommand): RequestHandler {
 }
 
 export function createApp({
-  users, hasher, tokens, restaurants, menu, restaurantStatus, orders, orderMenu, pricing, orderSummaries, ledger, couriers, assignments, dispatchQueue, dispatch, resetDatabase,
+  users, hasher, tokens, restaurants, menu, restaurantStatus, orders, orderMenu, pricing, orderSummaries, ledger, courierHistory, couriers, assignments, dispatchQueue, dispatch, resetDatabase,
 }: AppDeps) {
   
   const app = express();
@@ -164,6 +167,12 @@ export function createApp({
   const courierIdle = new CourierIdleSubject();
   if (dispatchQueue && dispatcher) {
     courierIdle.subscribe(new DispatchQueueObserver(new DispatchQueueService(dispatchQueue), dispatcher));
+  }
+  if (courierHistory) {
+    const history = new CourierHistoryService(courierHistory);
+    app.get("/api/couriers/me/history", (req, res) => respondDelivery(res, async () => {
+      res.json({ summaries: await history.list(deliveryActor(req.user)) });
+    }));
   }
   if (orderSummaries) {
     const summaryRoutes = new OrderSummaryRoutes(new OrderSummaryService(orderSummaries, ledger));

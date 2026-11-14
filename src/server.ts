@@ -1,3 +1,4 @@
+import { PrismaCourierHistoryRepository } from "./technical-services/dlv/PrismaCourierHistoryRepository";
 // For Node
 import "dotenv/config";
 import { createApp } from "./app";
@@ -28,6 +29,7 @@ const app = createApp({
   orders: new PrismaOrderRepository(),
   orderMenu: new PrismaMenuCatalog(),
   pricing: new PrismaPricingSettingsRepository(),
+  courierHistory: new PrismaCourierHistoryRepository(),
   orderSummaries: new PrismaOrderSummaryRepository(),
   ledger: new PrismaLedgerRepository(),
   couriers: new PrismaCourierAvailabilityRepository(),
