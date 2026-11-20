@@ -1,0 +1,9 @@
+services:
+  app:
+    build: .
+    ports:
+      - "5173:5173"
+      - "3000:3000"
+    env_file:
+      - .env
+    command: npx concurrently "npm:dev:server" "vite --host 0.0.0.0 --port 5173"
