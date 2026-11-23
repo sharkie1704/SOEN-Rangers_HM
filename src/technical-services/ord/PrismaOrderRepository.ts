@@ -103,10 +103,7 @@ export class PrismaOrderRepository implements OrderRepository {
         data: pending.map((event) => ({ ...this.toEventRow(event), orderId: order.id })),
       });
       const ledger = new PrismaLedgerEntryStore(tx);
-      for (const event of pending) {
-        if (event.to !== "Delivered" && event.to !== "Refunded" && event.to !== "Rejected" && event.to !== "Cancelled") continue;
-        await ledger.add(order, event);
-      }
+      await ledger.addTerminalEvents(order, pending);
     });
   }
 
