@@ -14,6 +14,13 @@ const toDbState: Record<"Delivered" | "Refunded" | "Rejected" | "Cancelled", DbO
 export class PrismaLedgerEntryStore {
   constructor(private readonly tx: Prisma.TransactionClient) {}
 
+  async addTerminalEvents(order: Order, events: readonly StateChangeEvent[]): Promise<void> {
+    for (const event of events) {
+      if (event.to !== "Delivered" && event.to !== "Refunded" && event.to !== "Rejected" && event.to !== "Cancelled") continue;
+      await this.add(order, event);
+    }
+  }
+
   async add(order: Order, event: StateChangeEvent): Promise<void> {
     const [state] = await this.tx.$queryRaw<{ epoch: number }[]>`
       SELECT "epoch" FROM "LedgerState" WHERE "id" = 'default' FOR UPDATE
