@@ -1,6 +1,7 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import type { OrderDTO } from "../../application/ord/OrderDTO.ts";
-import { api, ApiError } from "../reg/api/client";
+import { api } from "../reg/api/client";
+import { errorMessage, useApi } from "../reg/api/useApi";
 import type { AuthUser } from "../reg/auth/AuthContext";
 import MapView, { type MapCourier, type MapRestaurant } from "./MapView";
 import "./courier-deliveries.css";
@@ -20,6 +21,7 @@ interface CourierDelivery {
 }
 
 type DeliveryAction = "accept" | "decline" | "pickup" | "deliver";
+type CourierAvailabilityResponse = { courier: { status: MapCourier["status"]; location?: { lat: number; lng: number } } };
 
 const statusLabels: Record<DeliveryOrderStatus, string> = {
   Placed: "Order placed",
@@ -54,47 +56,31 @@ export function canConfirmDelivery(delivery: CourierDelivery, user: AuthUser): b
 }
 
 export default function CourierDeliveriesPage({ user }: { user: AuthUser }) {
-  const [deliveries, setDeliveries] = useState<CourierDelivery[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [refreshCount, setRefreshCount] = useState(0);
+  const courierMarker = (availability: CourierAvailabilityResponse): MapCourier | null => availability.courier.location
+    ? { id: user.id, name: user.name ?? "You", status: availability.courier.status, ...availability.courier.location }
+    : null;
+
+  const resource = useApi(async () => {
+    if (user.role !== "COURIER") return { deliveries: [], courierLocation: null };
+    const [response, availability] = await Promise.all([
+      api<{ deliveries: CourierDelivery[] }>("/api/couriers/me/deliveries"),
+      api<CourierAvailabilityResponse>("/api/couriers/me/availability"),
+    ]);
+    return { deliveries: response.deliveries, courierLocation: courierMarker(availability) };
+  }, "Could not load your assigned deliveries.", [user.id, user.role]);
+  const deliveries = resource.data?.deliveries ?? [];
+  const courierLocation = resource.data?.courierLocation ?? null;
+  const { loading, error: loadError, reload } = resource;
   const [pendingAction, setPendingAction] = useState<{ orderId: number; action: DeliveryAction } | null>(null);
-  const [loadError, setLoadError] = useState("");
   const [actionError, setActionError] = useState("");
-  const [courierLocation, setCourierLocation] = useState<MapCourier | null>(null);
 
-  useEffect(() => {
-    if (user.role !== "COURIER") {
-      setLoading(false);
-      return;
-    }
+  function setDeliveries(update: (current: CourierDelivery[]) => CourierDelivery[]) {
+    resource.setData((current) => current && { ...current, deliveries: update(current.deliveries) });
+  }
 
-    let cancelled = false;
-    async function loadDeliveries() {
-      setLoading(true);
-      setLoadError("");
-      try {
-        const [response, availability] = await Promise.all([
-          api<{ deliveries: CourierDelivery[] }>("/api/couriers/me/deliveries"),
-          api<{ courier: { status: MapCourier["status"]; location?: { lat: number; lng: number } } }>("/api/couriers/me/availability"),
-        ]);
-        if (!cancelled) {
-          setDeliveries(response.deliveries);
-          if (availability.courier.location) {
-            setCourierLocation({ id: user.id, name: user.name ?? "You", status: availability.courier.status, ...availability.courier.location });
-          }
-        }
-      } catch (cause) {
-        if (!cancelled) {
-          setLoadError(cause instanceof ApiError ? cause.message : "Could not load your assigned deliveries.");
-        }
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    }
-
-    void loadDeliveries();
-    return () => { cancelled = true; };
-  }, [refreshCount, user.id, user.role]);
+  function setCourierLocation(location: MapCourier | null) {
+    resource.setData((current) => current && { ...current, courierLocation: location });
+  }
 
   async function runAction(delivery: CourierDelivery, action: DeliveryAction) {
     if (pendingAction !== null) return;
@@ -138,19 +124,14 @@ export default function CourierDeliveriesPage({ user }: { user: AuthUser }) {
         )));
         if (action === "pickup" || action === "deliver") {
           try {
-            const availability = await api<{
-              courier: { status: MapCourier["status"]; location?: { lat: number; lng: number } };
-            }>("/api/couriers/me/availability");
-            setCourierLocation(availability.courier.location
-              ? { id: user.id, name: user.name ?? "You", status: availability.courier.status, ...availability.courier.location }
-              : null);
+            setCourierLocation(courierMarker(await api<CourierAvailabilityResponse>("/api/couriers/me/availability")));
           } catch {
             // The handoff already succeeded; keep the current marker if its refresh fails.
           }
         }
       }
     } catch (cause) {
-      setActionError(cause instanceof ApiError ? cause.message : "The delivery action could not be completed.");
+      setActionError(errorMessage(cause, "The delivery action could not be completed."));
     } finally {
       setPendingAction(null);
     }
@@ -190,7 +171,7 @@ export default function CourierDeliveriesPage({ user }: { user: AuthUser }) {
           type="button"
           className="courier-deliveries__refresh"
           disabled={loading || pendingAction !== null}
-          onClick={() => setRefreshCount((count) => count + 1)}
+          onClick={reload}
         >
           Refresh deliveries
         </button>
@@ -213,7 +194,7 @@ export default function CourierDeliveriesPage({ user }: { user: AuthUser }) {
       {loadError && (
         <div className="courier-deliveries__error" role="alert">
           <span>{loadError}</span>
-          <button type="button" disabled={loading} onClick={() => setRefreshCount((count) => count + 1)}>
+          <button type="button" disabled={loading} onClick={reload}>
             Try again
           </button>
         </div>

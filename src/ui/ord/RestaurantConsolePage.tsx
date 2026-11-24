@@ -1,5 +1,6 @@
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { api, ApiError } from "../reg/api/client";
+import { useApi } from "../reg/api/useApi";
 import { BAND_COLOURS, queueBand, type Band } from "../dash/QueueBand";
 import { page, row, input, primary, secondary } from "./MenuEditorPage";
 import "./button-interactions.css";
@@ -33,40 +34,29 @@ export function orderSummary(order: Order): string {
 const doneMessage = { accept: "accepted", reject: "rejected", ready: "marked ready" };
 
 export default function RestaurantConsolePage({ restaurantId }: RestaurantConsolePageInputs) {
-  const [incoming, setIncoming] = useState<Order[]>([]);
-  const [queue, setQueue] = useState<Order[]>([]);
-  const [restaurantStatus, setRestaurantStatus] = useState<RestaurantStatus>("OPEN");
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const orders = useApi(async () => {
+    const path = `/api/restaurants/${encodeURIComponent(restaurantId)}/orders`;
+    const [placed, queued, restaurant] = await Promise.all([
+      api<{ orders: Order[] }>(`${path}/incoming`),
+      api<{ orders: Order[] }>(`${path}/queue`),
+      api<{ restaurant: { status: RestaurantStatus } }>(`/api/restaurants/${encodeURIComponent(restaurantId)}`),
+    ]);
+    return { incoming: placed.orders, queue: queued.orders, restaurantStatus: restaurant.restaurant.status };
+  }, "Could not load orders. Retrying...", [restaurantId]);
+  const incoming = orders.data?.incoming ?? [];
+  const queue = orders.data?.queue ?? [];
+  const restaurantStatus = orders.data?.restaurantStatus ?? "OPEN";
+  const loading = orders.loading && orders.data === undefined;
+  const { error, reload: loadOrders } = orders;
   const [message, setMessage] = useState("");
   const [rejectingId, setRejectingId] = useState<number | null>(null);
   const [reason, setReason] = useState("");
 
-  const loadOrders = useCallback(async () => {
-    const path = `/api/restaurants/${encodeURIComponent(restaurantId)}/orders`;
-    try {
-      const [placed, queued, restaurant] = await Promise.all([
-        api<{ orders: Order[] }>(`${path}/incoming`),
-        api<{ orders: Order[] }>(`${path}/queue`),
-        api<{ restaurant: { status: RestaurantStatus } }>(`/api/restaurants/${encodeURIComponent(restaurantId)}`),
-      ]);
-      setIncoming(placed.orders);
-      setQueue(queued.orders);
-      setRestaurantStatus(restaurant.restaurant.status);
-      setError("");
-    } catch {
-      setError("Could not load orders. Retrying...");
-    } finally {
-      setLoading(false);
-    }
-  }, [restaurantId]);
-
   useEffect(() => {
-    loadOrders();
     const events = new EventSource("/api/command-events");
     events.addEventListener("command", loadOrders);
     return () => events.close();
-  }, [loadOrders]);
+  }, [restaurantId]);
 
   async function act(order: Order, action: keyof typeof doneMessage, body?: unknown) {
     try {
@@ -78,7 +68,7 @@ export default function RestaurantConsolePage({ restaurantId }: RestaurantConsol
       setMessage(e instanceof ApiError ? `Error: ${e.message}` : "Error: request failed");
     }
     // Refresh either way: the queue may have moved, or the customer may have cancelled first
-    await loadOrders();
+    loadOrders();
   }
 
   const band: Band = queueBand({ status: restaurantStatus, queue });

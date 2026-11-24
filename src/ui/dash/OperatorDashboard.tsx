@@ -1,6 +1,7 @@
-import { useEffect, useId, useState, type ComponentProps } from "react";
+import { useId, useState, type ComponentProps } from "react";
 import OperatorRestaurantsPage, { type OperatorRestaurant } from "../ord/OperatorRestaurantsPage";
 import { api, ApiError } from "../reg/api/client";
+import { useApi } from "../reg/api/useApi";
 import OperatorOverview from "./OperatorOverview";
 import OrderSummaryList from "../prc/OrderSummaryList";
 import BillingLedger from "../prc/BillingLedger";
@@ -167,37 +168,21 @@ function OperatorNavigation({
   );
 }
 
+const NO_RESTAURANTS: OperatorRestaurant[] = [];
+
 export default function OperatorDashboard({ user, onLogout }: OperatorDashboardProps) {
   const [activeSection, setActiveSection] = useState<OperatorSection>("overview");
   const [billingExpanded, setBillingExpanded] = useState(false);
   const billingNavigationId = useId();
 
-  const [restaurants, setRestaurants] = useState<OperatorRestaurant[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const restaurantResource = useApi(
+    () => api<{ restaurants: OperatorRestaurant[] }>("/api/restaurants").then((res) => res.restaurants),
+    "Could not load restaurants. Please try again.",
+  );
+  const restaurants = restaurantResource.data ?? NO_RESTAURANTS;
+  const { loading, error, setData: setRestaurants, reload: reloadRestaurants } = restaurantResource;
   const [message, setMessage] = useState("");
   const [resetting, setResetting] = useState(false);
-  const [restaurantReload, setRestaurantReload] = useState(0);
-
-  useEffect(() => {
-    let cancelled = false;
-    setLoading(true);
-    setError("");
-
-    async function loadRestaurants() {
-      try {
-        const res = await api<{ restaurants: OperatorRestaurant[] }>("/api/restaurants");
-        if (!cancelled) setRestaurants(res.restaurants);
-      } catch {
-        if (!cancelled) setError("Could not load restaurants. Please try again.");
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    }
-
-    loadRestaurants();
-    return () => { cancelled = true; };
-  }, [restaurantReload]);
 
   async function changeStatus(restaurant: OperatorRestaurant, status: "PAUSED" | "OPEN") {
     try {
@@ -206,7 +191,7 @@ export default function OperatorDashboard({ user, onLogout }: OperatorDashboardP
         { method: "PATCH", body: { status } },
       );
       setRestaurants((current) =>
-        current.map((r) => (r.id === res.restaurant.id ? { ...r, status: res.restaurant.status } : r)),
+        current?.map((r) => (r.id === res.restaurant.id ? { ...r, status: res.restaurant.status } : r)),
       );
       setMessage(`${restaurant.name} ${status === "PAUSED" ? "paused" : "reopened"} (event #${res.eventId})`);
     } catch (e) {
@@ -265,7 +250,7 @@ export default function OperatorDashboard({ user, onLogout }: OperatorDashboardP
             restaurants={restaurants}
             loading={loading}
             error={error}
-            onRefresh={() => setRestaurantReload((current) => current + 1)}
+            onRefresh={reloadRestaurants}
             onNavigate={setActiveSection}
           />
         </>
@@ -277,7 +262,7 @@ export default function OperatorDashboard({ user, onLogout }: OperatorDashboardP
           error={error}
           message={message}
           onChangeStatus={changeStatus}
-          onRefresh={() => setRestaurantReload((current) => current + 1)}
+          onRefresh={reloadRestaurants}
         />
       )}
       {activeSection === "orders" && <OperatorOrdersPage restaurants={restaurants} />}

@@ -1,5 +1,6 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { api, ApiError } from "../reg/api/client";
+import { useApi } from "../reg/api/useApi";
 import "./button-interactions.css";
 
 export type EditableMenuItem = {
@@ -33,37 +34,25 @@ function formatPrice(priceCents: number): string {
 }
 
 export default function MenuEditorPage({ restaurantId }: MenuEditorPageInputs) {
-  const [items, setItems] = useState<EditableMenuItem[]>([]);
-  const [restaurantStatus, setRestaurantStatus] = useState<RestaurantStatus | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const menu = useApi(async () => {
+    const path = `/api/restaurants/${encodeURIComponent(restaurantId)}`;
+    const [details, menuItems] = await Promise.all([
+      api<{ restaurant: { status: RestaurantStatus } }>(path),
+      api<{ menuItems: EditableMenuItem[] }>(`${path}/menu`),
+    ]);
+    return { status: details.restaurant.status, items: menuItems.menuItems };
+  }, "Could not load your menu. Please try again.", [restaurantId]);
+  const { loading, error } = menu;
+  const items = menu.data?.items ?? [];
+  const restaurantStatus = menu.data?.status ?? null;
 
-  useEffect(() => {
-    let cancelled = false;
-    setLoading(true);
-    setError("");
+  function setItems(update: (current: EditableMenuItem[]) => EditableMenuItem[]) {
+    menu.setData((current) => current && { ...current, items: update(current.items) });
+  }
 
-    async function loadMenu() {
-      try {
-        const path = `/api/restaurants/${encodeURIComponent(restaurantId)}`;
-        const [details, menu] = await Promise.all([
-          api<{ restaurant: { status: RestaurantStatus } }>(path),
-          api<{ menuItems: EditableMenuItem[] }>(`${path}/menu`),
-        ]);
-        if (!cancelled) {
-          setRestaurantStatus(details.restaurant.status);
-          setItems(menu.menuItems);
-        }
-      } catch {
-        if (!cancelled) setError("Could not load your menu. Please try again.");
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    }
-
-    loadMenu();
-    return () => { cancelled = true; };
-  }, [restaurantId]);
+  function setRestaurantStatus(status: RestaurantStatus) {
+    menu.setData((current) => current && { ...current, status });
+  }
 
   const [message, setMessage] = useState("");
   const itemPath = (id: number) => `/api/restaurants/${encodeURIComponent(restaurantId)}/menu/${id}`;

@@ -1,5 +1,6 @@
-import { useEffect, useState } from "react";
-import { api, ApiError } from "../reg/api/client";
+import { useState } from "react";
+import { api } from "../reg/api/client";
+import { errorMessage, useApi } from "../reg/api/useApi";
 import type { Summary } from "../prc/OrderSummaryList";
 import type { OrderDTO } from "../../application/ord/OrderDTO.ts";
 import "./customer-orders.css";
@@ -18,32 +19,25 @@ type Order = {
 
 export default function CustomerOrderHistory() {
   const [section, setSection] = useState<"active" | "delivered" | "cancelled">("active");
-  const [summaries, setSummaries] = useState<Summary[]>([]);
-  const [summaryError, setSummaryError] = useState("");
-  const [refreshCount, setRefreshCount] = useState(0);
-  const [orders, setOrders] = useState<Order[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const summaryResource = useApi(
+    () => api<{ summaries: Summary[] }>("/api/order-summaries"),
+    "Could not load delivery summaries.",
+  );
+  const orderResource = useApi(
+    () => api<{ orders: Order[] }>("/api/orders").then((result) => result.orders),
+    "Could not load your orders.",
+  );
+  const summaries = summaryResource.data?.summaries ?? [];
+  const { loading: summariesLoading, error: summaryError } = summaryResource;
+  const orders = orderResource.data ?? [];
+  const { error, setError, setData: setOrders } = orderResource;
+  const loading = orderResource.loading && orderResource.data === undefined;
+  const refreshingList = orderResource.loading && orderResource.data !== undefined;
   const [busyOrderId, setBusyOrderId] = useState<number | null>(null);
-  const [refreshingList, setRefreshingList] = useState(false);
-  const [summariesLoading, setSummariesLoading] = useState(true);
-
-  async function refreshOrders() {
-    setRefreshingList(true);
-    setError("");
-    try {
-      const { orders: result } = await api<{ orders: Order[] }>("/api/orders");
-      setOrders(result);
-    } catch (cause) {
-      setError(cause instanceof ApiError ? cause.message : "Could not load your orders.");
-    } finally {
-      setRefreshingList(false);
-    }
-  }
 
   function refreshHistory() {
-    setRefreshCount((count) => count + 1);
-    void refreshOrders();
+    summaryResource.reload();
+    orderResource.reload();
   }
 
   async function cancelOrder(orderId: number) {
@@ -51,28 +45,13 @@ export default function CustomerOrderHistory() {
     setError("");
     try {
       const { transition } = await api<{ transition: { order: Order } }>(`/api/orders/${orderId}/cancel`, { method: "POST" });
-      setOrders((current) => current.map((item) => item.id === orderId ? transition.order : item));
+      setOrders((current) => current?.map((item) => item.id === orderId ? transition.order : item));
     } catch (cause) {
-      setError(cause instanceof ApiError ? cause.message : "Could not cancel this order.");
+      setError(errorMessage(cause, "Could not cancel this order."));
     } finally {
       setBusyOrderId(null);
     }
   }
-
-  useEffect(() => {
-    refreshOrders().finally(() => setLoading(false));
-  }, []);
-
-  useEffect(() => {
-    let cancelled = false;
-    setSummaryError("");
-    setSummariesLoading(true);
-    api<{ summaries: Summary[] }>("/api/order-summaries")
-      .then((result) => { if (!cancelled) setSummaries(result.summaries); })
-      .catch((cause) => { if (!cancelled) setSummaryError(cause instanceof ApiError ? cause.message : "Could not load delivery summaries."); })
-      .finally(() => { if (!cancelled) setSummariesLoading(false); });
-    return () => { cancelled = true; };
-  }, [refreshCount]);
 
   const visibleOrders = orders.filter((order) => section === "delivered"
     ? order.status === "Delivered" || order.status === "Refunded"

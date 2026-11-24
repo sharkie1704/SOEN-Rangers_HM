@@ -1,8 +1,8 @@
 
-import { useEffect, useState } from "react";
 import RestaurantCard from "./RestaurantCard";
 import { getRestaurantDemoDetails } from "./restaurantDemoDetails";
 import { api } from "../reg/api/client";
+import { useApi } from "../reg/api/useApi";
 
 type RestaurantListPageInputs = {
   onSelectRestaurant: (restaurantId: string) => void;
@@ -19,37 +19,11 @@ type Restaurant = {
 
 export default function RestaurantListPage({
   onSelectRestaurant,}: RestaurantListPageInputs) {
-    const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
-const [loading, setLoading] = useState(true);
-const [error, setError] = useState("");
-
-useEffect(() => {
-  let cancelled = false;
-
-  async function loadRestaurants() {
-    try {
-      const data = await api<{ restaurants: Restaurant[] }>("/api/restaurants");
-
-      if (!cancelled) {
-        setRestaurants(data.restaurants);
-      }
-    } catch {
-      if (!cancelled) {
-        setError("Could not load restaurants. Please try again.");
-      }
-    } finally {
-      if (!cancelled) {
-        setLoading(false);
-      }
-    }
-  }
-
-  loadRestaurants();
-
-  return () => {
-    cancelled = true;
-  };
-}, []);
+  const { data, loading, error } = useApi(
+    () => api<{ restaurants: Restaurant[] }>("/api/restaurants"),
+    "Could not load restaurants. Please try again.",
+  );
+  const restaurants = data?.restaurants ?? [];
   return (
     <main
       style={{

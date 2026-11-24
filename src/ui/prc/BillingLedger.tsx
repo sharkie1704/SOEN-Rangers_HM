@@ -1,5 +1,6 @@
-import { useEffect, useState } from "react";
-import { api, ApiError } from "../reg/api/client";
+import { useState } from "react";
+import { api } from "../reg/api/client";
+import { errorMessage, useApi } from "../reg/api/useApi";
 import "./billing-ledger.css";
 
 type LedgerEntry = {
@@ -23,28 +24,17 @@ function money(cents: number | null): string {
 }
 
 export default function BillingLedger() {
-  const [snapshot, setSnapshot] = useState<LedgerSnapshot | null>(null);
+  const {
+    data: snapshot,
+    setData: setSnapshot,
+    loading,
+    error,
+    setError,
+    reload: loadLedger,
+  } = useApi(() => api<LedgerSnapshot>("/api/ledger"), "Could not load the billing ledger.");
   const [showHistory, setShowHistory] = useState(false);
-  const [loading, setLoading] = useState(true);
   const [resetting, setResetting] = useState(false);
-  const [error, setError] = useState("");
   const [message, setMessage] = useState("");
-
-  async function loadLedger() {
-    setLoading(true);
-    setError("");
-    try {
-      setSnapshot(await api<LedgerSnapshot>("/api/ledger"));
-    } catch (cause) {
-      setError(cause instanceof ApiError ? cause.message : "Could not load the billing ledger.");
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  useEffect(() => {
-    void loadLedger();
-  }, []);
 
   async function resetLedger() {
     setResetting(true);
@@ -56,7 +46,7 @@ export default function BillingLedger() {
       setShowHistory(false);
       setMessage(`Ledger reset. New entries will appear in ledger period ${epoch}; earlier entries are still available in all history.`);
     } catch (cause) {
-      setError(cause instanceof ApiError ? cause.message : "Could not reset the billing ledger.");
+      setError(errorMessage(cause, "Could not reset the billing ledger."));
     } finally {
       setResetting(false);
     }
@@ -76,7 +66,7 @@ export default function BillingLedger() {
           <button type="button" onClick={() => setShowHistory((visible) => !visible)} disabled={!snapshot}>
             {showHistory ? "Show current ledger" : "Show all history"}
           </button>
-          <button type="button" onClick={() => void loadLedger()} disabled={loading || resetting}>
+          <button type="button" onClick={loadLedger} disabled={loading || resetting}>
             Refresh
           </button>
           <button type="button" onClick={() => void resetLedger()} disabled={loading || resetting}>

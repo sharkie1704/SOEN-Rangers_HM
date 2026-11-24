@@ -1,6 +1,7 @@
 import { Fragment, useEffect, useMemo, useState } from "react";
 import type { OrderDTO } from "../../application/ord/OrderDTO.ts";
-import { api, ApiError } from "../reg/api/client";
+import { api } from "../reg/api/client";
+import { useApi } from "../reg/api/useApi";
 import type { OperatorRestaurant } from "./OperatorRestaurantsPage";
 import "./operator-orders.css";
 
@@ -28,10 +29,11 @@ export function restaurantDisplayName(
 }
 
 export default function OperatorOrdersPage({ restaurants }: Props) {
-  const [orders, setOrders] = useState<OperatorOrder[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-  const [refreshCount, setRefreshCount] = useState(0);
+  const { data, loading, error, reload } = useApi(
+    () => api<{ orders: OperatorOrder[] }>("/api/orders/all"),
+    "Could not load orders. Please try again.",
+  );
+  const orders = useMemo(() => data?.orders ?? [], [data]);
   const [filter, setFilter] = useState<OrderFilter>("all");
   const [search, setSearch] = useState("");
   const [expandedOrderId, setExpandedOrderId] = useState<number | null>(null);
@@ -53,28 +55,8 @@ export default function OperatorOrdersPage({ restaurants }: Props) {
   }, [filter, orders, restaurants, search]);
 
   useEffect(() => {
-    let cancelled = false;
-
-    async function loadOrders() {
-      setLoading(true);
-      setError("");
-      try {
-        const response = await api<{ orders: OperatorOrder[] }>("/api/orders/all");
-        if (!cancelled) setOrders(response.orders);
-      } catch (e) {
-        if (!cancelled) setError(e instanceof ApiError ? e.message : "Could not load orders. Please try again.");
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    }
-
-    void loadOrders();
-    return () => { cancelled = true; };
-  }, [refreshCount]);
-
-  useEffect(() => {
     const events = new EventSource("/api/command-events");
-    events.addEventListener("command", () => setRefreshCount((count) => count + 1));
+    events.addEventListener("command", reload);
     return () => events.close();
   }, []);
 
@@ -111,7 +93,7 @@ export default function OperatorOrdersPage({ restaurants }: Props) {
             {label}
           </button>
         ))}
-        <button className="operator-orders__refresh" type="button" disabled={loading} onClick={() => setRefreshCount((count) => count + 1)}>
+        <button className="operator-orders__refresh" type="button" disabled={loading} onClick={reload}>
           Refresh orders
         </button>
       </div>

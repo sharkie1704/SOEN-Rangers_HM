@@ -50,6 +50,10 @@ describe("courier delivery history", () => {
     expect(renderToStaticMarkup(tree)).toContain("Order #11");
     harness.api.mockResolvedValueOnce({ summaries: [record(11), record(12)] });
     await refreshButton(tree)!.props.onClick();
+    harness.effects = [];
+    renderList();
+    harness.effects[0]();
+    await vi.waitFor(() => expect(harness.states[2]).toBe(false));
     tree = renderList();
     expect(renderToStaticMarkup(tree)).toContain("Order #12");
     expect(harness.api.mock.calls).toEqual([

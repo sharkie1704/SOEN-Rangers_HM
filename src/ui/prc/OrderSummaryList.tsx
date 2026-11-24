@@ -1,5 +1,6 @@
-import { useEffect, useId, useState } from "react";
-import { api, ApiError } from "../reg/api/client";
+import { useId, useState } from "react";
+import { api } from "../reg/api/client";
+import { errorMessage, useApi } from "../reg/api/useApi";
 import "./order-summaries.css";
 
 export type Summary = {
@@ -78,26 +79,17 @@ export default function OrderSummaryList({ operatorView = false, restaurantView 
   const [expandedOrderId, setExpandedOrderId] = useState<number | null>(null);
   const refundDescriptionId = useId();
   const detailsId = useId();
-  const [summaries, setSummaries] = useState<HistoryRecord[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const historyEndpoint = courierView ? "/api/couriers/me/history" : "/api/order-summaries";
+  const {
+    data,
+    loading,
+    error,
+    setError,
+    reload: loadSummaries,
+  } = useApi(() => api<{ summaries: HistoryRecord[] }>(historyEndpoint), "Could not load order summaries.", [historyEndpoint]);
+  const summaries = data?.summaries ?? [];
   const [message, setMessage] = useState("");
   const [refundingOrderId, setRefundingOrderId] = useState<number | null>(null);
-
-  const historyEndpoint = courierView ? "/api/couriers/me/history" : "/api/order-summaries";
-
-  async function loadSummaries() {
-    setLoading(true);
-    setError("");
-    try {
-      const result = await api<{ summaries: HistoryRecord[] }>(historyEndpoint);
-      setSummaries(result.summaries);
-    } catch (cause) {
-      setError(cause instanceof ApiError ? cause.message : "Could not load order summaries.");
-    } finally {
-      setLoading(false);
-    }
-  }
 
   async function refundOrder(orderId: number) {
     if (!window.confirm(`Refund order #${orderId}? This action cannot be undone.`)) return;
@@ -107,33 +99,13 @@ export default function OrderSummaryList({ operatorView = false, restaurantView 
     try {
       await api(`/api/orders/${orderId}/refund`, { method: "POST" });
       setMessage(`Order #${orderId} refunded successfully.`);
-      await loadSummaries();
+      loadSummaries();
     } catch (cause) {
-      setError(cause instanceof ApiError ? cause.message : "Could not refund the order.");
+      setError(errorMessage(cause, "Could not refund the order."));
     } finally {
       setRefundingOrderId(null);
     }
   }
-
-  useEffect(() => {
-    let cancelled = false;
-
-    async function loadInitialSummaries() {
-      try {
-        const result = await api<{ summaries: HistoryRecord[] }>(historyEndpoint);
-        if (!cancelled) setSummaries(result.summaries);
-      } catch (cause) {
-        if (!cancelled) {
-          setError(cause instanceof ApiError ? cause.message : "Could not load order summaries.");
-        }
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    }
-
-    void loadInitialSummaries();
-    return () => { cancelled = true; };
-  }, [historyEndpoint]);
 
   return (
     <section className={`order-summaries${operatorView ? " order-summaries--operator" : ""}`} aria-label="Delivered order summaries">

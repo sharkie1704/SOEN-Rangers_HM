@@ -1,5 +1,6 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { api, ApiError } from "../reg/api/client";
+import { errorMessage, useApi } from "../reg/api/useApi";
 import "./courier-availability.css";
 
 type CourierStatus = "OFFLINE" | "IDLE" | "ASSIGNED" | "CARRYING";
@@ -34,33 +35,16 @@ async function fetchStatus(): Promise<CourierStatus> {
 }
 
 export default function CourierAvailabilityPage() {
-  const [status, setStatus] = useState<CourierStatus | null>(null);
-  const [loading, setLoading] = useState(true);
+  const {
+    data,
+    setData: setStatus,
+    loading,
+    error,
+    setError,
+    reload,
+  } = useApi(fetchStatus, "Could not load your availability. Please try again.");
+  const status = data ?? null;
   const [saving, setSaving] = useState(false);
-  const [error, setError] = useState("");
-  const [loadAttempt, setLoadAttempt] = useState(0);
-
-  useEffect(() => {
-    let cancelled = false;
-
-    async function loadStatus() {
-      setLoading(true);
-      setError("");
-      try {
-        const current = await fetchStatus();
-        if (!cancelled) setStatus(current);
-      } catch (cause) {
-        if (!cancelled) {
-          setError(cause instanceof ApiError ? cause.message : "Could not load your availability. Please try again.");
-        }
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    }
-
-    void loadStatus();
-    return () => { cancelled = true; };
-  }, [loadAttempt]);
 
   async function changeStatus(next: ToggleStatus) {
     setSaving(true);
@@ -72,14 +56,14 @@ export default function CourierAvailabilityPage() {
       });
       setStatus(res.courier.status);
     } catch (cause) {
-      setError(cause instanceof ApiError ? cause.message : "Could not update your availability. Please try again.");
+      setError(errorMessage(cause, "Could not update your availability. Please try again."));
       if (cause instanceof ApiError && cause.status === 409) {
         try {
           setStatus(await fetchStatus());
         } catch (refreshCause) {
           setError(
             `${cause.message} We also couldn't refresh your status: ${
-              refreshCause instanceof ApiError ? refreshCause.message : "Please try loading again."
+              errorMessage(refreshCause, "Please try loading again.")
             }`,
           );
         }
@@ -111,7 +95,7 @@ export default function CourierAvailabilityPage() {
         <div className="courier-availability__error" role="alert">
           <p>{error}</p>
           {!loading && (
-            <button type="button" onClick={() => setLoadAttempt((attempt) => attempt + 1)}>
+            <button type="button" onClick={reload}>
               Refresh status
             </button>
           )}
@@ -177,7 +161,7 @@ export default function CourierAvailabilityPage() {
       {!loading && !status && !error && (
         <div className="courier-availability__empty">
           <strong>Your availability couldn’t be displayed.</strong>
-          <button type="button" onClick={() => setLoadAttempt((attempt) => attempt + 1)}>Try again</button>
+          <button type="button" onClick={reload}>Try again</button>
         </div>
       )}
     </section>

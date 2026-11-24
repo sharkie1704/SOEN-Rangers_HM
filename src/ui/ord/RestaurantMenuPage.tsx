@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import MenuItemCard from "./MenuItemCard";
 import { api } from "../reg/api/client";
+import { useApi } from "../reg/api/useApi";
 import { BAND_COLOURS, queueBand, type Band } from "../dash/QueueBand";
 import { getRestaurantDemoDetails } from "./restaurantDemoDetails";
 import "./button-interactions.css";
@@ -40,47 +41,25 @@ type RestaurantMenuPageInputs = {
 export default function RestaurantMenuPage({
   restaurantId, onBack, onViewCart, cartCount, onAddToCart
 }: RestaurantMenuPageInputs) {
-  const [restaurant, setRestaurant] = useState<Restaurant | null>(null);
-  const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
+  const { data, loading, error } = useApi(async () => {
+    const path = `/api/restaurants/${encodeURIComponent(restaurantId)}`;
+    const details = await api<{ restaurant: Restaurant }>(path);
+    // Paused and closed restaurants can't be browsed (R-ORD-02)
+    if (details.restaurant.status !== "OPEN") return { restaurant: details.restaurant, menuItems: [] };
+    const menu = await api<{ menuItems: ApiMenuItem[] }>(`${path}/menu`);
+    return {
+      restaurant: details.restaurant,
+      menuItems: menu.menuItems.map((item): MenuItem => ({
+        ...item,
+        price: item.priceCents / 100,
+        image: item.imageUrl,
+      })),
+    };
+  }, "Could not load menu. Please try again.", [restaurantId]);
+  const restaurant = data?.restaurant ?? null;
+  const menuItems = data?.menuItems ?? [];
   const [queuedCount, setQueuedCount] = useState(0);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
   const demoDetails = getRestaurantDemoDetails(restaurantId);
-
-  useEffect(() => {
-    let cancelled = false;
-    setLoading(true);
-    setError("");
-    setRestaurant(null);
-    setMenuItems([]);
-
-    async function loadMenu() {
-      try {
-        const path = `/api/restaurants/${encodeURIComponent(restaurantId)}`;
-        const details = await api<{ restaurant: Restaurant }>(path);
-        if (cancelled) return;
-        setRestaurant(details.restaurant);
-        // Paused and closed restaurants can't be browsed (R-ORD-02)
-        if (details.restaurant.status !== "OPEN") return;
-
-        const menu = await api<{ menuItems: ApiMenuItem[] }>(`${path}/menu`);
-        if (!cancelled) {
-          setMenuItems(menu.menuItems.map((item) => ({
-            ...item,
-            price: item.priceCents / 100,
-            image: item.imageUrl,
-          })));
-        }
-      } catch {
-        if (!cancelled) setError("Could not load menu. Please try again.");
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    }
-
-    loadMenu();
-    return () => { cancelled = true; };
-  }, [restaurantId]);
 
   useEffect(() => {
     let cancelled = false;
