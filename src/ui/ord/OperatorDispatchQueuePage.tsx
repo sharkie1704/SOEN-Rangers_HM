@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { api, ApiError } from "../reg/api/client";
+import { api } from "../reg/api/client";
+import { errorMessage, useApi } from "../reg/api/useApi";
 import type { ReassignmentResult, StalledOrder } from "../../application/dlv/ReassignmentService.ts";
 import "./operator-orders.css";
 
@@ -20,34 +21,26 @@ export async function reassignStalledOrder(orderId: number): Promise<string> {
 
 export default function OperatorDispatchQueuePage() {
   const [activeTab, setActiveTab] = useState<"queue" | "stalled">("queue");
-  const [entries, setEntries] = useState<DispatchQueueEntry[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-  const [refreshCount, setRefreshCount] = useState(0);
-  const [stalled, setStalled] = useState<StalledOrder[]>([]);
-  const [stalledLoading, setStalledLoading] = useState(true);
-  const [stalledError, setStalledError] = useState("");
+  const stalledOrders = useApi(
+    () => api<{ stalled: StalledOrder[] }>("/api/dispatch/stalled"),
+    "Could not load stalled orders. Please refresh.",
+  );
+  const queue = useApi(
+    () => api<{ waiting: DispatchQueueEntry[] }>("/api/dispatch/queue"),
+    "Could not load the dispatch queue. Please try again.",
+  );
+  const stalled = stalledOrders.data?.stalled ?? [];
+  const { loading: stalledLoading, error: stalledError } = stalledOrders;
+  const entries = queue.data?.waiting ?? [];
+  const { loading, error } = queue;
   const [reassigningOrderId, setReassigningOrderId] = useState<number | null>(null);
   const [actionError, setActionError] = useState("");
   const [message, setMessage] = useState("");
 
-  useEffect(() => {
-    let cancelled = false;
-    async function loadStalled() {
-      setStalledLoading(true);
-      setStalledError("");
-      try {
-        const response = await api<{ stalled: StalledOrder[] }>("/api/dispatch/stalled");
-        if (!cancelled) setStalled(response.stalled);
-      } catch (cause) {
-        if (!cancelled) setStalledError(cause instanceof ApiError ? cause.message : "Could not load stalled orders. Please refresh.");
-      } finally {
-        if (!cancelled) setStalledLoading(false);
-      }
-    }
-    void loadStalled();
-    return () => { cancelled = true; };
-  }, [refreshCount]);
+  function refresh() {
+    stalledOrders.reload();
+    queue.reload();
+  }
 
   async function reassign(orderId: number) {
     if (reassigningOrderId !== null) return;
@@ -57,38 +50,16 @@ export default function OperatorDispatchQueuePage() {
     try {
       setMessage(await reassignStalledOrder(orderId));
     } catch (cause) {
-      setActionError(cause instanceof ApiError ? cause.message : "Could not reassign the order. Refresh to check its current state before trying again.");
+      setActionError(errorMessage(cause, "Could not reassign the order. Refresh to check its current state before trying again."));
     } finally {
       setReassigningOrderId(null);
-      setRefreshCount((count) => count + 1);
+      refresh();
     }
   }
 
   useEffect(() => {
-    let cancelled = false;
-
-    async function loadQueue() {
-      setLoading(true);
-      setError("");
-      try {
-        const response = await api<{ waiting: DispatchQueueEntry[] }>("/api/dispatch/queue");
-        if (!cancelled) setEntries(response.waiting);
-      } catch (cause) {
-        if (!cancelled) {
-          setError(cause instanceof ApiError ? cause.message : "Could not load the dispatch queue. Please try again.");
-        }
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    }
-
-    void loadQueue();
-    return () => { cancelled = true; };
-  }, [refreshCount]);
-
-  useEffect(() => {
     const events = new EventSource("/api/command-events");
-    events.addEventListener("command", () => setRefreshCount((count) => count + 1));
+    events.addEventListener("command", refresh);
     return () => events.close();
   }, []);
 
@@ -102,7 +73,7 @@ export default function OperatorDispatchQueuePage() {
         <button
           type="button"
           disabled={(activeTab === "queue" ? loading : stalledLoading) || reassigningOrderId !== null}
-          onClick={() => setRefreshCount((count) => count + 1)}
+          onClick={refresh}
         >
           {activeTab === "queue" ? "Refresh queue" : "Refresh stalled orders"}
         </button>

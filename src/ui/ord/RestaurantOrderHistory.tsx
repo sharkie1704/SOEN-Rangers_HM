@@ -1,6 +1,7 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import type { OrderDTO } from "../../application/ord/OrderDTO.ts";
-import { api, ApiError } from "../reg/api/client";
+import { api } from "../reg/api/client";
+import { useApi } from "../reg/api/useApi";
 import OrderSummaryList from "../prc/OrderSummaryList";
 import "./customer-orders.css";
 
@@ -10,31 +11,12 @@ type HistoryOrder = Pick<OrderDTO, "id" | "status" | "lines" | "totalCents" | "f
 
 export default function RestaurantOrderHistory({ restaurantId }: { restaurantId: string }) {
   const [view, setView] = useState<"orders" | "summaries">("orders");
-  const [orders, setOrders] = useState<HistoryOrder[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-  const [refreshCount, setRefreshCount] = useState(0);
-
-  useEffect(() => {
-    let cancelled = false;
-    async function loadOrders() {
-      setLoading(true);
-      setError("");
-      setOrders([]);
-      try {
-        const response = await api<{ orders: HistoryOrder[] }>(
-          `/api/restaurants/${encodeURIComponent(restaurantId)}/orders/all`,
-        );
-        if (!cancelled) setOrders(response.orders);
-      } catch (cause) {
-        if (!cancelled) setError(cause instanceof ApiError ? cause.message : "Could not load restaurant history.");
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    }
-    void loadOrders();
-    return () => { cancelled = true; };
-  }, [restaurantId, refreshCount]);
+  const { data, loading, error, reload } = useApi(
+    () => api<{ orders: HistoryOrder[] }>(`/api/restaurants/${encodeURIComponent(restaurantId)}/orders/all`),
+    "Could not load restaurant history.",
+    [restaurantId],
+  );
+  const orders = data?.orders ?? [];
 
   return (
     <section className="my-orders-page" aria-label="Restaurant history">
@@ -47,7 +29,7 @@ export default function RestaurantOrderHistory({ restaurantId }: { restaurantId:
       </header>
       {view === "summaries" ? <OrderSummaryList restaurantView /> : (
         <>
-          <button type="button" disabled={loading} onClick={() => setRefreshCount((count) => count + 1)}>Refresh orders</button>
+          <button type="button" disabled={loading} onClick={reload}>Refresh orders</button>
           {loading && <p role="status">Loading restaurant history…</p>}
           {error && <p role="alert">{error}</p>}
           {!loading && !error && orders.length === 0 && <p>No restaurant orders yet.</p>}

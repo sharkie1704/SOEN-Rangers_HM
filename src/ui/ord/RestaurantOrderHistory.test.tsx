@@ -14,7 +14,7 @@ vi.mock("../prc/OrderSummaryList", () => ({
 afterEach(() => vi.clearAllMocks());
 
 function render(view = "orders", orders: unknown[] = [], loading = false, error = "") {
-  const values = [view, orders, loading, error, 0];
+  const values = [view, { orders }, loading, error, 0];
   let index = 0;
   vi.mocked(useState).mockImplementation((() => [values[index++], vi.fn()]) as unknown as typeof useState);
   return renderToStaticMarkup(createElement(RestaurantOrderHistory, { restaurantId: "restaurant-a" }));

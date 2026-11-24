@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { api, ApiError } from "../reg/api/client";
+import { api } from "../reg/api/client";
+import { useApi } from "../reg/api/useApi";
 import MapView, { type MapRestaurant } from "../dash/MapView";
 import RestaurantDetails from "../dash/map-popup/RestaurantDetails";
 import type { PanelOrder } from "../dash/map-popup/PopupInfoTypes";
@@ -32,54 +33,30 @@ export default function OperatorRestaurantsPage({
   restaurants, loading, error, message, onChangeStatus, onRefresh,
 }: OperatorRestaurantsPageProps) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [ordersByRestaurant, setOrdersByRestaurant] = useState<OrdersByRestaurant>({});
-  const [ordersError, setOrdersError] = useState("");
-  const [ordersLoading, setOrdersLoading] = useState(false);
+  const orders = useApi(async (): Promise<OrdersByRestaurant> => {
+    const results = await Promise.all(restaurants.map(async (restaurant) => {
+      const response = await api<{ orders: { id: number; status: string }[] }>(
+        `/api/restaurants/${encodeURIComponent(restaurant.id)}/orders/all`,
+      );
+      return [restaurant.id, response.orders.map((order) => ({
+        id: String(order.id),
+        state: order.status,
+      }))] as const;
+    }));
+    return Object.fromEntries(results);
+  }, "Could not load restaurant orders for the map.", [restaurants]);
+  const ordersByRestaurant = orders.data ?? {};
+  const ordersError = orders.error;
+  const ordersLoading = orders.loading && orders.data === undefined && restaurants.length > 0;
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<RestaurantStatus | "ALL">("ALL");
   const [pendingRestaurantId, setPendingRestaurantId] = useState<string | null>(null);
 
   useEffect(() => {
-    let cancelled = false;
-    setOrdersLoading(restaurants.length > 0);
-
-    async function loadOrders() {
-      try {
-        const results = await Promise.all(restaurants.map(async (restaurant) => {
-          const response = await api<{ orders: { id: number; status: string }[] }>(
-            `/api/restaurants/${encodeURIComponent(restaurant.id)}/orders/all`,
-          );
-          return [restaurant.id, response.orders.map((order) => ({
-            id: String(order.id),
-            state: order.status,
-          }))] as const;
-        }));
-        if (!cancelled) {
-          setOrdersByRestaurant(Object.fromEntries(results));
-          setOrdersError("");
-        }
-      } catch (cause) {
-        if (!cancelled) {
-          setOrdersError(cause instanceof ApiError ? cause.message : "Could not load restaurant orders for the map.");
-        }
-      } finally {
-        if (!cancelled) setOrdersLoading(false);
-      }
-    }
-
-    if (restaurants.length > 0) {
-      void loadOrders();
-      const events = new EventSource("/api/command-events");
-      events.addEventListener("command", loadOrders);
-      return () => {
-        cancelled = true;
-        events.close();
-      };
-    }
-
-    setOrdersByRestaurant({});
-    setOrdersError("");
-    return () => { cancelled = true; };
+    if (restaurants.length === 0) return;
+    const events = new EventSource("/api/command-events");
+    events.addEventListener("command", orders.reload);
+    return () => events.close();
   }, [restaurants]);
 
   const counts = {
