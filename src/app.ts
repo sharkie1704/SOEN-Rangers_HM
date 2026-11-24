@@ -80,6 +80,28 @@ export interface AppDeps {
   resetDatabase?: () => Promise<void>;
 }
 
+type AuthenticatedRouteDeps = Pick<AppDeps,
+  | "users"
+  | "restaurants"
+  | "orders"
+  | "orderMenu"
+  | "pricing"
+  | "orderSummaries"
+  | "ledger"
+  | "courierHistory"
+  | "couriers"
+  | "assignments"
+  | "dispatchQueue"
+  | "dispatch"
+  | "resetDatabase"
+> & {
+  app: ReturnType<typeof express>;
+  createOperator: CreateOperatorAccountController;
+  restaurantController: RestaurantQueryController;
+  menuController: MenuController;
+  statusController: RestaurantStatusController;
+};
+
 // Session authentication runs before these permission gates.
 function requirePermission(command: PermissionCommand): RequestHandler {
   return (req, res, next) => {
@@ -120,9 +142,40 @@ export function createApp({
 
 
   // Session gate (R-REG-02): every other /api route requires authentication.
-  // Please put your own routes after this line !
-  
   app.use("/api", authenticate(tokens));
+
+  registerAuthenticatedRoutes({
+    app,
+    users, restaurants, orders, orderMenu, pricing, orderSummaries, ledger,
+    courierHistory, couriers, assignments, dispatchQueue, dispatch, resetDatabase,
+    createOperator, restaurantController, menuController, statusController,
+  });
+
+  return app;
+}
+
+function registerAuthenticatedRoutes({
+  app, users, restaurants, orders, orderMenu, pricing, orderSummaries, ledger,
+  courierHistory, couriers, assignments, dispatchQueue, dispatch, resetDatabase,
+  createOperator, restaurantController, menuController, statusController,
+}: AuthenticatedRouteDeps): void {
+  registerAdminRoutes(app, resetDatabase);
+  registerCommandEventRoutes(app);
+
+  // Offers an order to a courier when it becomes ready, and again when a courier declines it
+  const dispatcher = orders && assignments && dispatch ? new DispatchService(orders, assignments, dispatch) : undefined;
+  registerDeliveryRoutes(app, {
+    courierHistory, couriers, assignments, orders, restaurants, users, dispatchQueue, dispatcher,
+  });
+
+  registerPricingRoutes(app, orderSummaries, ledger);
+  registerOrderRoutes(app, { orders, orderMenu, pricing, dispatcher });
+  registerRestaurantRoutes(app, { restaurantController, menuController, statusController });
+  registerProfileRoutes(app, users);
+  app.post("/api/operator/accounts", createOperator.handle);
+}
+
+function registerAdminRoutes(app: AuthenticatedRouteDeps["app"], resetDatabase: AppDeps["resetDatabase"]): void {
   app.post("/api/admin/reset", async (req, res) => {
     if (req.user?.role !== Role.OPERATOR) {
       res.status(403).json({ error: "Only operators can reset the application." });
@@ -140,6 +193,9 @@ export function createApp({
       res.status(500).json({ error: "Could not reset the application." });
     }
   });
+}
+
+function registerCommandEventRoutes(app: AuthenticatedRouteDeps["app"]): void {
   app.get("/api/command-events", (req, res) => {
     const user = req.user;
     if (!user) {
@@ -162,8 +218,16 @@ export function createApp({
       unsubscribeOutput();
     });
   });
-  // Offers an order to a courier when it becomes ready, and again when a courier declines it
-  const dispatcher = orders && assignments && dispatch ? new DispatchService(orders, assignments, dispatch) : undefined;
+
+}
+
+type DeliveryRouteDeps = Pick<AuthenticatedRouteDeps,
+  "courierHistory" | "couriers" | "assignments" | "orders" | "restaurants" | "users" | "dispatchQueue"
+> & { dispatcher: DispatchService | undefined };
+
+function registerDeliveryRoutes(app: AuthenticatedRouteDeps["app"], {
+  courierHistory, couriers, assignments, orders, restaurants, users, dispatchQueue, dispatcher,
+}: DeliveryRouteDeps): CourierIdleSubject {
   const courierIdle = new CourierIdleSubject();
   if (dispatchQueue && dispatcher) {
     courierIdle.subscribe(new DispatchQueueObserver(new DispatchQueueService(dispatchQueue), dispatcher));
@@ -173,34 +237,6 @@ export function createApp({
     app.get("/api/couriers/me/history", (req, res) => respondDelivery(res, async () => {
       res.json({ summaries: await history.list(deliveryActor(req.user)) });
     }));
-  }
-  if (orderSummaries) {
-    const summaryRoutes = new OrderSummaryRoutes(new OrderSummaryService(orderSummaries, ledger));
-    app.get("/api/order-summaries", summaryRoutes.list);
-  }
-  if (ledger) {
-    const ledgerRoutes = new LedgerRoutes(new LedgerService(ledger));
-    app.get("/api/ledger", ledgerRoutes.read);
-    app.post("/api/ledger/reset", ledgerRoutes.reset);
-  }
-  if (orders && orderMenu) {
-    const orderRoutes = new OrderRoutes(
-      new OrderController(new OrderService(orders, orderMenu, pricing, dispatcher)),
-    );
-    app.post("/api/orders/quote", orderRoutes.quote);
-    app.post("/api/orders", orderRoutes.place);
-    app.get("/api/orders", orderRoutes.listMine);
-    app.get("/api/orders/all", orderRoutes.listAll);
-    app.get("/api/orders/:orderId", orderRoutes.getOne);
-    app.post("/api/orders/:orderId/cancel", orderRoutes.cancel);
-    app.post("/api/orders/:orderId/refund", orderRoutes.refund);
-    app.post("/api/orders/:orderId/accept", orderRoutes.accept);
-    app.post("/api/orders/:orderId/reject", orderRoutes.reject);
-    app.post("/api/orders/:orderId/ready", orderRoutes.markReady);
-    app.get("/api/restaurants/:restaurantId/orders/incoming", orderRoutes.incoming);
-    app.get("/api/restaurants/:restaurantId/orders/queue", orderRoutes.queue);
-    app.get("/api/restaurants/:restaurantId/orders/queue-count", orderRoutes.queueCount);
-    app.get("/api/restaurants/:restaurantId/orders/all", orderRoutes.allForRestaurant);
   }
   if (couriers) {
     const courierController = new CourierAvailabilityController(new CourierAvailabilityService(couriers, courierIdle, assignments));
@@ -232,6 +268,58 @@ export function createApp({
     app.get("/api/dispatch/stalled", reassignmentController.stalled);
     app.post("/api/orders/:orderId/reassign", reassignmentController.reassign);
   }
+  return courierIdle;
+}
+
+function registerPricingRoutes(
+  app: AuthenticatedRouteDeps["app"],
+  orderSummaries: AppDeps["orderSummaries"],
+  ledger: AppDeps["ledger"],
+): void {
+  if (orderSummaries) {
+    const summaryRoutes = new OrderSummaryRoutes(new OrderSummaryService(orderSummaries, ledger));
+    app.get("/api/order-summaries", summaryRoutes.list);
+  }
+  if (ledger) {
+    const ledgerRoutes = new LedgerRoutes(new LedgerService(ledger));
+    app.get("/api/ledger", ledgerRoutes.read);
+    app.post("/api/ledger/reset", ledgerRoutes.reset);
+  }
+}
+
+type OrderRouteDeps = Pick<AuthenticatedRouteDeps, "orders" | "orderMenu" | "pricing"> & {
+  dispatcher: DispatchService | undefined;
+};
+
+function registerOrderRoutes(app: AuthenticatedRouteDeps["app"], { orders, orderMenu, pricing, dispatcher }: OrderRouteDeps): void {
+  if (orders && orderMenu) {
+    const orderRoutes = new OrderRoutes(
+      new OrderController(new OrderService(orders, orderMenu, pricing, dispatcher)),
+    );
+    app.post("/api/orders/quote", orderRoutes.quote);
+    app.post("/api/orders", orderRoutes.place);
+    app.get("/api/orders", orderRoutes.listMine);
+    app.get("/api/orders/all", orderRoutes.listAll);
+    app.get("/api/orders/:orderId", orderRoutes.getOne);
+    app.post("/api/orders/:orderId/cancel", orderRoutes.cancel);
+    app.post("/api/orders/:orderId/refund", orderRoutes.refund);
+    app.post("/api/orders/:orderId/accept", orderRoutes.accept);
+    app.post("/api/orders/:orderId/reject", orderRoutes.reject);
+    app.post("/api/orders/:orderId/ready", orderRoutes.markReady);
+    app.get("/api/restaurants/:restaurantId/orders/incoming", orderRoutes.incoming);
+    app.get("/api/restaurants/:restaurantId/orders/queue", orderRoutes.queue);
+    app.get("/api/restaurants/:restaurantId/orders/queue-count", orderRoutes.queueCount);
+    app.get("/api/restaurants/:restaurantId/orders/all", orderRoutes.allForRestaurant);
+  }
+}
+
+type RestaurantRouteDeps = Pick<AuthenticatedRouteDeps,
+  "restaurantController" | "menuController" | "statusController"
+>;
+
+function registerRestaurantRoutes(app: AuthenticatedRouteDeps["app"], {
+  restaurantController, menuController, statusController,
+}: RestaurantRouteDeps): void {
   app.get("/api/restaurants", requirePermission({ name: "browseRestaurants" }), restaurantController.listRestaurants);
   app.get("/api/restaurants/:restaurantId", requirePermission({ name: "browseRestaurants" }), restaurantController.getRestaurant);
   app.get("/api/restaurants/:restaurantId/menu", requirePermission({ name: "browseMenu" }), restaurantController.getMenu);
@@ -240,28 +328,27 @@ export function createApp({
   app.patch("/api/restaurants/:restaurantId/menu/:itemId", menuController.update);
   app.delete("/api/restaurants/:restaurantId/menu/:itemId", menuController.remove);
   app.patch("/api/restaurants/:restaurantId/status", statusController.update);
+}
 
+function registerProfileRoutes(app: AuthenticatedRouteDeps["app"], users: UserRepository): void {
   app.get("/api/auth/me", requirePermission({ name: "viewProfile" }), async (req, res) => {
-  if (!req.user) {
-    res.status(401).json({ error: "Authentication required" });
-    return;
-  }
-
-  try {
-    const user = await users.findById(req.user.id);
-
-    if (!user) {
+    if (!req.user) {
       res.status(401).json({ error: "Authentication required" });
       return;
     }
 
-    res.json({ user: toUserDto(user) });
-  } catch (error) {
-    console.error("Failed to retrieve user profile:", error);
-    res.status(500).json({ error: "Failed to retrieve user profile" });
-  }
-});
-  app.post("/api/operator/accounts", createOperator.handle);
+    try {
+      const user = await users.findById(req.user.id);
 
-  return app;
+      if (!user) {
+        res.status(401).json({ error: "Authentication required" });
+        return;
+      }
+
+      res.json({ user: toUserDto(user) });
+    } catch (error) {
+      console.error("Failed to retrieve user profile:", error);
+      res.status(500).json({ error: "Failed to retrieve user profile" });
+    }
+  });
 }
