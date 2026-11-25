@@ -7,6 +7,7 @@ export class CustomerPermission implements RolePermissions {
     if (isCommonCommand(cmd)) return true;
     switch (cmd.name) {
       case "placeOrder":
+      case "rateOrder":
       case "customerOrders": return true;
       case "viewOrder":
       case "cancelOrder": return cmd.customerId === user.id;
