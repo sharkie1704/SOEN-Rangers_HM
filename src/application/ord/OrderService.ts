@@ -17,6 +17,7 @@ import { calculateSubtotalCents } from "../../domain/ord/calculateSubtotalCents.
 import { calculate } from "../../domain/prc/FareCalculator.ts";
 import type { FareBreakdown } from "../../domain/prc/FareBreakdown.ts";
 import type { PricingSettingsRepository } from "../prc/PricingSettingsRepository.ts";
+import type { PromoService } from "../promo/PromoService.ts";
 
 
 export const MAX_LINE_QUANTITY = 50;
@@ -26,17 +27,20 @@ export class OrderService {
   private readonly menu: MenuCatalog;
   private readonly pricing?: PricingSettingsRepository;
   private readonly readyListener?: OrderReadyListener;
+  private readonly promos?: PromoService;
 
   constructor(
     repository: OrderRepository,
     menu: MenuCatalog,
     pricing?: PricingSettingsRepository,
     readyListener?: OrderReadyListener,
+    promos?: PromoService,
   ) {
     this.repository = repository;
     this.menu = menu;
     this.pricing = pricing;
     this.readyListener = readyListener;
+    this.promos = promos;
   }
 
   async place(
@@ -231,7 +235,8 @@ export class OrderService {
       throw new Error("Pricing settings repository is not configured.");
     }
     const settings = await this.pricing.getSettings();
-    const fare = calculate(subtotalCents, settings);
+    const baseFare = calculate(subtotalCents, settings);
+    const fare = input.promoCode === undefined ? baseFare : await this.applyPromo(baseFare, input.promoCode);
 
     return { customer, restaurantId, restaurantName: restaurant.name, lines, fare };
   }
@@ -316,6 +321,13 @@ export class OrderService {
     await this.repository.save(order);
     this.logEvent(event);
     return toTransition(order, event);
+  }
+
+  private applyPromo(fare: FareBreakdown, code: unknown): Promise<FareBreakdown> {
+    if (!this.promos) {
+      throw new Error("Promo service is not configured.");
+    }
+    return this.promos.apply(fare, code);
   }
 
   private logEvent(event: StateChangeEvent): void {

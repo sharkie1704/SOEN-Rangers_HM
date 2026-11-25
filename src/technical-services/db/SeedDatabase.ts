@@ -1,6 +1,6 @@
 import { prisma } from "./PrismaClient";
 import { BcryptPasswordHasher } from "../reg/BcryptPasswordHasher";
-import { restaurants, menuItems, users } from "../../../prisma/seed-data";
+import { restaurants, menuItems, users, promoCodes } from "../../../prisma/seed-data";
 import { loadPricingConfig, PRICING_SETTINGS_ID } from "../../../prisma/pricing-config";
 
 export type DbClient = Parameters<Parameters<typeof prisma.$transaction>[0]>[0];
@@ -135,6 +135,13 @@ export async function seedDatabase(db: DbClient, prepared: PreparedSeed): Promis
   await seedRestaurants(db);
   await seedMenuItems(db);
   await seedUsers(db, prepared.passwordHashes);
+  await seedPromoCodes(db);
+}
+
+async function seedPromoCodes(db: DbClient): Promise<void> {
+  for (const promo of promoCodes) {
+    await db.promoCode.upsert({ where: { code: promo.code }, update: promo, create: promo });
+  }
 }
 
 // CLI-only helper (needs $transaction, so it takes the full client). reset does not use it.

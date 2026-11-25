@@ -70,6 +70,8 @@ export class PrismaOrderRepository implements OrderRepository {
         serviceFeeCents: order.fare?.serviceFeeCents ?? null,
         smallOrderSurchargeCents: order.fare?.smallOrderSurchargeCents ?? null,
         fareTotalCents: order.fare?.totalCents ?? null,
+        promoCode: order.fare?.promo?.code ?? null,
+        discountCents: order.fare?.promo?.discountCents ?? null,
         lines: {
           create: order.lines.map((line, position) => ({
             position,
@@ -187,6 +189,9 @@ export class PrismaOrderRepository implements OrderRepository {
       serviceFeeCents: row.serviceFeeCents!,
       smallOrderSurchargeCents: row.smallOrderSurchargeCents!,
       totalCents: row.fareTotalCents!,
+      ...(row.promoCode !== null && row.discountCents !== null
+        ? { promo: { code: row.promoCode, discountCents: row.discountCents } }
+        : {}),
     };
   }
 

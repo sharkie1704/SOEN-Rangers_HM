@@ -1,6 +1,6 @@
 import { prisma } from "../src/technical-services/db/PrismaClient";
 import { BcryptPasswordHasher } from "../src/technical-services/reg/BcryptPasswordHasher";
-import { restaurants, menuItems, users } from "./seed-data";
+import { restaurants, menuItems, users, promoCodes } from "./seed-data";
 import { loadPricingConfig, PRICING_SETTINGS_ID } from "./pricing-config";
 
 const passwordHasher = new BcryptPasswordHasher();
@@ -172,6 +172,9 @@ async function main() {
   await seedRestaurants();
   await seedMenuItems();
   await seedUsers();
+  for (const promo of promoCodes) {
+    await prisma.promoCode.upsert({ where: { code: promo.code }, update: promo, create: promo });
+  }
   await backfillLocations();
 
   console.log("Database seed completed.");

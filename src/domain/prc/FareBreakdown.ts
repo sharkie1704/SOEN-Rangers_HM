@@ -6,4 +6,10 @@ export interface FareBreakdown {
   readonly serviceFeeCents: number;
   readonly smallOrderSurchargeCents: number;
   readonly totalCents: number;
+  readonly promo?: AppliedPromo;
+}
+
+export interface AppliedPromo {
+  readonly code: string;
+  readonly discountCents: number;
 }

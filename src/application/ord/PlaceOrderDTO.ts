@@ -9,4 +9,5 @@ export interface PlaceOrderDTO {
   lines: readonly PlaceOrderLineDTO[];
   // Checkout sends the displayed total so placement can reject changed prices.
   expectedTotalCents?: number;
+  promoCode?: string;
 }

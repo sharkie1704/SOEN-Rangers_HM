@@ -31,6 +31,8 @@ import type { OrderRepository } from "./application/ord/OrderRepository";
 import type { MenuCatalog } from "./application/ord/MenuCatalog";
 import { OrderService } from "./application/ord/OrderService";
 import type { PricingSettingsRepository } from "./application/prc/PricingSettingsRepository";
+import type { PromoRepository } from "./application/promo/PromoRepository";
+import { PromoService } from "./application/promo/PromoService";
 import type { CourierAvailabilityRepository } from "./application/dlv/CourierAvailabilityRepository";
 import { CourierAvailabilityService } from "./application/dlv/CourierAvailabilityService";
 import { CourierAvailabilityController } from "./application/dlv/CourierAvailabilityController";
@@ -75,6 +77,7 @@ export interface AppDeps {
   orderMenu?: MenuCatalog;
   pricing?: PricingSettingsRepository;
   ratings?: { repository: RatingRepository; scale: RatingScale };
+  promos?: PromoRepository;
   orderSummaries?: OrderSummaryRepository;
   ledger?: LedgerRepository;
   courierHistory?: CourierHistoryRepository;
@@ -92,6 +95,7 @@ type AuthenticatedRouteDeps = Pick<AppDeps,
   | "orderMenu"
   | "pricing"
   | "ratings"
+  | "promos"
   | "orderSummaries"
   | "ledger"
   | "courierHistory"
@@ -120,7 +124,7 @@ function requirePermission(command: PermissionCommand): RequestHandler {
 }
 
 export function createApp({
-  users, hasher, tokens, restaurants, menu, restaurantStatus, orders, orderMenu, pricing, ratings, orderSummaries, ledger, courierHistory, couriers, assignments, dispatchQueue, dispatch, resetDatabase,
+  users, hasher, tokens, restaurants, menu, restaurantStatus, orders, orderMenu, pricing, ratings, promos, orderSummaries, ledger, courierHistory, couriers, assignments, dispatchQueue, dispatch, resetDatabase,
 }: AppDeps) {
   
   const app = express();
@@ -152,7 +156,7 @@ export function createApp({
 
   registerAuthenticatedRoutes({
     app,
-    users, restaurants, orders, orderMenu, pricing, ratings, orderSummaries, ledger,
+    users, restaurants, orders, orderMenu, pricing, ratings, promos, orderSummaries, ledger,
     courierHistory, couriers, assignments, dispatchQueue, dispatch, resetDatabase,
     createOperator, restaurantController, menuController, statusController,
   });
@@ -161,7 +165,7 @@ export function createApp({
 }
 
 function registerAuthenticatedRoutes({
-  app, users, restaurants, orders, orderMenu, pricing, ratings, orderSummaries, ledger,
+  app, users, restaurants, orders, orderMenu, pricing, ratings, promos, orderSummaries, ledger,
   courierHistory, couriers, assignments, dispatchQueue, dispatch, resetDatabase,
   createOperator, restaurantController, menuController, statusController,
 }: AuthenticatedRouteDeps): void {
@@ -175,7 +179,7 @@ function registerAuthenticatedRoutes({
   });
 
   registerPricingRoutes(app, orderSummaries, ledger);
-  registerOrderRoutes(app, { orders, orderMenu, pricing, dispatcher });
+  registerOrderRoutes(app, { orders, orderMenu, pricing, promos, dispatcher });
   registerRatingRoutes(app, orders, ratings);
   registerRestaurantRoutes(app, { restaurantController, menuController, statusController });
   registerProfileRoutes(app, users);
@@ -303,14 +307,15 @@ function registerPricingRoutes(
   }
 }
 
-type OrderRouteDeps = Pick<AuthenticatedRouteDeps, "orders" | "orderMenu" | "pricing"> & {
+type OrderRouteDeps = Pick<AuthenticatedRouteDeps, "orders" | "orderMenu" | "pricing" | "promos"> & {
   dispatcher: DispatchService | undefined;
 };
 
-function registerOrderRoutes(app: AuthenticatedRouteDeps["app"], { orders, orderMenu, pricing, dispatcher }: OrderRouteDeps): void {
+function registerOrderRoutes(app: AuthenticatedRouteDeps["app"], { orders, orderMenu, pricing, promos, dispatcher }: OrderRouteDeps): void {
   if (orders && orderMenu) {
+    const promoService = promos ? new PromoService(promos) : undefined;
     const orderRoutes = new OrderRoutes(
-      new OrderController(new OrderService(orders, orderMenu, pricing, dispatcher)),
+      new OrderController(new OrderService(orders, orderMenu, pricing, dispatcher, promoService)),
     );
     app.post("/api/orders/quote", orderRoutes.quote);
     app.post("/api/orders", orderRoutes.place);
