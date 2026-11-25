@@ -18,6 +18,9 @@ import { PrismaDispatchQueueRepository } from "./technical-services/dlv/PrismaDi
 import { PrismaOrderSummaryRepository } from "./technical-services/prc/PrismaOrderSummaryRepository";
 import { PrismaLedgerRepository } from "./technical-services/prc/PrismaLedgerRepository";
 import { resetDatabase } from "./technical-services/db/ResetDatabase";
+import { loadRatingConfig } from "./technical-services/rvw/rating-config";
+
+await loadRatingConfig();
 
 const app = createApp({
   users: new PrismaUserRepository(),

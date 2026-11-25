@@ -48,6 +48,9 @@ model User {
   // Restaurant staff only (plain string for now; ORD team can turn it into a FK later)
   restaurantId String?
 
+  customerRatings Rating[] @relation("RatingCustomer")
+  courierRatings  Rating[] @relation("RatingCourier")
+
   @@index([role])
 }
 
@@ -106,6 +109,7 @@ model Restaurant {
 
   menuItems MenuItem[]
   orders    Order[]
+  ratings   Rating[]
 }
 
 model MenuItem {
@@ -141,9 +145,30 @@ model Order {
   events      OrderEvent[]
   assignments Assignment[]
   summary     OrderSummary?
+  rating      Rating?
 
   @@index([restaurantId, status])
   @@index([customerId])
+}
+
+// ---------- RVW ----------
+
+model Rating {
+  orderId         Int        @id
+  order           Order      @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  customerId      String
+  customer        User       @relation("RatingCustomer", fields: [customerId], references: [id])
+  restaurantId    String
+  restaurant      Restaurant @relation(fields: [restaurantId], references: [id])
+  courierId       String
+  courier         User       @relation("RatingCourier", fields: [courierId], references: [id])
+  restaurantScore Int
+  courierScore    Int
+  createdAt       DateTime   @default(now())
+
+  @@index([customerId])
+  @@index([restaurantId])
+  @@index([courierId])
 }
 
 // Snapshot of the menu item at order time, so no FK to MenuItem
