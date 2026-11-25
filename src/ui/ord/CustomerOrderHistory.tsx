@@ -3,6 +3,8 @@ import { api } from "../reg/api/client";
 import { errorMessage, useApi } from "../reg/api/useApi";
 import type { Summary } from "../prc/OrderSummaryList";
 import type { OrderDTO } from "../../application/ord/OrderDTO.ts";
+import type { RatingScale } from "../../domain/rvw/Rating.ts";
+import OrderRatingForm from "../rvw/OrderRatingForm";
 import "./customer-orders.css";
 
 type Order = {
@@ -17,6 +19,9 @@ type Order = {
   rejectionReason: string;
 };
 
+type RatingState = { scale: RatingScale; ratedOrderIds: number[] };
+type RatingFeedback = { saved: true } | { saved: false; message: string };
+
 export default function CustomerOrderHistory() {
   const [section, setSection] = useState<"active" | "delivered" | "cancelled">("active");
   const summaryResource = useApi(
@@ -27,6 +32,11 @@ export default function CustomerOrderHistory() {
     () => api<{ orders: Order[] }>("/api/orders").then((result) => result.orders),
     "Could not load your orders.",
   );
+  const ratingResource = useApi(
+    () => api<RatingState>("/api/ratings/me"),
+    "Could not load rating information.",
+  );
+  const [ratingFeedback, setRatingFeedback] = useState<Partial<Record<number, RatingFeedback>>>({});
   const summaries = summaryResource.data?.summaries ?? [];
   const { loading: summariesLoading, error: summaryError } = summaryResource;
   const orders = orderResource.data ?? [];
@@ -38,6 +48,7 @@ export default function CustomerOrderHistory() {
   function refreshHistory() {
     summaryResource.reload();
     orderResource.reload();
+    ratingResource.reload();
   }
 
   async function cancelOrder(orderId: number) {
@@ -78,6 +89,7 @@ export default function CustomerOrderHistory() {
           ))}
         </div>
         {section === "delivered" && summaryError && <p role="alert">{summaryError}</p>}
+        {section === "delivered" && ratingResource.error && <p role="alert">{ratingResource.error}</p>}
         <div className="orders-count">{visibleOrders.length} {visibleOrders.length === 1 ? "order" : "orders"}</div>
         {loading && <div className="orders-message" role="status"><span className="orders-spinner" />Loading your orders…</div>}
         {error && <div className="orders-error" role="alert"><span>{error}</span><button type="button" onClick={refreshHistory}>Try again</button></div>}
@@ -93,6 +105,8 @@ export default function CustomerOrderHistory() {
             const summary = summaries.find((item) => item.orderId === order.id);
             const completed = order.status === "Delivered" || order.status === "Refunded";
             const notCharged = order.status === "Cancelled" || order.status === "Rejected";
+            const rating = ratingResource.data;
+            const feedback = ratingFeedback[order.id];
             let fareLabel = "Saved order total";
             if (!order.fare) fareLabel = "Final charge unavailable";
             else if (order.status === "Delivered") fareLabel = "Final charge";
@@ -132,6 +146,23 @@ export default function CustomerOrderHistory() {
                     </dl>
                   </details>
                 : <p>{summariesLoading ? "Loading delivery summary…" : summaryError ? "Delivery summary could not be loaded." : "Delivery summary unavailable."}</p>)}
+              {order.status === "Delivered" && (
+                <>
+                  {rating && !ratingResource.error && !rating.ratedOrderIds.includes(order.id) && !feedback && (
+                    <OrderRatingForm
+                      orderId={order.id}
+                      scale={rating.scale}
+                      onSaved={() => setRatingFeedback((current) => ({ ...current, [order.id]: { saved: true } }))}
+                      onDuplicate={(message) => {
+                        setRatingFeedback((current) => ({ ...current, [order.id]: { saved: false, message } }));
+                        ratingResource.reload();
+                      }}
+                    />
+                  )}
+                  <div role="status">{feedback?.saved ? "Rating submitted. Thank you!" : null}</div>
+                  {feedback && !feedback.saved && <p role="alert">{feedback.message}</p>}
+                </>
+              )}
               {(order.status === "Placed" || order.status === "Rejected") && <div className="order-card-actions">
                 {order.status === "Placed" && <button className="order-action order-action-cancel" type="button" disabled={busyOrderId === order.id} onClick={() => cancelOrder(order.id)}>
                   Cancel order
