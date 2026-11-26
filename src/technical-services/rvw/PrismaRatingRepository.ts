@@ -17,6 +17,18 @@ export class PrismaRatingRepository implements RatingRepository {
     return rows.map(({ orderId }) => orderId);
   }
 
+  async averageCourierScore(courierId: string): Promise<{ readonly average: number; readonly count: number } | null> {
+    const result = await prisma.rating.aggregate({
+      where: { courierId },
+      _avg: { courierScore: true },
+      _count: { _all: true },
+    });
+    return result._avg.courierScore === null ? null : {
+      average: result._avg.courierScore,
+      count: result._count._all,
+    };
+  }
+
   async create(rating: Rating): Promise<void> {
     try {
       await prisma.$transaction(async (tx) => {

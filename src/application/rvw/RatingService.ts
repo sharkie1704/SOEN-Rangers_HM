@@ -59,6 +59,13 @@ export class RatingService {
     return { scale: this.scale, ratedOrderIds: await this.ratings.findRatedOrderIds(customerId) };
   }
 
+  async getCourierAverage(actor: PermissionUser | undefined) {
+    if (!actor || actor.role !== "COURIER" || !actor.id.trim()) {
+      throw new OrderError("FORBIDDEN", "Only couriers can view their average rating.");
+    }
+    return { scale: this.scale, rating: await this.ratings.averageCourierScore(actor.id) };
+  }
+
   private requireCustomer(actor: PermissionUser | undefined): string {
     if (!actor || !hasPermission({ name: "rateOrder" }, actor)) {
       throw new OrderError("FORBIDDEN", "Only customers can rate orders.");

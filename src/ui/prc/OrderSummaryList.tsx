@@ -88,6 +88,11 @@ export default function OrderSummaryList({ operatorView = false, restaurantView 
     reload: loadSummaries,
   } = useApi(() => api<{ summaries: HistoryRecord[] }>(historyEndpoint), "Could not load order summaries.", [historyEndpoint]);
   const summaries = data?.summaries ?? [];
+  const courierRating = useApi(
+    () => api<{ scale: { min: number; max: number }; rating: { average: number; count: number } | null }>("/api/couriers/me/rating"),
+    "Could not load courier rating.",
+    [courierView],
+  );
   const [message, setMessage] = useState("");
   const [refundingOrderId, setRefundingOrderId] = useState<number | null>(null);
 
@@ -113,6 +118,11 @@ export default function OrderSummaryList({ operatorView = false, restaurantView 
         <p className="order-summaries__eyebrow">PRICING & HISTORY</p>
         <h2>{courierView ? "Delivery history" : restaurantView ? "Restaurant order history" : "Delivered order summaries"}</h2>
         <p>{courierView ? "Orders delivered by your courier account." : "Final charges are saved from the time each order was placed."}</p>
+        {courierView && <p className="order-summaries__rating" aria-live="polite">
+          Average rating: {courierRating.loading ? "Loading…" : courierRating.error ? "Unavailable" : courierRating.data?.rating
+            ? `${courierRating.data.rating.average.toFixed(1)} ★ (${courierRating.data.rating.count} ${courierRating.data.rating.count === 1 ? "rating" : "ratings"})`
+            : "No ratings yet"}
+        </p>}
         <button type="button" onClick={loadSummaries} disabled={loading}>
           {loading ? "Loading…" : "Refresh summaries"}
         </button>
