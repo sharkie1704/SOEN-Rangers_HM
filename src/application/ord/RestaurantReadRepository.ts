@@ -9,6 +9,8 @@ export interface RestaurantDTO {
   status: "OPEN" | "PAUSED" | "CLOSED";
   lat: number | null;
   lng: number | null;
+  averageRating?: number | null;
+  ratingCount?: number;
 }
 
 //one dessert returned 

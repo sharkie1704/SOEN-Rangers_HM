@@ -29,6 +29,14 @@ export class PrismaRatingRepository implements RatingRepository {
     };
   }
 
+  async findForRestaurant(restaurantId: string): Promise<readonly { orderId: number; restaurantScore: number; createdAt: Date }[]> {
+    return prisma.rating.findMany({
+      where: { restaurantId },
+      select: { orderId: true, restaurantScore: true, createdAt: true },
+      orderBy: { createdAt: "desc" },
+    });
+  }
+
   async create(rating: Rating): Promise<void> {
     try {
       await prisma.$transaction(async (tx) => {
