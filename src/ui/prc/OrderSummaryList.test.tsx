@@ -23,9 +23,16 @@ const record = (orderId: number) => ({
   orderId, restaurantName: "Bakery", lines: [{ name: "Brownie", quantity: 2 }],
   placedAt: "2026-11-01T10:00:00Z", deliveredAt: "2026-11-01T11:00:00Z", generatedAt: null,
 });
-function renderList() {
+function renderList(courierView = true) {
   harness.index = 0;
-  return OrderSummaryList({ courierView: true });
+  return OrderSummaryList({ courierView });
+}
+function primeList(summaries: ReturnType<typeof record>[], rating: { average: number; count: number } | null) {
+  harness.states = [
+    null,
+    { summaries }, false, "", 0,
+    { scale: { min: 1, max: 5 }, rating }, false, "", 0,
+  ];
 }
 function refreshButton(node: unknown): ReactElement<{ onClick: () => Promise<void> }> | undefined {
   if (!node || typeof node !== "object") return;
@@ -41,6 +48,25 @@ beforeEach(() => {
   harness.states = []; harness.index = 0; harness.effects = []; harness.api.mockReset();
 });
 describe("courier delivery history", () => {
+  it("shows the average with a star and count after enough deliveries", () => {
+    primeList([1, 2, 3, 4, 5].map(record), { average: 4.2, count: 3 });
+    const html = renderToStaticMarkup(renderList());
+    expect(html).toContain("Average rating: 4.2 ★ (3 ratings)");
+  });
+
+  it("shows No ratings yet when the courier has no rating", () => {
+    primeList([1, 2, 3, 4, 5].map(record), null);
+    const html = renderToStaticMarkup(renderList());
+    expect(html).toContain("Average rating: No ratings yet");
+  });
+
+  it("shows the average rating only in courier view", () => {
+    primeList([1, 2, 3, 4, 5].map(record), { average: 4, count: 1 });
+    const html = renderToStaticMarkup(renderList(false));
+    expect(html).not.toContain("Average rating:");
+    expect(html).not.toContain("4.0 ★");
+  });
+
   it("mounts and refreshes from courier history, showing newly returned deliveries", async () => {
     harness.api.mockResolvedValueOnce({ summaries: [record(11)] });
     renderList();
