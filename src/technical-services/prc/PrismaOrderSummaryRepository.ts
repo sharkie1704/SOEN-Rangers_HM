@@ -66,6 +66,9 @@ function toSummary(row: SummaryRow): OrderSummary {
       serviceFeeCents: row.serviceFeeCents,
       smallOrderSurchargeCents: row.smallOrderSurchargeCents,
       totalCents: row.totalCents,
+      ...(row.promoCode !== null && row.discountCents !== null
+        ? { promo: { code: row.promoCode, discountCents: row.discountCents } }
+        : {}),
     }),
     placedAt: row.placedAt,
     deliveredAt: row.deliveredAt,

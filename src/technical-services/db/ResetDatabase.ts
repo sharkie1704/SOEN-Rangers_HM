@@ -18,6 +18,7 @@ export async function resetDatabase(): Promise<void> {
       await tx.menuItem.deleteMany();
       await tx.restaurant.deleteMany();
       await tx.pricingSettings.deleteMany();
+      await tx.promoCode.deleteMany();
       await tx.user.deleteMany();
 
       // Ledger entries are immutable audit history. A reset only starts a new

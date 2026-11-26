@@ -27,6 +27,17 @@ export class Money {
     return new Money(cents);
   }
 
+  minus(other: Money): Money {
+    if (other.#cents > this.#cents) {
+      throw new OrderError("INVALID_INPUT", "An amount cannot go below zero.");
+    }
+    return new Money(this.#cents - other.#cents);
+  }
+
+  percent(percentage: number): Money {
+    return new Money(Math.floor((this.#cents * percentage) / 100));
+  }
+
   isLessThan(other: Money): boolean {
     return this.#cents < other.#cents;
   }

@@ -140,6 +140,8 @@ export class PrismaAssignmentRepository implements AssignmentRepository {
             serviceFeeCents: summary.fare.serviceFeeCents,
             smallOrderSurchargeCents: summary.fare.smallOrderSurchargeCents,
             totalCents: summary.fare.totalCents,
+            promoCode: summary.fare.promo?.code ?? null,
+            discountCents: summary.fare.promo?.discountCents ?? null,
             placedAt: summary.placedAt,
             deliveredAt: summary.deliveredAt,
             generatedAt: summary.generatedAt,

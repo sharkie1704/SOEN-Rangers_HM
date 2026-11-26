@@ -140,6 +140,8 @@ model Order {
   serviceFeeCents           Int?
   smallOrderSurchargeCents  Int?
   fareTotalCents            Int?
+  promoCode                 String?
+  discountCents             Int?
 
   lines       OrderLine[]
   events      OrderEvent[]
@@ -210,6 +212,8 @@ model OrderSummary {
   serviceFeeCents           Int
   smallOrderSurchargeCents  Int
   totalCents                Int
+  promoCode                 String?
+  discountCents             Int?
   placedAt                  DateTime
   deliveredAt               DateTime
   generatedAt               DateTime @default(now())
@@ -311,4 +315,11 @@ model AssignmentEvent {
   occurredAt   DateTime
 
   @@index([assignmentId])
+}
+
+model PromoCode {
+  code          String   @id
+  percentOff    Int
+  minOrderCents Int
+  expiresAt     DateTime
 }

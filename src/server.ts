@@ -11,6 +11,7 @@ import { PrismaRestaurantStatusRepository } from "./technical-services/ord/Prism
 import { PrismaOrderRepository } from "./technical-services/ord/PrismaOrderRepository";
 import { PrismaMenuCatalog } from "./technical-services/ord/PrismaMenuCatalog";
 import { PrismaPricingSettingsRepository } from "./technical-services/prc/PrismaPricingSettingsRepository";
+import { PrismaPromoRepository } from "./technical-services/promo/PrismaPromoRepository";
 import { PrismaCourierAvailabilityRepository } from "./technical-services/dlv/PrismaCourierAvailabilityRepository";
 import { PrismaAssignmentRepository } from "./technical-services/dlv/PrismaAssignmentRepository";
 import { PrismaDispatchRepository } from "./technical-services/dlv/PrismaDispatchRepository";
@@ -34,6 +35,7 @@ const app = createApp({
   orderMenu: new PrismaMenuCatalog(),
   pricing: new PrismaPricingSettingsRepository(),
   ratings: { repository: new PrismaRatingRepository(), scale: ratingScale },
+  promos: new PrismaPromoRepository(),
   courierHistory: new PrismaCourierHistoryRepository(),
   orderSummaries: new PrismaOrderSummaryRepository(),
   ledger: new PrismaLedgerRepository(),
