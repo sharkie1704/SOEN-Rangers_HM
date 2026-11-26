@@ -41,6 +41,22 @@
   color: #765F53;
 }
 
+.app-header__role--link {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  font-family: inherit;
+  font-size: 13px;
+  line-height: inherit;
+  cursor: pointer;
+}
+
+.app-header__role--link:hover,
+.app-header__role--link:focus-visible {
+  color: #4B3028;
+  text-decoration: underline;
+}
+
 .app-header__logout {
   padding: 10px 18px;
   background-color: #C66B32;

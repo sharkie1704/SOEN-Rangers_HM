@@ -193,6 +193,7 @@ function registerRatingRoutes(
   const routes = new RatingRoutes(new RatingService(orders, ratings.repository, ratings.scale));
   app.post("/api/orders/:orderId/rating", routes.rate);
   app.get("/api/ratings/me", routes.getState);
+  app.get("/api/couriers/me/rating", routes.getCourierAverage);
 }
 
 function registerAdminRoutes(app: AuthenticatedRouteDeps["app"], resetDatabase: AppDeps["resetDatabase"]): void {
