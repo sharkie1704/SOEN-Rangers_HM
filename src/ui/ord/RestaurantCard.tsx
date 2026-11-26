@@ -9,12 +9,13 @@ type RestaurantCardData = {
   address: string;
   specialty: string;
   rating?: number;
+  ratingCount?: number;
   image: string;
   status: "open" | "paused" | "closed";
   onViewMenu: () => void;
 };
 
-export default function RestaurantCard({ name, category, address, specialty, rating, status, image, onViewMenu
+export default function RestaurantCard({ name, category, address, specialty, rating, ratingCount = 0, status, image, onViewMenu
 }: RestaurantCardData) {
   return (
 
@@ -72,9 +73,10 @@ export default function RestaurantCard({ name, category, address, specialty, rat
           <p style={{ margin: "0 0 6px" }}>{address}</p>
           {rating !== undefined && (
             <p aria-label={`Rated ${rating} out of 5`} style={{ margin: 0, color: "#835900", fontWeight: 600 }}>
-              <span aria-hidden="true">★</span> {rating.toFixed(1)}
+              <span aria-hidden="true">★</span> {rating.toFixed(1)} ({ratingCount} {ratingCount === 1 ? "rating" : "ratings"})
             </p>
           )}
+          {rating === undefined && <p style={{ margin: 0, color: "#835900" }}>No ratings yet</p>}
         </div>
 
         {/* Status  */}

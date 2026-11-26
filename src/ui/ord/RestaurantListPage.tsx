@@ -15,6 +15,8 @@ type Restaurant = {
   description: string;
   imageUrl: string;
   status: "OPEN" | "PAUSED" | "CLOSED";
+  averageRating?: number | null;
+  ratingCount?: number;
 };
 
 export default function RestaurantListPage({
@@ -71,7 +73,8 @@ export default function RestaurantListPage({
               category={restaurant.category}
               address={details?.address ?? "Montreal address coming soon"}
               specialty={details?.specialty ?? restaurant.description}
-              rating={details?.rating}
+              rating={restaurant.averageRating ?? undefined}
+              ratingCount={restaurant.ratingCount}
               status={restaurant.status.toLowerCase() as "open" | "paused" | "closed"}
               image={restaurant.imageUrl}
               onViewMenu={() => onSelectRestaurant(restaurant.id)}
