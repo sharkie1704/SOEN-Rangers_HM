@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import CartItemRow from "./CartItemRow";
 import CheckoutFare from "./CheckoutFare";
+import PromoCodeField from "../promo/PromoCodeField";
 import { checkoutKey, fetchCheckoutQuote, placeQuotedOrder, type CheckoutQuote } from "./checkoutQuote";
 import type { FareBreakdown } from "../../domain/prc/FareBreakdown.ts";
 import { ApiError } from "../reg/api/client";
@@ -54,7 +55,8 @@ export default function PlaceOrderPage({
     const [placeError, setPlaceError] = useState("");
     const [quoteState, setQuoteState] = useState<{ key: string; quote?: CheckoutQuote; error?: string } | null>(null);
     const [quoteAttempt, setQuoteAttempt] = useState(0);
-    const key = checkoutKey(restaurantId, cartItems);
+    const [promoCode, setPromoCode] = useState("");
+    const key = checkoutKey(restaurantId, cartItems, promoCode);
     const hasItems = cartItems.length > 0;
     const allSelectedItemsSoldOut = hasItems && cartItems.every((item) => item.available === false);
     const current = quoteState?.key === key ? quoteState : null;
@@ -101,6 +103,7 @@ export default function PlaceOrderPage({
                 image: cartItems.find((item) => item.id === line.menuItemId)?.image ?? "",
             }));
             setPlacedOrder({ ...order, items });
+            setPromoCode("");
             onCartChange([]);
         } catch (error) {
             setPlaceError(error instanceof ApiError ? error.message : "Could not place your order. Please try again.");
@@ -292,6 +295,7 @@ export default function PlaceOrderPage({
                     {allSelectedItemsSoldOut && (
                         <p role="status">All selected items are sold out. Remove them or return to the menu to choose available items.</p>
                     )}
+                    {hasItems && <PromoCodeField appliedCode={promoCode} onApply={setPromoCode} onRemove={() => setPromoCode("")} />}
                     {quoteLoading && <p role="status">Updating your fare…</p>}
                     {current?.error && <div role="alert">
                         <p>{current.error}</p>

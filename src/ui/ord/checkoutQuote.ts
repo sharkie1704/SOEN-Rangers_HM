@@ -8,8 +8,12 @@ export interface CheckoutQuote {
 }
 
 // The key also serves as the request body; local names and prices are never sent.
-export function checkoutKey(restaurantId: string, items: readonly { id: number; quantity: number }[]) {
-    return JSON.stringify({ restaurantId, lines: items.map(({ id, quantity }) => ({ menuItemId: id, quantity })) });
+export function checkoutKey(restaurantId: string, items: readonly { id: number; quantity: number }[], promoCode = "") {
+    return JSON.stringify({
+        restaurantId,
+        lines: items.map(({ id, quantity }) => ({ menuItemId: id, quantity })),
+        ...(promoCode ? { promoCode } : {}),
+    });
 }
 
 export async function fetchCheckoutQuote(key: string): Promise<CheckoutQuote> {
