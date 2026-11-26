@@ -119,8 +119,10 @@ export default function OrderSummaryList({ operatorView = false, restaurantView 
         <h2>{courierView ? "Delivery history" : restaurantView ? "Restaurant order history" : "Delivered order summaries"}</h2>
         <p>{courierView ? "Orders delivered by your courier account." : "Final charges are saved from the time each order was placed."}</p>
         {courierView && <p className="order-summaries__rating" aria-live="polite">
-          Average rating: {courierRating.loading ? "Loading…" : courierRating.error ? "Unavailable" : courierRating.data?.rating
-            ? `${courierRating.data.rating.average.toFixed(1)} ★ (${courierRating.data.rating.count} ${courierRating.data.rating.count === 1 ? "rating" : "ratings"})`
+          Average rating: {loading || courierRating.loading ? "Loading…" : courierRating.error ? "Unavailable" : courierRating.data?.rating
+            ? summaries.length < 5
+              ? `${courierRating.data.rating.average.toFixed(1)} ★ (rating count is anonymous until you complete 5 deliveries)`
+              : `${courierRating.data.rating.average.toFixed(1)} ★ (${courierRating.data.rating.count} ${courierRating.data.rating.count === 1 ? "rating" : "ratings"})`
             : "No ratings yet"}
         </p>}
         <button type="button" onClick={loadSummaries} disabled={loading}>
