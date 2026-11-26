@@ -6,7 +6,7 @@ import { errorMessage } from "../reg/api/useApi";
 type Props = {
   orderId: number;
   scale: RatingScale;
-  onSaved: () => void;
+  onSaved: (rating: { orderId: number; restaurantScore: number; courierScore: number }) => void;
   onDuplicate: (message: string) => void;
 };
 
