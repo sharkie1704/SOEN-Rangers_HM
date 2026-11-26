@@ -213,21 +213,7 @@ export default function PlaceOrderPage({
                             ))}
                         </ul>
 
-                        <p
-                            style={{
-                                display: "flex",
-                                justifyContent: "space-between",
-                                borderTop: "1px solid #C89F7A",
-                                paddingTop: "16px",
-                                margin: 0,
-                                color: "#4B3028",
-                                fontSize: "18px",
-                                fontWeight: 600,
-                            }}
-                        >
-                            <span>Total</span>
-                            <span>${(placedOrder.fare.totalCents / 100).toFixed(2)}</span>
-                        </p>
+                        <CheckoutFare fare={placedOrder.fare} />
                     </section>
 
                     <button

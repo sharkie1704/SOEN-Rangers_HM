@@ -9,7 +9,8 @@ export class PrismaPromoRepository implements PromoRepository {
     if (!row) return null;
     return new PromoCode(
       row.code,
-      row.percentOff,
+      row.type as "percent" | "fixed",
+      row.value,
       Money.fromCents(row.minOrderCents, "minOrderCents"),
       row.expiresAt,
     );

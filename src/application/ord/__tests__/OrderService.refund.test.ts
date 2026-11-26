@@ -28,6 +28,31 @@ async function serviceWithDeliveredOrder() {
 }
 
 describe("OrderService.refund", () => {
+  it("refund preserves the original promo charge snapshot", async () => {
+    const repository = new InMemoryOrderRepository();
+    const order = Order.restore({
+      id: 43,
+      restaurantId: "restaurant-1",
+      customerId: "customer-1",
+      lines: [{ menuItemId: 1, name: "Brownie", quantity: 1, unitPriceCents: 450 }],
+      placedAt: new Date("2026-11-04T12:00:00Z"),
+      status: "Delivered",
+      fare: {
+        subtotalCents: 450,
+        deliveryFeeCents: 300,
+        serviceFeeCents: 150,
+        smallOrderSurchargeCents: 200,
+        totalCents: 1005,
+        promo: { code: "FIVE", discountCents: 95 },
+      },
+      events: [],
+    });
+    await repository.add(order);
+    const service = new OrderService(repository, new FakeMenuCatalog());
+    await service.refund(operator, order.id);
+    expect(order.fare?.totalCents).toBe(1005);
+    expect(order.fare?.promo).toEqual({ code: "FIVE", discountCents: 95 });
+  });
   it("allows an operator to refund a delivered order", async () => {
     const { order, service } = await serviceWithDeliveredOrder();
 

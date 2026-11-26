@@ -1,6 +1,6 @@
 import { prisma } from "./PrismaClient";
 import { BcryptPasswordHasher } from "../reg/BcryptPasswordHasher";
-import { restaurants, menuItems, users, promoCodes } from "../../../prisma/seed-data";
+import { restaurants, menuItems, users } from "../../../prisma/seed-data";
 import { loadPricingConfig, PRICING_SETTINGS_ID } from "../../../prisma/pricing-config";
 
 export type DbClient = Parameters<Parameters<typeof prisma.$transaction>[0]>[0];
@@ -127,20 +127,28 @@ async function seedUsers(db: DbClient, passwordHashes: Map<string, string>) {
 }
 
 export async function seedDatabase(db: DbClient, prepared: PreparedSeed): Promise<void> {
+  const { promos, ...pricing } = prepared.pricing;
   await db.pricingSettings.upsert({
     where: { id: PRICING_SETTINGS_ID },
-    update: prepared.pricing,
-    create: { id: PRICING_SETTINGS_ID, ...prepared.pricing },
+    update: pricing,
+    create: { id: PRICING_SETTINGS_ID, ...pricing },
   });
   await seedRestaurants(db);
   await seedMenuItems(db);
   await seedUsers(db, prepared.passwordHashes);
-  await seedPromoCodes(db);
+  await seedPromoCodes(db, promos);
 }
 
-async function seedPromoCodes(db: DbClient): Promise<void> {
-  for (const promo of promoCodes) {
-    await db.promoCode.upsert({ where: { code: promo.code }, update: promo, create: promo });
+async function seedPromoCodes(db: DbClient, promos: readonly { code: string; type: "percent" | "fixed"; value: number; expiresOn: string; minOrderValue: number }[]): Promise<void> {
+  for (const promo of promos) {
+    const row = {
+      code: promo.code,
+      type: promo.type,
+      value: promo.value,
+      minOrderCents: promo.minOrderValue,
+      expiresAt: new Date(`${promo.expiresOn}T23:59:59.999Z`),
+    };
+    await db.promoCode.upsert({ where: { code: promo.code }, update: row, create: row });
   }
 }
 

@@ -11,7 +11,7 @@ import { PrismaRestaurantStatusRepository } from "./technical-services/ord/Prism
 import { PrismaOrderRepository } from "./technical-services/ord/PrismaOrderRepository";
 import { PrismaMenuCatalog } from "./technical-services/ord/PrismaMenuCatalog";
 import { PrismaPricingSettingsRepository } from "./technical-services/prc/PrismaPricingSettingsRepository";
-import { PrismaPromoRepository } from "./technical-services/promo/PrismaPromoRepository";
+import { ConfigPromoRepository } from "./technical-services/promo/ConfigPromoRepository";
 import { PrismaCourierAvailabilityRepository } from "./technical-services/dlv/PrismaCourierAvailabilityRepository";
 import { PrismaAssignmentRepository } from "./technical-services/dlv/PrismaAssignmentRepository";
 import { PrismaDispatchRepository } from "./technical-services/dlv/PrismaDispatchRepository";
@@ -21,8 +21,10 @@ import { PrismaLedgerRepository } from "./technical-services/prc/PrismaLedgerRep
 import { resetDatabase } from "./technical-services/db/ResetDatabase";
 import { loadRatingConfig } from "./technical-services/rvw/rating-config";
 import { PrismaRatingRepository } from "./technical-services/rvw/PrismaRatingRepository";
+import { loadPricingConfig } from "../prisma/pricing-config";
 
 const { rating: ratingScale } = await loadRatingConfig();
+const pricingConfig = await loadPricingConfig();
 
 const app = createApp({
   users: new PrismaUserRepository(),
@@ -35,7 +37,7 @@ const app = createApp({
   orderMenu: new PrismaMenuCatalog(),
   pricing: new PrismaPricingSettingsRepository(),
   ratings: { repository: new PrismaRatingRepository(), scale: ratingScale },
-  promos: new PrismaPromoRepository(),
+  promos: new ConfigPromoRepository(pricingConfig.promos),
   courierHistory: new PrismaCourierHistoryRepository(),
   orderSummaries: new PrismaOrderSummaryRepository(),
   ledger: new PrismaLedgerRepository(),

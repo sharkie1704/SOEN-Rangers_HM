@@ -8,6 +8,7 @@ interface PromoCodeFieldProps {
 
 const rowStyle = {
     display: "flex",
+    flexWrap: "wrap",
     alignItems: "center",
     justifyContent: "space-between",
     gap: 12,
@@ -56,7 +57,7 @@ export default function PromoCodeField({ appliedCode, onApply, onRemove }: Promo
 
     return (
         <form aria-label="Promo code" onSubmit={apply} style={rowStyle}>
-            <label style={{ flex: 1 }}>
+            <label style={{ flex: "1 1 180px", minWidth: 0 }}>
                 <span style={visuallyHidden}>Promo code</span>
                 <input
                     value={draft}

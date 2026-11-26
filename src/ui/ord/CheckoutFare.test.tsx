@@ -7,6 +7,14 @@ const fare = { subtotalCents: 1000, deliveryFeeCents: 300, serviceFeeCents: 150,
     smallOrderSurchargeCents: 200, totalCents: 1650 };
 
 describe("checkout fare display", () => {
+    it("renders the server-provided promo code and discount", () => {
+        const html = renderToStaticMarkup(createElement(CheckoutFare, {
+            fare: { ...fare, promo: { code: "WELCOME10", discountCents: 100 }, totalCents: 1550 },
+        }));
+        expect(html).toContain("Promo (WELCOME10)");
+        expect(html).toContain("$1.00");
+        expect(html).toContain("$15.50");
+    });
     it("displays the server breakdown in dollars with two decimal places", () => {
         const html = renderToStaticMarkup(createElement(CheckoutFare, { fare }));
         for (const text of ["Subtotal", "Delivery fee", "Service fee", "Small-order surcharge", "Total",

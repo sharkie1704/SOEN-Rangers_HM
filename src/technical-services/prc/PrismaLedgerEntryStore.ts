@@ -40,6 +40,12 @@ export class PrismaLedgerEntryStore {
         finalizedAt: entry.finalizedAt,
         deliveredAt: entry.deliveredAt,
         totalChargeCents: entry.totalChargeCents,
+        subtotalCents: entry.subtotalCents ?? null,
+        deliveryFeeCents: entry.deliveryFeeCents ?? null,
+        serviceFeeCents: entry.serviceFeeCents ?? null,
+        smallOrderSurchargeCents: entry.smallOrderSurchargeCents ?? null,
+        discountCents: entry.discountCents ?? null,
+        promoCode: entry.promoCode ?? null,
       },
     });
   }

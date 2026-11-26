@@ -237,6 +237,12 @@ model LedgerEntry {
   finalizedAt      DateTime
   deliveredAt      DateTime?
   totalChargeCents Int?
+  subtotalCents    Int?
+  deliveryFeeCents Int?
+  serviceFeeCents  Int?
+  smallOrderSurchargeCents Int?
+  discountCents    Int?
+  promoCode        String?
 
   @@index([epoch, finalizedAt])
   @@index([orderId])
@@ -319,7 +325,8 @@ model AssignmentEvent {
 
 model PromoCode {
   code          String   @id
-  percentOff    Int
+  type          String
+  value         Int
   minOrderCents Int
   expiresAt     DateTime
 }

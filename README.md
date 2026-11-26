@@ -65,6 +65,20 @@ You can also start either process separately with `npm run dev:client` or `npm r
 - API: `POST /api/orders/quote`; order placement checks `expectedTotalCents`.
 - Example: $12.00 subtotal → $18.50 total.
 
+## Promo codes (US-PROMO-01)
+
+Promo codes are configured in `config/pricing.json`. Supported types are `percent` and `fixed` (cents).
+
+Codes:
+- `WELCOME10`: 10% off, no minimum, expires 2027-12-31.
+- `SAVE20`: 20% off, $30.00 minimum, expires 2027-12-31.
+- `FIVEOFF`: $5.00 fixed off, $10.00 minimum, expires 2027-12-31.
+- `SPRING15`: 15% off, no minimum, expired 2026-05-31.
+
+Discounts apply only to items, are capped at the subtotal, and are revalidated at checkout.
+
+**Formula:** Final charge = max(0, subtotal − discount) + delivery fee + service fee + small-order surcharge.
+
 ## Delivered order summaries (US-PRC-02)
 
 - Order placement stores the fare breakdown and restaurant name as an immutable snapshot.
