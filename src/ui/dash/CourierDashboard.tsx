@@ -66,6 +66,7 @@ export default function CourierDashboard({ user, onLogout }: CourierDashboardPro
     <DashboardLayout
       user={user}
       onLogout={onLogout}
+      onCourierRatingClick={() => setActiveSection("history")}
       sidebar={
         <DashboardSidebar
           items={items}
