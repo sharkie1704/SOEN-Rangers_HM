@@ -32,7 +32,7 @@ function historyView() {
     vi.mocked(useApi)
       .mockReturnValueOnce({ ...resource, data: { summaries: [] } })
       .mockReturnValueOnce({ ...resource, data: orders })
-      .mockReturnValueOnce({ ...resource, data: { scale: { min: 1, max: 5 }, ratedOrderIds: [2] } });
+      .mockReturnValueOnce({ ...resource, data: { scale: { min: 1, max: 5 }, ratedOrderIds: [2], ratings: [{ orderId: 2, restaurantScore: 4, courierScore: 5 }] } });
     vi.mocked(useState)
       .mockReturnValueOnce(["delivered", vi.fn()])
       .mockReturnValueOnce([feedback, setFeedback])
@@ -49,7 +49,7 @@ it("offers a rating only for a delivered, unrated order", () => {
 it("hides the form and confirms submission after a successful save", () => {
   const render = historyView();
   expect(render()).toContain("Rate order #1");
-  vi.mocked(OrderRatingForm).mock.calls[0][0].onSaved();
+  vi.mocked(OrderRatingForm).mock.calls[0][0].onSaved({ orderId: 1, restaurantScore: 3, courierScore: 4 });
 
   const html = render();
   expect(html).not.toContain("Rate order #1");

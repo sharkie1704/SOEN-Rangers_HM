@@ -56,7 +56,8 @@ export class RatingService {
 
   async getState(actor: PermissionUser | undefined) {
     const customerId = this.requireCustomer(actor);
-    return { scale: this.scale, ratedOrderIds: await this.ratings.findRatedOrderIds(customerId) };
+    const ratings = await this.ratings.findForCustomer(customerId);
+    return { scale: this.scale, ratedOrderIds: ratings.map(({ orderId }) => orderId), ratings };
   }
 
   async getCourierAverage(actor: PermissionUser | undefined) {
