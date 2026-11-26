@@ -37,14 +37,14 @@ function ratingForm() {
 }
 
 it("submits both selected scores together", async () => {
-  vi.mocked(api).mockResolvedValueOnce({});
+  vi.mocked(api).mockResolvedValueOnce({ rating: { orderId: 42, restaurantScore: 2, courierScore: 5 } });
   const form = ratingForm();
   await form.submit();
 
   expect(api).toHaveBeenCalledExactlyOnceWith("/api/orders/42/rating", {
     method: "POST", body: { restaurantScore: 2, courierScore: 5 },
   });
-  expect(form.onSaved).toHaveBeenCalledOnce();
+  expect(form.onSaved).toHaveBeenCalledExactlyOnceWith({ orderId: 42, restaurantScore: 2, courierScore: 5 });
 });
 
 it("displays the backend refusal and keeps the form available", async () => {

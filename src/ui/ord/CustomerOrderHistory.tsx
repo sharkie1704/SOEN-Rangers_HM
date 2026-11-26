@@ -19,7 +19,11 @@ type Order = {
   rejectionReason: string;
 };
 
-type RatingState = { scale: RatingScale; ratedOrderIds: number[] };
+type RatingState = {
+  scale: RatingScale;
+  ratedOrderIds: number[];
+  ratings: { orderId: number; restaurantScore: number; courierScore: number }[];
+};
 type RatingFeedback = { saved: true } | { saved: false; message: string };
 
 export default function CustomerOrderHistory() {
@@ -106,6 +110,7 @@ export default function CustomerOrderHistory() {
             const completed = order.status === "Delivered" || order.status === "Refunded";
             const notCharged = order.status === "Cancelled" || order.status === "Rejected";
             const rating = ratingResource.data;
+            const orderRating = rating?.ratings.find((item) => item.orderId === order.id);
             const feedback = ratingFeedback[order.id];
             let fareLabel = "Saved order total";
             if (!order.fare) fareLabel = "Final charge unavailable";
@@ -149,18 +154,30 @@ export default function CustomerOrderHistory() {
                 : <p>{summariesLoading ? "Loading delivery summary…" : summaryError ? "Delivery summary could not be loaded." : "Delivery summary unavailable."}</p>)}
               {order.status === "Delivered" && (
                 <>
+                  {orderRating && <section className="order-rating-result" aria-label={`Your rating for order #${order.id}`}>
+                    <h3>Your rating</h3>
+                    <p>Restaurant: {orderRating.restaurantScore} ★</p>
+                    <p>Courier: {orderRating.courierScore} ★</p>
+                  </section>}
+                  {feedback?.saved && !orderRating && <p>Rating submitted. Thank you!</p>}
                   {rating && !ratingResource.error && !rating.ratedOrderIds.includes(order.id) && !feedback && (
                     <OrderRatingForm
                       orderId={order.id}
                       scale={rating.scale}
-                      onSaved={() => setRatingFeedback((current) => ({ ...current, [order.id]: { saved: true } }))}
+                      onSaved={(savedRating) => {
+                        ratingResource.setData((current) => current ? {
+                          ...current,
+                          ratedOrderIds: [...current.ratedOrderIds, order.id],
+                          ratings: [...current.ratings, savedRating],
+                        } : current);
+                        setRatingFeedback((current) => ({ ...current, [order.id]: { saved: true } }));
+                      }}
                       onDuplicate={(message) => {
                         setRatingFeedback((current) => ({ ...current, [order.id]: { saved: false, message } }));
                         ratingResource.reload();
                       }}
                     />
                   )}
-                  <div role="status">{feedback?.saved ? "Rating submitted. Thank you!" : null}</div>
                   {feedback && !feedback.saved && <p role="alert">{feedback.message}</p>}
                 </>
               )}

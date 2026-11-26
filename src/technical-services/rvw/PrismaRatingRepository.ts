@@ -8,13 +8,13 @@ export class PrismaRatingRepository implements RatingRepository {
     return (await prisma.rating.findUnique({ where: { orderId }, select: { orderId: true } })) !== null;
   }
 
-  async findRatedOrderIds(customerId: string): Promise<readonly number[]> {
+  async findForCustomer(customerId: string): Promise<readonly { orderId: number; restaurantScore: number; courierScore: number }[]> {
     const rows = await prisma.rating.findMany({
       where: { customerId },
-      select: { orderId: true },
+      select: { orderId: true, restaurantScore: true, courierScore: true },
       orderBy: { orderId: "asc" },
     });
-    return rows.map(({ orderId }) => orderId);
+    return rows;
   }
 
   async averageCourierScore(courierId: string): Promise<{ readonly average: number; readonly count: number } | null> {

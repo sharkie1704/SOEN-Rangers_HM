@@ -419,6 +419,13 @@
 .customer-order-history details { margin-top: 16px; min-width: 0; }
 .customer-order-history details summary { cursor: pointer; color: #4b3028; font-weight: 600; }
 .customer-order-history .customer-history-fare { margin: 16px 0; padding-inline: 24px; }
+.customer-order-history details,
+.customer-order-history .order-rating,
+.customer-order-history .order-rating-result { margin-right: 24px; margin-left: 24px; }
+.customer-order-history details .customer-history-fare { padding-inline: 0; }
+.customer-order-history .order-rating-result { margin-top: 16px; }
+.customer-order-history .order-rating-result h3 { margin: 0 0 8px; }
+.customer-order-history .order-rating-result p { margin: 4px 0; }
 .customer-order-history .order-placed-date,
 .customer-order-history .order-lines { margin-inline: 24px; }
 .customer-order-history .customer-history-fare > div { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px; margin: 8px 0; color: #4b3028; }
@@ -427,6 +434,9 @@
 
 @media (max-width: 600px) {
   .customer-order-history .customer-history-fare { padding-inline: 16px; }
+  .customer-order-history details,
+  .customer-order-history .order-rating,
+  .customer-order-history .order-rating-result { margin-right: 16px; margin-left: 16px; }
   .customer-order-history .order-placed-date,
   .customer-order-history .order-lines { margin-inline: 16px; }
 }

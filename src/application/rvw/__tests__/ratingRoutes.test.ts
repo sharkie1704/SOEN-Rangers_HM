@@ -52,8 +52,9 @@ beforeEach(async () => {
       scale: { min: 2, max: 7 },
       repository: {
         existsForOrder: async (id) => stored.has(id),
-        findRatedOrderIds: async (customerId) => [...stored.values()]
-          .filter((rating) => rating.customerId === customerId).map((rating) => rating.orderId),
+        findForCustomer: async (customerId) => [...stored.values()]
+          .filter((rating) => rating.customerId === customerId)
+          .map(({ orderId, restaurantScore, courierScore }) => ({ orderId, restaurantScore, courierScore })),
         averageCourierScore: async (courierId) => {
           const courierRatings = [...stored.values()].filter((rating) => rating.courierId === courierId);
           return courierRatings.length === 0 ? null : {
@@ -129,10 +130,12 @@ describe("rating routes", () => {
     expect(stored.get(42)).toMatchObject({
       customerId: "customer-a", restaurantId: "restaurant-a", courierId: "courier-a", ...scores,
     });
-    for (const [customerId, ratedOrderIds] of [["customer-a", [42]], ["customer-b", []]] as const) {
+    for (const [customerId, ratedOrderIds, ratings] of [
+      ["customer-a", [42], [{ orderId: 42, ...scores }]], ["customer-b", [], []],
+    ] as const) {
       const state = await request(app).get("/api/ratings/me").set("Authorization", authorization(customerId));
       expect(state.status).toBe(200);
-      expect(state.body).toEqual({ scale: { min: 2, max: 7 }, ratedOrderIds });
+      expect(state.body).toEqual({ scale: { min: 2, max: 7 }, ratedOrderIds, ratings });
     }
   });
 

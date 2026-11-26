@@ -6,7 +6,7 @@ import { errorMessage } from "../reg/api/useApi";
 type Props = {
   orderId: number;
   scale: RatingScale;
-  onSaved: () => void;
+  onSaved: (rating: { orderId: number; restaurantScore: number; courierScore: number }) => void;
   onDuplicate: (message: string) => void;
 };
 
@@ -24,11 +24,11 @@ export default function OrderRatingForm({ orderId, scale, onSaved, onDuplicate }
     setPending(true);
     setError("");
     try {
-      await api(`/api/orders/${orderId}/rating`, {
+      const result = await api<{ rating: { orderId: number; restaurantScore: number; courierScore: number } }>(`/api/orders/${orderId}/rating`, {
         method: "POST",
         body: { restaurantScore, courierScore },
       });
-      onSaved();
+      onSaved(result.rating);
     } catch (cause) {
       // Other rating conflicts share the same HTTP status and error code.
       if (cause instanceof ApiError && cause.status === 409 && cause.message === "This order has already been rated.") {
