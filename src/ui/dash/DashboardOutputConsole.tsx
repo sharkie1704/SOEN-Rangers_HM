@@ -103,6 +103,9 @@ export function formatOutputEvent(event: OutputEvent): Omit<ConsoleEntry, "id"> 
   if (event.method === "POST" && event.path === "/api/orders") {
     return { timestamp, command, status: event.status, outcome: "Order placed successfully.", failed: false };
   }
+  if (event.method === "POST" && /^\/api\/orders\/\d+\/rating$/.test(event.path)) {
+    return { timestamp, command, status: event.status, outcome: "Order rating saved.", failed: false };
+  }
   if (event.method === "PATCH" && /^\/api\/couriers\/me\/availability$/.test(event.path)) {
     return { timestamp, command, status: event.status, outcome: "Courier availability updated.", failed: false };
   }

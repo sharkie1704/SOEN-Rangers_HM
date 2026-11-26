@@ -59,6 +59,10 @@ import type { LedgerRepository } from "./application/prc/LedgerRepository";
 import { toUserDto } from "./technical-services/http/UserDTO";
 import { subscribeToCommandEvents, subscribeToUserOutputEvents } from "./application/http/CommandEvents";
 import { Role } from "./domain/reg/Role";
+import type { RatingRepository } from "./application/rvw/RatingRepository";
+import { RatingRoutes } from "./application/rvw/RatingRoutes";
+import { RatingService } from "./application/rvw/RatingService";
+import type { RatingScale } from "./domain/rvw/Rating";
 
 export interface AppDeps {
   users: UserRepository;
@@ -70,6 +74,7 @@ export interface AppDeps {
   orders?: OrderRepository;
   orderMenu?: MenuCatalog;
   pricing?: PricingSettingsRepository;
+  ratings?: { repository: RatingRepository; scale: RatingScale };
   orderSummaries?: OrderSummaryRepository;
   ledger?: LedgerRepository;
   courierHistory?: CourierHistoryRepository;
@@ -86,6 +91,7 @@ type AuthenticatedRouteDeps = Pick<AppDeps,
   | "orders"
   | "orderMenu"
   | "pricing"
+  | "ratings"
   | "orderSummaries"
   | "ledger"
   | "courierHistory"
@@ -114,7 +120,7 @@ function requirePermission(command: PermissionCommand): RequestHandler {
 }
 
 export function createApp({
-  users, hasher, tokens, restaurants, menu, restaurantStatus, orders, orderMenu, pricing, orderSummaries, ledger, courierHistory, couriers, assignments, dispatchQueue, dispatch, resetDatabase,
+  users, hasher, tokens, restaurants, menu, restaurantStatus, orders, orderMenu, pricing, ratings, orderSummaries, ledger, courierHistory, couriers, assignments, dispatchQueue, dispatch, resetDatabase,
 }: AppDeps) {
   
   const app = express();
@@ -146,7 +152,7 @@ export function createApp({
 
   registerAuthenticatedRoutes({
     app,
-    users, restaurants, orders, orderMenu, pricing, orderSummaries, ledger,
+    users, restaurants, orders, orderMenu, pricing, ratings, orderSummaries, ledger,
     courierHistory, couriers, assignments, dispatchQueue, dispatch, resetDatabase,
     createOperator, restaurantController, menuController, statusController,
   });
@@ -155,7 +161,7 @@ export function createApp({
 }
 
 function registerAuthenticatedRoutes({
-  app, users, restaurants, orders, orderMenu, pricing, orderSummaries, ledger,
+  app, users, restaurants, orders, orderMenu, pricing, ratings, orderSummaries, ledger,
   courierHistory, couriers, assignments, dispatchQueue, dispatch, resetDatabase,
   createOperator, restaurantController, menuController, statusController,
 }: AuthenticatedRouteDeps): void {
@@ -170,9 +176,19 @@ function registerAuthenticatedRoutes({
 
   registerPricingRoutes(app, orderSummaries, ledger);
   registerOrderRoutes(app, { orders, orderMenu, pricing, dispatcher });
+  registerRatingRoutes(app, orders, ratings);
   registerRestaurantRoutes(app, { restaurantController, menuController, statusController });
   registerProfileRoutes(app, users);
   app.post("/api/operator/accounts", createOperator.handle);
+}
+
+function registerRatingRoutes(
+  app: AuthenticatedRouteDeps["app"], orders: AppDeps["orders"], ratings: AppDeps["ratings"],
+): void {
+  if (!orders || !ratings) return;
+  const routes = new RatingRoutes(new RatingService(orders, ratings.repository, ratings.scale));
+  app.post("/api/orders/:orderId/rating", routes.rate);
+  app.get("/api/ratings/me", routes.getState);
 }
 
 function registerAdminRoutes(app: AuthenticatedRouteDeps["app"], resetDatabase: AppDeps["resetDatabase"]): void {

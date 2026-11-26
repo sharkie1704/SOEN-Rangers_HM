@@ -18,6 +18,10 @@ import { PrismaDispatchQueueRepository } from "./technical-services/dlv/PrismaDi
 import { PrismaOrderSummaryRepository } from "./technical-services/prc/PrismaOrderSummaryRepository";
 import { PrismaLedgerRepository } from "./technical-services/prc/PrismaLedgerRepository";
 import { resetDatabase } from "./technical-services/db/ResetDatabase";
+import { loadRatingConfig } from "./technical-services/rvw/rating-config";
+import { PrismaRatingRepository } from "./technical-services/rvw/PrismaRatingRepository";
+
+const { rating: ratingScale } = await loadRatingConfig();
 
 const app = createApp({
   users: new PrismaUserRepository(),
@@ -29,6 +33,7 @@ const app = createApp({
   orders: new PrismaOrderRepository(),
   orderMenu: new PrismaMenuCatalog(),
   pricing: new PrismaPricingSettingsRepository(),
+  ratings: { repository: new PrismaRatingRepository(), scale: ratingScale },
   courierHistory: new PrismaCourierHistoryRepository(),
   orderSummaries: new PrismaOrderSummaryRepository(),
   ledger: new PrismaLedgerRepository(),
