@@ -35,7 +35,7 @@ function historyView() {
       .mockReturnValueOnce({ ...resource, data: orders })
       .mockReturnValueOnce({ ...resource, data: { scale: { min: 1, max: 5 }, ratedOrderIds: [2], ratings: [{ orderId: 2, restaurantScore: 4, courierScore: 5 }] } });
     vi.mocked(useState)
-      .mockReturnValueOnce(["delivered", vi.fn()])
+      .mockReturnValueOnce(["all", vi.fn()])
       .mockReturnValueOnce([feedback, setFeedback])
       .mockReturnValueOnce([null, vi.fn()]);
     return renderToStaticMarkup(createElement(CustomerOrderHistory));

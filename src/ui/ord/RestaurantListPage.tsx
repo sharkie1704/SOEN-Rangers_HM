@@ -24,7 +24,9 @@ export default function RestaurantListPage({ onSelectRestaurant }: RestaurantLis
     () => api<{ restaurants: Restaurant[] }>("/api/restaurants"),
     "Could not load restaurants. Please try again.",
   );
-  const restaurants = data?.restaurants ?? [];
+  const restaurants = (data?.restaurants ?? []).filter((restaurant) =>
+    restaurant.imageUrl.trim().length > 0 && restaurant.category.toLowerCase() !== "test" && !restaurant.id.startsWith("race-it-"),
+  );
   const categories = ["All desserts", ...new Set(restaurants.map((restaurant) => restaurant.category))];
   const filtered = useMemo(() => restaurants.filter((restaurant) => {
     const matchesCategory = category === "All desserts" || restaurant.category === category;

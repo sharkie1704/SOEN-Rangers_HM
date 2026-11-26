@@ -1,6 +1,5 @@
 .restaurant-discovery {
   box-sizing: border-box;
-  min-height: 100%;
   padding: clamp(22px, 4vw, 52px);
   background: #fff9f2;
   color: #4b3028;

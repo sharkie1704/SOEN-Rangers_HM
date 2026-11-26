@@ -31,15 +31,15 @@ export default function PublicLandingPage() {
     () => api<{ restaurants: Restaurant[] }>("/api/public/restaurants"),
     "Could not load local dessert spots.",
   );
-  const featuredNames = ["Sweet Bites", "La Cremerie", "The Dessert Lab", "Cake House"];
+  const featuredNames = ["Brownie & Crumb", "Sweet Spot", "Macaron Maison", "Waffle & Crumb"];
   const normalizeName = (name: string) => name.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
   const restaurants = [...(data?.restaurants ?? [])]
+    .filter((restaurant) => restaurant.status === "OPEN" && featuredNames.includes(normalizeName(restaurant.name)))
     .sort((first, second) => {
       const firstIndex = featuredNames.indexOf(normalizeName(first.name));
       const secondIndex = featuredNames.indexOf(normalizeName(second.name));
       return (firstIndex < 0 ? Number.MAX_SAFE_INTEGER : firstIndex) - (secondIndex < 0 ? Number.MAX_SAFE_INTEGER : secondIndex);
-    })
-    .slice(0, 4);
+    });
 
   return (
     <main className="public-landing">

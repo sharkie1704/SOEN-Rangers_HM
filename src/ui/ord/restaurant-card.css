@@ -26,9 +26,10 @@
 }
 
 .restaurant-card__content {
-  display: flex;
+  display: grid;
   flex: 1;
-  flex-direction: column;
+  grid-template-rows: auto minmax(6.5em, 1fr) auto auto;
+  gap: 10px;
   padding: 18px;
 }
 
@@ -53,7 +54,7 @@
 }
 
 .restaurant-card__details {
-  margin-top: 11px;
+  min-width: 0;
   color: #765f53;
   font-size: 0.87rem;
   line-height: 1.45;
@@ -68,8 +69,10 @@
 }
 
 .restaurant-card__status {
-  align-self: flex-start;
-  margin-top: 13px;
+  justify-self: start;
+  width: max-content;
+  max-width: 100%;
+  margin: 0;
   border-radius: 999px;
   padding: 5px 10px;
   font-size: 0.75rem;
@@ -81,9 +84,11 @@
 .restaurant-card__status--closed { background: #f2d8d5; color: #923c32; }
 
 .restaurant-card__action {
-  align-self: flex-start;
+  justify-self: start;
+  width: max-content;
+  max-width: 100%;
   min-height: 40px;
-  margin-top: auto;
+  margin: 0;
   padding: 9px 14px;
   border: 0;
   border-radius: 9px;

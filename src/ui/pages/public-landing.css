@@ -39,12 +39,11 @@
 .public-view-all { flex: 0 0 auto; margin-bottom: 4px; color: #a3440e; font-size: .9rem; font-weight: 700; }
 .public-restaurant-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
 .public-restaurant-grid .restaurant-card__image { height: 135px; }
-.public-restaurant-grid .restaurant-card__content { padding: 13px; }
+.public-restaurant-grid .restaurant-card__content { grid-template-rows: auto minmax(4.8em, 1fr) auto auto; gap: 8px; padding: 13px; }
 .public-restaurant-grid .restaurant-card__title-row h2 { font-size: 1rem; }
-.public-restaurant-grid .restaurant-card__details { margin-top: 7px; font-size: .78rem; }
+.public-restaurant-grid .restaurant-card__details { min-height: 4.8em; font-size: .78rem; }
 .public-restaurant-grid .restaurant-card__details p:first-child { display: none; }
-.public-restaurant-grid .restaurant-card__status { margin-top: 8px; }
-.public-restaurant-grid .restaurant-card__action { min-height: 34px; margin-top: 9px; padding: 6px 10px; font-size: .78rem; }
+.public-restaurant-grid .restaurant-card__action { min-height: 34px; padding: 6px 10px; font-size: .78rem; }
 .public-footer { display: flex; align-items: center; justify-content: space-between; gap: 18px; border-top: 1px solid var(--brand-line); padding: 16px max(24px, calc((100% - 1356px) / 2)); background: #fffdfa; }
 .public-brand--small { gap: 7px; font-size: 1.2rem; }
 .public-brand--small .public-brand__mark { width: 28px; height: 28px; }

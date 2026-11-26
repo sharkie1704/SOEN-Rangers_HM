@@ -31,7 +31,6 @@
   --orders-orange: #c66b32;
   box-sizing: border-box;
   width: min(100% - 32px, 920px);
-  min-height: 60vh;
   margin: 12px auto 48px;
   padding: clamp(20px, 4vw, 38px);
   border: 1px solid rgb(200 159 122 / 45%);
@@ -352,11 +351,10 @@
   .orders-spinner { animation: none; }
 }
 
-.customer-order-history .customer-history-filters { display: flex; flex-wrap: wrap; gap: 8px; margin: 16px 0; }
-.customer-order-history .customer-history-filters button { border: 1px solid #c89f7a; border-radius: 8px; padding: 8px 14px; background: #fff9f2; color: #4b3028; font: inherit; cursor: pointer; }
-.customer-order-history .customer-history-filters button[aria-pressed="true"] { background: #eadbc8; font-weight: 700; border-width: 2px; }
-.customer-order-history .customer-history-filters button:hover { background: #eadbc8; }
-.customer-order-history .customer-history-filters button:focus-visible,
+.customer-order-history .customer-history-controls { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; margin: 16px 0; }
+.customer-order-history .customer-history-controls label { color: #765f53; font-size: .88rem; font-weight: 600; }
+.customer-order-history .customer-history-controls select { min-width: 190px; min-height: 42px; border: 1px solid #c89f7a; border-radius: 9px; padding: 8px 34px 8px 12px; background: #fff; color: #4b3028; font: inherit; }
+.customer-order-history .customer-history-controls select:focus-visible,
 .customer-order-history details summary:focus-visible { outline: 2px solid #4b3028; outline-offset: 3px; }
 
 .order-rating {
