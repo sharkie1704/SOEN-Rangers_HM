@@ -432,6 +432,148 @@
 .customer-order-history .customer-history-fare dd { margin: 0; }
 .customer-order-history .customer-history-fare__total { border-top: 1px solid #c89f7a; padding-top: 12px; font-weight: 700; }
 
+.restaurant-order-history .my-orders-heading > [role="group"] {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.restaurant-order-history .my-orders-heading button,
+.restaurant-history-refresh {
+  min-height: 40px;
+  border: 1px solid var(--orders-caramel);
+  border-radius: 9px;
+  padding: 8px 14px;
+  background: #fff;
+  color: var(--orders-chocolate);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.restaurant-order-history .my-orders-heading button[aria-pressed="true"] {
+  border-color: var(--orders-orange);
+  background: var(--orders-orange);
+  color: #fff;
+}
+
+.restaurant-order-history .my-orders-heading button:focus-visible,
+.restaurant-history-refresh:focus-visible {
+  outline: 3px solid var(--orders-chocolate);
+  outline-offset: 3px;
+}
+
+.restaurant-history-refresh {
+  margin: 16px 0 20px;
+}
+
+.restaurant-history-refresh:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
+.restaurant-history-order-body {
+  padding: 12px 20px 16px;
+  color: var(--orders-chocolate);
+  overflow-wrap: anywhere;
+}
+
+.restaurant-history-order-body > p {
+  margin: 8px 0 14px;
+  line-height: 1.5;
+}
+
+.restaurant-history-order-body > p:first-child {
+  margin-top: 4px;
+  color: #765f53;
+  font-size: 0.92em;
+}
+
+.restaurant-history-order-body ul {
+  display: grid;
+  gap: 7px;
+  margin: 12px 0 18px;
+  padding-left: 24px;
+}
+
+.restaurant-history-order-body li {
+  padding-left: 3px;
+}
+
+.restaurant-history-ratings {
+  margin: 8px 0 20px;
+  border: 1px solid rgb(200 159 122 / 65%);
+  border-radius: 12px;
+  padding: 16px 18px;
+  background: rgb(255 255 255 / 75%);
+}
+
+.restaurant-history-ratings > header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  margin-bottom: 10px;
+}
+
+.restaurant-history-ratings h2,
+.restaurant-history-ratings p {
+  margin: 0;
+}
+
+.restaurant-history-ratings h2 {
+  font-size: 1.15rem;
+}
+
+.restaurant-history-ratings > header p {
+  color: #835900;
+  font-weight: 700;
+}
+
+.restaurant-history-ratings > header p span {
+  color: #765f53;
+  font-size: 0.88em;
+  font-weight: 500;
+}
+
+.restaurant-history-rating {
+  display: grid;
+  grid-template-columns: minmax(100px, 1fr) auto auto;
+  gap: 12px;
+  align-items: center;
+  border-top: 1px solid #eee3d7;
+  padding: 10px 0;
+}
+
+.restaurant-history-rating strong {
+  color: #835900;
+}
+
+.restaurant-history-rating time {
+  color: #765f53;
+  font-size: 0.9em;
+}
+
+.restaurant-history-order-body > p:last-child {
+  margin-bottom: 4px;
+}
+
+@media (max-width: 600px) {
+  .restaurant-history-order-body {
+    padding-right: 15px;
+    padding-left: 15px;
+  }
+
+  .restaurant-history-rating {
+    grid-template-columns: 1fr auto;
+  }
+
+  .restaurant-history-rating time {
+    grid-column: 1 / -1;
+  }
+}
+
 @media (max-width: 600px) {
   .customer-order-history .customer-history-fare { padding-inline: 16px; }
   .customer-order-history details,

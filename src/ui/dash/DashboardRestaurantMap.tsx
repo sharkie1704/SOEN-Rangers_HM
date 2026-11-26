@@ -16,6 +16,8 @@ type RestaurantSummary = {
   status: MapRestaurant["status"];
   lat: number | null;
   lng: number | null;
+  averageRating: number | null;
+  ratingCount: number;
 };
 
 export default function DashboardRestaurantMap({ user, onViewMenu }: Props) {
@@ -66,6 +68,8 @@ export default function DashboardRestaurantMap({ user, onViewMenu }: Props) {
             status: restaurant.status,
             lat: restaurant.lat,
             lng: restaurant.lng,
+            averageRating: restaurant.averageRating,
+            ratingCount: restaurant.ratingCount,
             queue: { length: queueCounts.get(restaurant.id) ?? 0 },
           }]
         ));

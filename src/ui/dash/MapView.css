@@ -148,6 +148,12 @@
   font-size: 1.35rem;
 }
 
+.map-view__drawer-rating {
+  margin: -8px 0 18px;
+  color: #835900;
+  font-weight: 700;
+}
+
 .map-view__drawer-status {
   display: flex;
   align-items: center;

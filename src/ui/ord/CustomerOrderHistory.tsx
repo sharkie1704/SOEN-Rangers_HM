@@ -5,6 +5,7 @@ import type { Summary } from "../prc/OrderSummaryList";
 import type { OrderDTO } from "../../application/ord/OrderDTO.ts";
 import type { RatingScale } from "../../domain/rvw/Rating.ts";
 import OrderRatingForm from "../rvw/OrderRatingForm";
+import { publishRestaurantRatingUpdate } from "../rvw/ratingEvents";
 import "./customer-orders.css";
 
 type Order = {
@@ -171,6 +172,7 @@ export default function CustomerOrderHistory() {
                           ratings: [...current.ratings, savedRating],
                         } : current);
                         setRatingFeedback((current) => ({ ...current, [order.id]: { saved: true } }));
+                        publishRestaurantRatingUpdate(order.restaurantId);
                       }}
                       onDuplicate={(message) => {
                         setRatingFeedback((current) => ({ ...current, [order.id]: { saved: false, message } }));
