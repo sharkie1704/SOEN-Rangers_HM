@@ -155,7 +155,7 @@ export default function OrderSummaryList({ operatorView = false, restaurantView 
             <small>{Math.min(summaries.length, 5)} of 5 deliveries completed</small>
           </div>
         )}
-        {!courierRating.loading && !courierRating.error && summaries.length >= 5 && courierRating.data?.ratings.map((rating) => (
+        {!courierRating.loading && !courierRating.error && summaries.length >= 5 && courierRating.data?.ratings?.map((rating) => (
           <p className="courier-received-ratings__row" key={rating.orderId}>
             <span>Order #{rating.orderId}</span>
             <strong>★ {rating.courierScore} / {courierRating.data?.scale.max}</strong>

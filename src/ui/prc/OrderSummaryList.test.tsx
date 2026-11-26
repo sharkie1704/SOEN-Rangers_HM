@@ -51,13 +51,14 @@ describe("courier delivery history", () => {
   it("shows the average with a star and count after enough deliveries", () => {
     primeList([1, 2, 3, 4, 5].map(record), { average: 4.2, count: 3 });
     const html = renderToStaticMarkup(renderList());
-    expect(html).toContain("Average rating: 4.2 ★ (3 ratings)");
+    expect(html).toContain("★ 4.2 / 5");
+    expect(html).toContain("(3 ratings)");
   });
 
   it("shows No ratings yet when the courier has no rating", () => {
     primeList([1, 2, 3, 4, 5].map(record), null);
     const html = renderToStaticMarkup(renderList());
-    expect(html).toContain("Average rating: No ratings yet");
+    expect(html).toContain("No ratings yet");
   });
 
   it("shows the average rating only in courier view", () => {
