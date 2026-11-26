@@ -68,6 +68,17 @@ export class RatingService {
     return { scale: this.scale, rating: await this.ratings.averageCourierScore(actor.id) };
   }
 
+  async getCourierRatings(actor: PermissionUser | undefined) {
+    if (!actor || actor.role !== Role.COURIER || !actor.id.trim()) {
+      throw new OrderError("FORBIDDEN", "Only couriers can view their ratings.");
+    }
+    const [rating, ratings] = await Promise.all([
+      this.ratings.averageCourierScore(actor.id),
+      this.ratings.findForCourier?.(actor.id) ?? Promise.resolve([]),
+    ]);
+    return { scale: this.scale, rating, ratings };
+  }
+
   async getRestaurantRatings(actor: PermissionUser | undefined, restaurantId: string) {
     const isOperator = actor?.role === Role.OPERATOR && !!actor.id.trim();
     const isRestaurantStaff = actor?.role === Role.RESTAURANT

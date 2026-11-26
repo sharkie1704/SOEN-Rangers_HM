@@ -194,6 +194,7 @@ function registerRatingRoutes(
   app.post("/api/orders/:orderId/rating", routes.rate);
   app.get("/api/ratings/me", routes.getState);
   app.get("/api/couriers/me/rating", routes.getCourierAverage);
+  app.get("/api/couriers/me/ratings", routes.getCourierRatings);
   app.get("/api/restaurants/:restaurantId/ratings", routes.getRestaurantRatings);
 }
 
