@@ -160,6 +160,7 @@ export default function OperatorOrdersPage({ restaurants }: Props) {
                                 <div><dt>Delivery fee</dt><dd>{money(order.fare.deliveryFeeCents)}</dd></div>
                                 <div><dt>Service fee</dt><dd>{money(order.fare.serviceFeeCents)}</dd></div>
                                 <div><dt>Small-order surcharge</dt><dd>{money(order.fare.smallOrderSurchargeCents)}</dd></div>
+                                {order.fare.promo && <div><dt>Promo ({order.fare.promo.code})</dt><dd>−{money(order.fare.promo.discountCents)}</dd></div>}
                                 <div><dt>Saved final charge</dt><dd>{money(order.fare.totalCents)}</dd></div>
                               </>
                             )}

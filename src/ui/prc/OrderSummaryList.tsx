@@ -13,6 +13,7 @@ export type Summary = {
     serviceFeeCents: number;
     smallOrderSurchargeCents: number;
     totalCents: number;
+    promo?: { code: string; discountCents: number };
   };
   placedAt: string;
   deliveredAt: string;
@@ -63,6 +64,7 @@ export function SummaryDetails({ summary }: { summary: HistoryRecord }) {
         <div><dt>Delivery fee</dt><dd>{money(summary.fare.deliveryFeeCents)}</dd></div>
         <div><dt>Service fee</dt><dd>{money(summary.fare.serviceFeeCents)}</dd></div>
         <div><dt>Small-order surcharge</dt><dd>{money(summary.fare.smallOrderSurchargeCents)}</dd></div>
+        {summary.fare.promo && <div><dt>Promo ({summary.fare.promo.code})</dt><dd>−{money(summary.fare.promo.discountCents)}</dd></div>}
         <div className="order-summary__total"><dt>Total charged</dt><dd>{money(summary.fare.totalCents)}</dd></div>
       </dl>}
     </article>

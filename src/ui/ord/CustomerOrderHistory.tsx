@@ -131,6 +131,7 @@ export default function CustomerOrderHistory() {
                   <div><dt>Delivery fee</dt><dd>${(order.fare.deliveryFeeCents / 100).toFixed(2)}</dd></div>
                   <div><dt>Service fee</dt><dd>${(order.fare.serviceFeeCents / 100).toFixed(2)}</dd></div>
                   <div><dt>Small-order surcharge</dt><dd>${(order.fare.smallOrderSurchargeCents / 100).toFixed(2)}</dd></div>
+                  {order.fare.promo && <div><dt>Promo ({order.fare.promo.code})</dt><dd>−${(order.fare.promo.discountCents / 100).toFixed(2)}</dd></div>}
                   <div className="customer-history-fare__total"><dt>{fareLabel}</dt><dd>${(order.fare.totalCents / 100).toFixed(2)}</dd></div>
                 </dl>
               ) : <p>Final charge unavailable.</p>}
