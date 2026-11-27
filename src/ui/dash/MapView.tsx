@@ -11,6 +11,8 @@ export type MapRestaurant = GeoPoint & {
   id: string;
   name: string;
   status: RestaurantStatus;
+  averageRating?: number | null;
+  ratingCount?: number;
   queue: { length: number; availability?: "known" }
     | { availability: "loading" | "unavailable"; length?: never };
 };

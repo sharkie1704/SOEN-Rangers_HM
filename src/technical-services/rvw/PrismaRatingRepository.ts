@@ -29,6 +29,30 @@ export class PrismaRatingRepository implements RatingRepository {
     };
   }
 
+  async findForCourier(courierId: string): Promise<readonly { orderId: number; courierScore: number; createdAt: Date }[]> {
+    const completedDeliveries = await prisma.order.count({
+      where: {
+        status: { in: ["DELIVERED", "REFUNDED"] },
+        events: { some: { actorId: courierId, action: "DELIVER", toStatus: "DELIVERED" } },
+      },
+    });
+    if (completedDeliveries < 5) return [];
+
+    return prisma.rating.findMany({
+      where: { courierId },
+      select: { orderId: true, courierScore: true, createdAt: true },
+      orderBy: { createdAt: "desc" },
+    });
+  }
+
+  async findForRestaurant(restaurantId: string): Promise<readonly { orderId: number; restaurantScore: number; createdAt: Date }[]> {
+    return prisma.rating.findMany({
+      where: { restaurantId },
+      select: { orderId: true, restaurantScore: true, createdAt: true },
+      orderBy: { createdAt: "desc" },
+    });
+  }
+
   async create(rating: Rating): Promise<void> {
     try {
       await prisma.$transaction(async (tx) => {

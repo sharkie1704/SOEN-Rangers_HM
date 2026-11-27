@@ -23,6 +23,8 @@ type Restaurant = {
   category: string;
   description: string;
   status: "OPEN" | "PAUSED" | "CLOSED";
+  averageRating?: number | null;
+  ratingCount?: number;
 };
 
 type ApiMenuItem = Omit<MenuItem, "price" | "image"> & {
@@ -260,9 +262,11 @@ export default function RestaurantMenuPage({
             <p style={{ margin: "0 0 6px" }}>{demoDetails.address}</p>
             <span style={{ width: "12px", height: "12px", borderRadius: "50%", backgroundColor: BAND_COLOURS[band] }} />
             {band} queue · {queuedCount} preparing
-            <p aria-label={`Rated ${demoDetails.rating} out of 5`} style={{ margin: 0, color: "#835900", fontWeight: 600 }}>
-              <span aria-hidden="true">★</span> {demoDetails.rating.toFixed(1)}
-            </p>
+            {restaurant?.averageRating !== null && restaurant?.averageRating !== undefined ? (
+              <p aria-label={`Rated ${restaurant.averageRating.toFixed(1)} out of 5`} style={{ margin: 0, color: "#835900", fontWeight: 600 }}>
+                <span aria-hidden="true">★</span> {restaurant.averageRating.toFixed(1)} ({restaurant.ratingCount ?? 0} {(restaurant.ratingCount ?? 0) === 1 ? "rating" : "ratings"})
+              </p>
+            ) : <p style={{ margin: 0, color: "#835900", fontWeight: 600 }}>No ratings yet</p>}
           </section>
         )}
 

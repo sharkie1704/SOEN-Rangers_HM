@@ -13,9 +13,13 @@ interface Props {
 type RestaurantSummary = {
   id: string;
   name: string;
+  category: string;
+  imageUrl: string;
   status: MapRestaurant["status"];
   lat: number | null;
   lng: number | null;
+  averageRating: number | null;
+  ratingCount: number;
 };
 
 export default function DashboardRestaurantMap({ user, onViewMenu }: Props) {
@@ -55,9 +59,12 @@ export default function DashboardRestaurantMap({ user, onViewMenu }: Props) {
           for (const [restaurantId, count] of queueResults) queueCounts.set(restaurantId, count);
         }
 
+        const imageReadySummaries = summaries.filter((restaurant) =>
+          restaurant.imageUrl.trim().length > 0 && restaurant.category.toLowerCase() !== "test" && !restaurant.id.startsWith("race-it-"),
+        );
         const visibleSummaries = user.role === "RESTAURANT" && user.restaurantId
-          ? summaries.filter((restaurant) => restaurant.id === user.restaurantId)
-          : summaries;
+          ? imageReadySummaries.filter((restaurant) => restaurant.id === user.restaurantId)
+          : imageReadySummaries;
 
         const mapRestaurants = visibleSummaries.flatMap((restaurant) => (
           restaurant.lat === null || restaurant.lng === null ? [] : [{
@@ -66,6 +73,8 @@ export default function DashboardRestaurantMap({ user, onViewMenu }: Props) {
             status: restaurant.status,
             lat: restaurant.lat,
             lng: restaurant.lng,
+            averageRating: restaurant.averageRating,
+            ratingCount: restaurant.ratingCount,
             queue: { length: queueCounts.get(restaurant.id) ?? 0 },
           }]
         ));

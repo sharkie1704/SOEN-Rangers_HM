@@ -146,11 +146,16 @@ describe("rating routes", () => {
     try {
       expect((await request(app).post(path).set("Authorization", auth).send(scores)).status).toBe(201);
       const original = stored.get(42);
+      const averageBeforeRefusal = [...stored.values()].reduce((total, rating) => total + rating.restaurantScore, 0)
+        / stored.size;
       const duplicate = await request(app).post(path).set("Authorization", auth)
         .send({ restaurantScore: 7, courierScore: 2 });
       expect(duplicate.status).toBe(409);
       expect(duplicate.body).toEqual({ code: "CONFLICT", error: "This order has already been rated." });
       expect(stored.get(42)).toBe(original);
+      const averageAfterRefusal = [...stored.values()].reduce((total, rating) => total + rating.restaurantScore, 0)
+        / stored.size;
+      expect(averageAfterRefusal).toBe(averageBeforeRefusal);
       expect(events).toEqual([201, 409].map((status) => ({
         method: "POST", path, status, timestamp: expect.any(String),
       })));

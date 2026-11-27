@@ -1,3 +1,8 @@
+import { useEffect } from "react";
+import { api } from "../../reg/api/client";
+import { useApi } from "../../reg/api/useApi";
+import { subscribeToRestaurantRatingUpdates } from "../../rvw/ratingEvents";
+import { formatRestaurantRating } from "../../rvw/ratingSummary";
 import type { MapRestaurant } from "../MapView";
 import { BAND_COLOURS, queueBand } from "../QueueBand";
 
@@ -17,10 +22,29 @@ export function getQueuePresentation(restaurant: Pick<MapRestaurant, "status" | 
 
 export default function PublicRestaurantPanel({ restaurant }: { restaurant: MapRestaurant }) {
   const { color, label } = getQueuePresentation(restaurant);
+  const rating = useApi(
+    () => api<{ rating: { average: number | null; count: number } }>(
+      `/api/restaurants/${encodeURIComponent(restaurant.id)}/rating-summary`,
+    ),
+    "Could not load restaurant rating.",
+    [restaurant.id],
+  );
+
+  useEffect(() => {
+    return subscribeToRestaurantRatingUpdates(restaurant.id, rating.reload);
+  }, [restaurant.id]);
+
   return (
     <>
       <p className="map-view__drawer-eyebrow">RESTAURANT</p>
       <h2>{restaurant.name}</h2>
+      <p className="map-view__drawer-rating" aria-live="polite">
+        {rating.loading ? "Loading rating…" : rating.error ? rating.error : rating.data?.rating.average === null
+          ? "No ratings yet"
+          : rating.data?.rating.average !== undefined
+            ? formatRestaurantRating(rating.data.rating)
+            : "Rating unavailable"}
+      </p>
       <div className="map-view__drawer-status">
         <span className="map-view__drawer-dot" style={{ backgroundColor: color }} />
         {restaurant.status}

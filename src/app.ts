@@ -148,6 +148,7 @@ export function createApp({
   app.post("/api/auth/register", register.handle);
   app.post("/api/auth/login", login.handle);
   app.post("/api/auth/logout", logout.handle);
+  app.get("/api/public/restaurants", restaurantController.listPublicRestaurants);
 
 
 
@@ -194,6 +195,8 @@ function registerRatingRoutes(
   app.post("/api/orders/:orderId/rating", routes.rate);
   app.get("/api/ratings/me", routes.getState);
   app.get("/api/couriers/me/rating", routes.getCourierAverage);
+  app.get("/api/couriers/me/ratings", routes.getCourierRatings);
+  app.get("/api/restaurants/:restaurantId/ratings", routes.getRestaurantRatings);
 }
 
 function registerAdminRoutes(app: AuthenticatedRouteDeps["app"], resetDatabase: AppDeps["resetDatabase"]): void {
@@ -344,6 +347,7 @@ function registerRestaurantRoutes(app: AuthenticatedRouteDeps["app"], {
 }: RestaurantRouteDeps): void {
   app.get("/api/restaurants", requirePermission({ name: "browseRestaurants" }), restaurantController.listRestaurants);
   app.get("/api/restaurants/:restaurantId", requirePermission({ name: "browseRestaurants" }), restaurantController.getRestaurant);
+  app.get("/api/restaurants/:restaurantId/rating-summary", requirePermission({ name: "browseRestaurants" }), restaurantController.getRatingSummary);
   app.get("/api/restaurants/:restaurantId/menu", requirePermission({ name: "browseMenu" }), restaurantController.getMenu);
 
   app.post("/api/restaurants/:restaurantId/menu", menuController.add);

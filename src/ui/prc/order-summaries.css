@@ -145,12 +145,117 @@
   outline-offset: 3px;
 }
 
+.courier-received-ratings {
+  margin: 8px 0 20px;
+  border: 1px solid rgb(200 159 122 / 65%);
+  border-radius: 12px;
+  padding: 16px 18px;
+  background: rgb(255 255 255 / 75%);
+}
+
+.courier-received-ratings__heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  margin-bottom: 10px;
+}
+
+.courier-received-ratings__heading h3,
+.courier-received-ratings__heading p {
+  margin: 0;
+}
+
+.courier-received-ratings__heading h3 {
+  font-size: 1.15rem;
+}
+
+.courier-received-ratings__heading p {
+  color: #835900;
+  font-weight: 700;
+}
+
+.courier-received-ratings__heading strong {
+  color: #835900;
+}
+
+.courier-received-ratings__privacy,
+.courier-received-ratings__empty,
+.courier-received-ratings__error {
+  border-top: 1px solid #eee3d7;
+  padding-top: 10px;
+}
+
+.courier-received-ratings__privacy p,
+.courier-received-ratings__empty,
+.courier-received-ratings__error {
+  margin: 0;
+  color: #765f53;
+  line-height: 1.5;
+}
+
+.courier-received-ratings__privacy > div {
+  overflow: hidden;
+  width: min(100%, 320px);
+  height: 8px;
+  margin-top: 12px;
+  border-radius: 999px;
+  background: #eadbc8;
+}
+
+.courier-received-ratings__privacy > div span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: #c66b32;
+}
+
+.courier-received-ratings__privacy small {
+  display: block;
+  margin-top: 6px;
+  color: #765f53;
+}
+
+.courier-received-ratings__row {
+  display: grid;
+  grid-template-columns: minmax(100px, 1fr) auto auto;
+  gap: 12px;
+  align-items: center;
+  margin: 0;
+  border-top: 1px solid #eee3d7;
+  padding: 10px 0;
+}
+
+.courier-received-ratings__row strong {
+  color: #835900;
+}
+
+.courier-received-ratings__row time {
+  color: #765f53;
+  font-size: 0.9em;
+}
+
+.courier-received-ratings__error {
+  color: #923c32;
+}
+
 .order-summaries__eyebrow,
 .order-summary__header p {
   color: #a95123;
   font-size: 0.72rem;
   font-weight: 700;
   letter-spacing: 0.12em;
+}
+
+@media (max-width: 560px) {
+  .courier-received-ratings__row {
+    grid-template-columns: 1fr auto;
+  }
+
+  .courier-received-ratings__row time {
+    grid-column: 1 / -1;
+  }
 }
 
 .order-summaries__list {
