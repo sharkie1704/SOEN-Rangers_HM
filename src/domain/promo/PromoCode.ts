@@ -28,12 +28,26 @@ export class PromoCode {
     this.expiresAt = new Date(expiresAt);
   }
 
-  discountFor(subtotal: Money): Money {
+  isExpired(now: Date = new Date()): boolean {
+    if (Number.isNaN(now.getTime())) {
+      throw new OrderError("INVALID_INPUT", "Current time must be a valid date.");
+    }
+    return now.getTime() > this.expiresAt.getTime();
+  }
+
+  discountFor(subtotal: Money, now: Date = new Date()): Money {
+    if (this.isExpired(now)) {
+      throw new OrderError("INVALID_INPUT", `Promo code ${this.code} has expired.`);
+    }
+    if (subtotal.isLessThan(this.minOrder)) {
+      const minimum = (this.minOrder.toCents() / 100).toFixed(2);
+      throw new OrderError("INVALID_INPUT", `Promo code ${this.code} requires a minimum order of $${minimum}.`);
+    }
     return subtotal.percent(this.percentOff);
   }
 
-  applyTo(fare: FareBreakdown): FareBreakdown {
-    const discount = this.discountFor(Money.fromCents(fare.subtotalCents, "subtotalCents"));
+  applyTo(fare: FareBreakdown, now: Date = new Date()): FareBreakdown {
+    const discount = this.discountFor(Money.fromCents(fare.subtotalCents, "subtotalCents"), now);
     const total = Money.fromCents(fare.totalCents, "totalCents").minus(discount);
     return {
       ...fare,
