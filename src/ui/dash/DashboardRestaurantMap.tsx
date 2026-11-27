@@ -104,7 +104,7 @@ export default function DashboardRestaurantMap({ user, onViewMenu }: Props) {
   const selectedOrders: PanelOrder[] = [];
 
   return (
-    <section aria-label="Restaurant map" style={{ width: "min(100% - 32px, 1200px)", margin: "24px auto" }}>
+    <section aria-label="Restaurant map" className="dashboard-restaurant-map">
       {error && <p className="error" role="alert">{error}</p>}
       <div style={{ height: "420px", border: "1px solid #EADBC8", borderRadius: "12px", overflow: "hidden" }}>
         <MapView

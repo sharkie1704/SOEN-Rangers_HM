@@ -64,6 +64,7 @@ export default function RestaurantStaffDashboard({ user, onLogout, restaurantId 
     <DashboardLayout
       user={user}
       onLogout={onLogout}
+      onDashboardHome={() => setActiveSection("overview")}
       sidebar={
         <DashboardSidebar
           items={items}

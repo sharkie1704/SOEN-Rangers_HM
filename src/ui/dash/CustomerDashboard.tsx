@@ -44,6 +44,7 @@ export default function CustomerDashboard({ user, onLogout }: CustomerDashboardP
     <DashboardLayout
       user={user}
       onLogout={onLogout}
+      onDashboardHome={() => setActiveSection("browse")}
       sidebar={
         <DashboardSidebar
           items={items}

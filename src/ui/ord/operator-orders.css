@@ -1,8 +1,6 @@
 .operator-orders {
   box-sizing: border-box;
-  width: 100%;
   min-width: 0;
-  padding: 32px 24px;
   color: #4b3028;
   font-family: Poppins, sans-serif;
 }
@@ -223,9 +221,7 @@
 
 .operator-dispatch {
   box-sizing: border-box;
-  width: 100%;
   min-width: 0;
-  padding: 32px 24px;
   color: #4b3028;
   font-family: Poppins, sans-serif;
 }

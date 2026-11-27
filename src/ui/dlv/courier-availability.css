@@ -5,9 +5,6 @@
   --availability-chocolate: #4b3028;
   --availability-orange: #c66b32;
   box-sizing: border-box;
-  width: min(100% - 32px, 900px);
-  margin: 0 auto;
-  padding: 20px 0 32px;
   color: var(--availability-chocolate);
   font-family: Poppins, sans-serif;
 }
@@ -61,7 +58,6 @@
   height: 9px;
   border-radius: 50%;
   background: currentColor;
-  box-shadow: 0 0 0 3px rgb(255 255 255 / 70%);
 }
 
 .courier-availability__badge--offline {
@@ -91,7 +87,6 @@
   border-radius: 18px;
   padding: clamp(22px, 4vw, 34px);
   background: hsl(37, 88%, 94%);
-  box-shadow: 0 12px 30px rgb(75 48 40 / 8%);
 }
 
 .courier-availability__status-summary {
@@ -104,13 +99,13 @@
 
 .courier-availability__status-card--available {
   border-color: #b6d7bd;
-  background: linear-gradient(115deg, #e1f0e2 0%, #f7fbf4 66%, #e8f4e8 100%);
+  background: #f7fbf4;
 }
 
 .courier-availability__status-card--assigned,
 .courier-availability__status-card--carrying {
   border-color: #e6cb8c;
-  background: linear-gradient(115deg, #fff0c8 0%, #fffaf0 66%, #fff2d6 100%);
+  background: #fffaf0;
 }
 
 .courier-availability__status-icon {
@@ -193,20 +188,17 @@
   cursor: pointer;
   font: inherit;
   font-weight: 700;
-  box-shadow: 0 5px 12px rgb(198 107 50 / 20%);
-  transition: transform 150ms ease, box-shadow 150ms ease, background-color 150ms ease;
+  transition: transform 150ms ease, background-color 150ms ease;
 }
 
 .courier-availability__action--secondary {
   border-color: #c89f7a;
   background: #fff9f2;
   color: #684536;
-  box-shadow: none;
 }
 
 .courier-availability__action:hover:not(:disabled) {
   transform: translateY(-1px);
-  box-shadow: 0 7px 16px rgb(75 48 40 / 16%);
 }
 
 .courier-availability__action:focus-visible,
@@ -308,10 +300,6 @@
 }
 
 @media (max-width: 620px) {
-  .courier-availability {
-    padding-top: 16px;
-  }
-
   .courier-availability__header {
     align-items: flex-start;
     flex-direction: column;

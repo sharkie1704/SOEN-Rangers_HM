@@ -1,0 +1,25 @@
+.dessertdash-header {
+  background-color: #fffdfa;
+}
+
+.dessertdash-logo { display: inline-flex; align-items: center; gap: 10px; color: #78330b; font-size: clamp(1.45rem, 2.5vw, 2rem); font-weight: 700; letter-spacing: -.055em; text-decoration: none; font-family: Poppins, sans-serif; }
+.dessertdash-logo > span:last-child > span { color: #c66b32; }
+.dessertdash-logo__mark { display: block; width: 38px; height: 38px; flex: 0 0 auto; stroke: #9b430d; stroke-width: 2.3; stroke-linecap: round; stroke-linejoin: round; }
+
+button.dessertdash-logo {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+.dessertdash-logo:focus-visible {
+  outline: 3px solid #c66b32;
+  outline-offset: 4px;
+  border-radius: 4px;
+}
+
+@media (max-width: 560px) {
+  .dessertdash-logo { gap: 6px; font-size: 1.28rem; }
+  .dessertdash-logo__mark { width: 30px; height: 30px; }
+}

@@ -5,9 +5,7 @@
   align-items: center;
   column-gap: 8px;
   row-gap: 6px;
-  width: min(100% - 48px, 1200px);
-  padding: 12px 0 14px;
-  margin: 12px auto 0;
+  padding: 0 0 14px;
   position: relative;
   color: #4B3028;
   font-family: Poppins, sans-serif;
@@ -19,7 +17,7 @@
   bottom: 0;
   left: 0;
   height: 1px;
-  background: linear-gradient(90deg, #C66B32 0%, #EADBC8 36%, transparent 100%);
+  background: #eadbc8;
   content: "";
 }
 
@@ -88,16 +86,7 @@
   margin-left: auto;
   color: #C66B32;
   font-size: 1.35rem;
-  text-shadow: 0 2px 8px rgb(198 107 50 / 20%);
   transition: transform 180ms ease;
-}
-
-@media (max-width: 520px) {
-  .welcome-page {
-    width: calc(100% - 32px);
-    padding: 10px 0 14px;
-    margin-top: 16px;
-  }
 }
 
 @media (prefers-reduced-motion: reduce) {

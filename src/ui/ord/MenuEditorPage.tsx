@@ -17,7 +17,6 @@ type MenuEditorPageInputs = {
   restaurantId: string;
 };
 
-export const page = { backgroundColor: "#FFF9F2", minHeight: "100vh", padding: "32px 24px", fontFamily: "'Poppins', sans-serif", color: "#4B3028" };
 export const row = { display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" as const, padding: "12px 16px", backgroundColor: "#F3E6D6", border: "1px solid #D9B48F", borderRadius: "8px" };
 export const input = { padding: "6px 8px", border: "1px solid #D9B48F", borderRadius: "6px", fontFamily: "inherit" };
 export const primary = { padding: "6px 14px", backgroundColor: "#C66B32", color: "#FFFFFF", border: "none", borderRadius: "6px", fontFamily: "inherit", fontWeight: 600, cursor: "pointer" };
@@ -141,8 +140,8 @@ export default function MenuEditorPage({ restaurantId }: MenuEditorPageInputs) {
   }
 
   return (
-    <section className="restaurant-menu-page" style={page}>
-      <div className="restaurant-menu-page__inner" style={{ maxWidth: "800px", margin: "0 auto" }}>
+    <section className="restaurant-menu-page">
+      <div>
         <header className="restaurant-menu-page__header">
           <h2>Manage your menu</h2>
           <p>Keep your offerings up to date and let guests know what’s available.</p>

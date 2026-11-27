@@ -8,14 +8,12 @@
   border: 1px solid #e8d1bd;
   border-radius: 16px;
   background: #fff;
-  box-shadow: 0 5px 18px rgb(75 48 40 / 6%);
   color: #321a12;
-  transition: transform 160ms ease, box-shadow 160ms ease;
+  transition: transform 160ms ease;
 }
 
 .restaurant-card:hover {
   transform: translateY(-3px);
-  box-shadow: 0 10px 24px rgb(75 48 40 / 12%);
 }
 
 .restaurant-card__image {

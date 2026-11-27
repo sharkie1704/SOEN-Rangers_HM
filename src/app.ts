@@ -148,9 +148,6 @@ export function createApp({
   app.post("/api/auth/register", register.handle);
   app.post("/api/auth/login", login.handle);
   app.post("/api/auth/logout", logout.handle);
-  app.get("/api/public/restaurants", restaurantController.listPublicRestaurants);
-
-
 
   // Session gate (R-REG-02): every other /api route requires authentication.
   app.use("/api", authenticate(tokens));

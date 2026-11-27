@@ -15,20 +15,18 @@ body {
   --orange: #C66B32;
   --muted: #765F53;
   display: grid;
+  grid-template-rows: auto 1fr;
   min-height: 100vh;
-  place-items: center;
-  padding: 40px 18px;
-  background:
-    radial-gradient(ellipse at 12% 10%, rgb(234 219 200 / 54%), transparent 34%),
-    radial-gradient(ellipse at 90% 88%, rgb(200 159 122 / 19%), transparent 30%),
-    var(--cream);
+  background: var(--cream);
   color: var(--chocolate);
   font-family: Poppins, sans-serif;
 }
 
 .auth-layout {
   display: grid;
-  width: min(100%, 480px);
+  place-self: center;
+  width: min(100% - 36px, 480px);
+  margin-block: 40px;
   gap: 22px;
 }
 
@@ -58,7 +56,6 @@ body {
   color: #FFFFFF;
   font-size: 1rem;
   font-weight: 700;
-  box-shadow: 0 4px 10px rgb(198 107 50 / 22%);
 }
 
 .auth-welcome-tagline {
@@ -80,51 +77,13 @@ body {
   line-height: 1.15;
 }
 
-.auth-welcome details {
-  margin-top: 10px;
-  color: var(--muted);
-  font-size: 0.88rem;
-}
-
-.auth-welcome summary {
-  width: fit-content;
-  color: #A95123;
-  cursor: pointer;
-  font-weight: 600;
-  text-decoration: underline;
-  text-decoration-color: rgb(169 81 35 / 35%);
-  text-underline-offset: 4px;
-  transition: color 160ms ease, text-decoration-color 160ms ease;
-}
-
-.auth-welcome summary:hover {
-  color: var(--chocolate);
-  text-decoration-color: currentColor;
-}
-
-.auth-welcome summary:focus-visible {
-  border-radius: 3px;
-  outline: 3px solid rgb(198 107 50 / 30%);
-  outline-offset: 4px;
-}
-
-.auth-welcome details p {
-  margin: 0;
-  padding-top: 9px;
-  color: var(--muted);
-  line-height: 1.65;
-}
-
 .auth-card {
   position: relative;
   padding: 30px;
-  border: 1px solid rgb(200 159 122 / 70%);
+  border: 1px solid var(--beige);
   border-top: 4px solid var(--orange);
   border-radius: 18px;
   background: #FFFFFF;
-  box-shadow:
-    0 16px 40px rgb(75 48 40 / 8%),
-    0 2px 8px rgb(75 48 40 / 4%);
 }
 
 .auth-card h2 {
@@ -170,8 +129,7 @@ body {
   font-size: 0.92rem;
   transition:
     border-color 150ms ease,
-    background-color 150ms ease,
-    box-shadow 150ms ease;
+    background-color 150ms ease;
 }
 
 .auth-form input::placeholder {
@@ -189,7 +147,6 @@ body {
   border-color: var(--orange);
   outline: none;
   background: #FFFFFF;
-  box-shadow: 0 0 0 4px rgb(198 107 50 / 15%);
 }
 
 .auth-form input:focus-visible,
@@ -223,22 +180,18 @@ body {
   font: inherit;
   font-size: 0.95rem;
   font-weight: 700;
-  box-shadow: 0 5px 12px rgb(198 107 50 / 19%);
   transition:
     transform 150ms ease,
-    background-color 150ms ease,
-    box-shadow 150ms ease;
+    background-color 150ms ease;
 }
 
 .auth-submit:hover {
   transform: translateY(-1px);
   background: #A95123;
-  box-shadow: 0 7px 16px rgb(169 81 35 / 22%);
 }
 
 .auth-submit:active {
   transform: translateY(0);
-  box-shadow: 0 3px 8px rgb(169 81 35 / 18%);
 }
 
 .auth-submit:focus-visible {
@@ -303,12 +256,10 @@ body {
 }
 
 @media (max-width: 520px) {
-  .auth-page {
-    place-items: start center;
-    padding: 28px 14px;
-  }
-
   .auth-layout {
+    place-self: start center;
+    width: min(100% - 28px, 480px);
+    margin-block: 28px;
     gap: 17px;
   }
 
@@ -323,8 +274,8 @@ body {
 }
 
 @media (max-width: 360px) {
-  .auth-page {
-    padding-inline: 10px;
+  .auth-layout {
+    width: min(100% - 20px, 480px);
   }
 
   .auth-card {
@@ -337,7 +288,6 @@ body {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .auth-welcome summary,
   .auth-form input,
   .auth-form select,
   .auth-submit,
