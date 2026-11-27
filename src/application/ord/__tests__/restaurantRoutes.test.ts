@@ -81,6 +81,7 @@ describe("Restaurant browsing routes", () => {
   // Verify that a user who is not logged in cannot access
   it("rejects unauthenticated requests", async () => {
     const endpoints = [
+      "/api/public/restaurants",
       "/api/restaurants",
       "/api/restaurants/restaurant-1",
       "/api/restaurants/restaurant-1/rating-summary",
@@ -92,6 +93,13 @@ describe("Restaurant browsing routes", () => {
       expect(response.status).toBe(401);
     }
   });
+  it("returns 404 for the retired public restaurant list even with a session", async () => {
+    const agent = await loggedInAgent();
+    const response = await agent.get("/api/public/restaurants");
+
+    expect(response.status).toBe(404);
+  });
+
    // TEST 2: RESTAURANT LIST
   // Verify that GET /api/restaurants returns the restaurants
 

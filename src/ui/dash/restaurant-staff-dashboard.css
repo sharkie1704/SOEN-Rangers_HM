@@ -4,8 +4,7 @@
   align-items: center;
   gap: 14px;
   box-sizing: border-box;
-  width: min(100% - 48px, 1040px);
-  margin: 20px auto 18px;
+  margin: 0 0 18px;
   padding: 0 0 18px;
   color: #4b3028;
 }
@@ -21,7 +20,6 @@
   background: #fbf3ea;
   color: #b9825d;
   font-size: 1.05rem;
-  text-shadow: 0 1px 2px rgb(185 130 93 / 18%);
 }
 
 .restaurant-staff-dashboard__intro::after {
@@ -29,13 +27,8 @@
   right: 0;
   bottom: 0;
   left: 0;
-  height: 2px;
-  background: linear-gradient(
-    180deg,
-    rgb(229 215 200 / 65%) 0,
-    rgb(238 229 219 / 35%) 1px,
-    transparent 2px
-  );
+  height: 1px;
+  background: #eadbc8;
   content: "";
 }
 
@@ -60,20 +53,6 @@
   background: none;
   color: inherit;
   font-size: inherit;
-  box-shadow: none;
-}
-
-.restaurant-orders-page,
-.restaurant-menu-page {
-  padding: 34px 24px 48px !important;
-  background: transparent !important;
-}
-
-.restaurant-orders-page__inner,
-.restaurant-menu-page__inner {
-  width: min(100%, 1040px);
-  max-width: 1040px !important;
-  margin: 0 auto !important;
 }
 
 .restaurant-orders-page__header {
@@ -117,7 +96,6 @@
   color: #60493d;
   font-size: 0.82rem;
   font-weight: 600;
-  box-shadow: 0 3px 10px rgb(75 48 40 / 5%);
 }
 
 .restaurant-orders-page__message {
@@ -183,15 +161,13 @@
   padding: 14px 16px !important;
   border: 1px solid #eddfd1 !important;
   border-radius: 12px !important;
-  background: linear-gradient(110deg, #fffdfa 0%, #fff 100%) !important;
-  box-shadow: 0 3px 12px rgb(75 48 40 / 5%);
-  transition: border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+  background: #fffdfa !important;
+  transition: border-color 160ms ease, transform 160ms ease;
 }
 
 .restaurant-orders-page__order-content:hover {
   transform: translateY(-1px);
   border-color: #d7b99d !important;
-  box-shadow: 0 8px 20px rgb(75 48 40 / 8%);
 }
 
 .restaurant-orders-page__order-id {
@@ -283,20 +259,19 @@
   overflow: hidden;
   border: 1px solid #dfe8d8 !important;
   border-left: 3px solid #8da77e !important;
-  background: linear-gradient(105deg, #f3f7ef 0%, #fbfcf8 70%, #f6f8f2 100%) !important;
-  box-shadow: 0 4px 14px rgb(75 91 62 / 5%);
+  background: #f3f7ef !important;
 }
 
 .restaurant-menu-page__status--paused {
   border-color: #efdfc2 !important;
   border-left-color: #c59a5b !important;
-  background: linear-gradient(105deg, #fbf5e9 0%, #fdfbf6 72%, #f9f5ed 100%) !important;
+  background: #fbf5e9 !important;
 }
 
 .restaurant-menu-page__status--closed {
   border-color: #ead8d3 !important;
   border-left-color: #b98276 !important;
-  background: linear-gradient(105deg, #f9f1ef 0%, #fdfaf9 72%, #f8f2f0 100%) !important;
+  background: #f9f1ef !important;
 }
 
 .restaurant-menu-page__status-copy {
@@ -329,7 +304,6 @@
   height: 8px;
   border-radius: 50%;
   background: #78a16e;
-  box-shadow: 0 0 0 3px rgb(120 161 110 / 14%);
   content: "";
 }
 
@@ -339,7 +313,6 @@
 
 .restaurant-menu-page__status--paused .restaurant-menu-page__status-value::before {
   background: #c59a5b;
-  box-shadow: 0 0 0 3px rgb(197 154 91 / 15%);
 }
 
 .restaurant-menu-page__status--closed .restaurant-menu-page__status-value {
@@ -348,7 +321,6 @@
 
 .restaurant-menu-page__status--closed .restaurant-menu-page__status-value::before {
   background: #b98276;
-  box-shadow: 0 0 0 3px rgb(185 130 118 / 15%);
 }
 
 .restaurant-menu-page__status-hint {
@@ -366,19 +338,7 @@
   margin: 0 0 28px !important;
   padding: 22px 20px !important;
   border: 1px solid #ecdfd1 !important;
-  background: linear-gradient(110deg, #fffaf4 0%, #fffdfa 58%, #fff 100%) !important;
-  box-shadow: 0 5px 16px rgb(75 48 40 / 5%);
-}
-
-.restaurant-menu-page__add-form::before {
-  position: absolute;
-  top: 0;
-  right: 18px;
-  left: 18px;
-  height: 2px;
-  border-radius: 0 0 2px 2px;
-  background: linear-gradient(90deg, #e8cbb0, #f1e4d7 55%, transparent);
-  content: "";
+  background: #fffdfa !important;
 }
 
 .restaurant-menu-page__add-copy {
@@ -406,7 +366,6 @@
   color: #b86a38;
   font-size: 1.1rem;
   font-weight: 500;
-  box-shadow: 0 2px 6px rgb(75 48 40 / 5%);
 }
 
 .restaurant-menu-page__add-copy strong {
@@ -458,14 +417,12 @@
   border: 1px solid #eddfd1 !important;
   border-radius: 12px !important;
   background: #fff !important;
-  box-shadow: 0 3px 12px rgb(75 48 40 / 5%);
-  transition: border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+  transition: border-color 160ms ease, transform 160ms ease;
 }
 
 .restaurant-menu-page__item-content:hover {
   transform: translateY(-1px);
   border-color: #d7b99d !important;
-  box-shadow: 0 8px 20px rgb(75 48 40 / 8%);
 }
 
 .restaurant-menu-page__item-name {
@@ -532,14 +489,7 @@
 }
 
 @media (max-width: 560px) {
-  .restaurant-orders-page,
-  .restaurant-menu-page {
-    padding: 26px 16px 36px !important;
-  }
-
   .restaurant-staff-dashboard__intro {
-    width: calc(100% - 32px);
-    margin-top: 18px;
     margin-bottom: 15px;
     padding-bottom: 15px;
   }

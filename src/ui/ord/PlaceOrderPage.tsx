@@ -115,14 +115,6 @@ export default function PlaceOrderPage({
         }
     }
 
-    const pageStyle = {
-        backgroundColor: "#FFF9F2",
-        minHeight: "100vh",
-        padding: "40px 24px",
-        boxSizing: "border-box",
-        fontFamily: "'Poppins', sans-serif",
-    } as const;
-
     const cardStyle = {
         backgroundColor: "#EADBC8",
         border: "1px solid #C89F7A",
@@ -146,7 +138,7 @@ export default function PlaceOrderPage({
 
     if (placingOrder) {
         return (
-            <main style={{ ...pageStyle, display: "grid", placeItems: "center" }}>
+            <main style={{ minHeight: "min(50vh, 400px)", display: "grid", placeItems: "center" }}>
                 <section role="status" aria-live="polite" style={{ textAlign: "center", color: "#4B3028" }}>
                     <div className="order-loading-spinner" aria-hidden="true" />
                     <h1 style={{ marginBottom: 8 }}>Placing your order</h1>
@@ -160,7 +152,7 @@ export default function PlaceOrderPage({
     // ---------- Order confirmation view ----------
     if (placedOrder !== null) {
         return (
-            <main style={pageStyle}>
+            <main>
                 <div style={{ maxWidth: "600px", margin: "0 auto" }}>
                     <header style={{ textAlign: "center", marginBottom: "32px" }}>
                         <h1 style={{ color: "#4B3028", fontSize: "32px", margin: "0 0 16px" }}>
@@ -245,8 +237,8 @@ export default function PlaceOrderPage({
 
     if (!hasItems) {
         return (
-            <main style={pageStyle}>
-                <h1 style={{ color: "#4B3028", textAlign: "center" }}>Your Cart</h1>
+            <main>
+                <h1 style={{ color: "#4B3028", textAlign: "center", marginTop: 0 }}>Your Cart</h1>
                 <div role="status" style={{ textAlign: "center", color: "#4B3028", padding: "48px 16px" }}>
                     <svg aria-hidden="true" focusable="false" width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="#C89F7A" strokeWidth="1.5">
                         <path d="M2 3h3l3 12h11l3-9H6" />
@@ -260,8 +252,8 @@ export default function PlaceOrderPage({
 
     // ---------- Cart view ----------
     return (
-        <main style={pageStyle}>
-            <div style={{ maxWidth: "800px", margin: "0 auto" }}>
+        <main>
+            <div>
                 <header style={{ textAlign: "center", marginBottom: "40px" }}>
                     <h1 style={{ color: "#4B3028", fontSize: "32px", margin: "0 0 16px" }}>
                         Your Cart

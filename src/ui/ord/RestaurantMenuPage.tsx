@@ -103,16 +103,8 @@ export default function RestaurantMenuPage({
     : "short";
 
   return (
-    <main
-      style={{
-        backgroundColor: "#FFF9F2",
-        minHeight: "100vh",
-        padding: "40px 24px",
-        boxSizing: "border-box",
-        fontFamily: "'Poppins', sans-serif",
-      }}
-    >
-      <div style={{ maxWidth: "1200px", margin: "0 auto" }}>
+    <main>
+      <div>
 
         <div
           style={{
@@ -330,7 +322,7 @@ export default function RestaurantMenuPage({
             borderRadius: "10px",
             backgroundColor: "#28633A",
             color: "#FFFFFF",
-            boxShadow: "0 6px 18px rgb(0 0 0 / 18%)",
+            boxShadow: "0 2px 8px rgb(0 0 0 / 12%)",
             animation: "cart-toast-in 180ms ease-out",
           }}
         >
@@ -338,6 +330,6 @@ export default function RestaurantMenuPage({
         </div>
       )}
       <style>{`@keyframes cart-toast-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } } @media (prefers-reduced-motion: reduce) { .cart-toast { animation: none !important; } }`}</style>
-    </main >
+    </main>
   );
 }

@@ -5,13 +5,7 @@
   --console-chocolate: #4b3028;
   --console-orange: #c66b32;
   box-sizing: border-box;
-  width: min(100% - 32px, 1200px);
   min-width: 0;
-  margin: 24px auto;
-  border: 1px solid rgb(200 159 122 / 45%);
-  border-radius: 18px;
-  padding: clamp(18px, 3vw, 32px);
-  background: radial-gradient(ellipse at 100% 0, rgb(234 219 200 / 48%), transparent 36%), var(--console-cream);
   color: var(--console-chocolate);
   font-family: Poppins, sans-serif;
 }

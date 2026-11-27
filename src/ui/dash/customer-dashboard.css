@@ -1,8 +1,5 @@
 .customer-dashboard__map-heading {
   box-sizing: border-box;
-  width: min(100% - 48px, 1200px);
-  margin-right: auto;
-  margin-left: auto;
   font-family: Poppins, sans-serif;
 }
 
@@ -11,7 +8,7 @@
   align-items: center;
   justify-content: space-between;
   margin-top: 22px;
-  margin-bottom: -12px;
+  margin-bottom: 12px;
   color: #4B3028;
 }
 
@@ -42,11 +39,7 @@
 
 @media (max-width: 520px) {
   .customer-dashboard__map-heading {
-    width: calc(100% - 32px);
-  }
-
-  .customer-dashboard__map-heading {
     margin-top: 20px;
-    margin-bottom: -12px;
+    margin-bottom: 12px;
   }
 }

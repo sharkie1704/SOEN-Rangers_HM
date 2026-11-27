@@ -7,10 +7,10 @@ import "./dashboard-layout.css";
 type DashboardLayoutProps = ComponentProps<typeof Header> & {
   children: ReactNode;
   sidebar?: ReactNode;
-  onCourierRatingClick?: () => void;
+  onDashboardHome: () => void;
 };
 
-export default function DashboardLayout({ user, onLogout, children, sidebar, onCourierRatingClick }: DashboardLayoutProps) {
+export default function DashboardLayout({ user, onLogout, children, sidebar, onDashboardHome, onCourierRatingClick }: DashboardLayoutProps) {
   const [collapsed, setCollapsed] = useState(false);
   const [showOutputConsole, setShowOutputConsole] = useState(false);
   const navigationId = useId();
@@ -18,7 +18,15 @@ export default function DashboardLayout({ user, onLogout, children, sidebar, onC
   return (
     <DashboardOutputConsoleContext.Provider value={showOutputConsole}>
       <div className={`dashboard-layout${collapsed ? " dashboard-layout--collapsed" : ""}`}>
-        <Header user={user} onLogout={onLogout} onCourierRatingClick={onCourierRatingClick} />
+        <Header
+          user={user}
+          onLogout={onLogout}
+          onDashboardHome={() => {
+            setShowOutputConsole(false);
+            onDashboardHome();
+          }}
+          onCourierRatingClick={onCourierRatingClick}
+        />
         <div className="dashboard-layout__body">
           {sidebar && (
             <aside className="dashboard-layout__sidebar" aria-label="Dashboard sidebar">

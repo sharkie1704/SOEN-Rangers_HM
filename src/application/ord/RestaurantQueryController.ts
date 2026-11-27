@@ -16,18 +16,6 @@ export class RestaurantQueryController {
     }
   };
 
-  listPublicRestaurants = async (_req: Request, res: Response): Promise<void> => {
-    try {
-      const restaurants = await this.restaurants.listRestaurants();
-      res.status(200).json({ restaurants: restaurants.map(({ id, name, category, description, imageUrl, status, averageRating, ratingCount }) => ({
-        id, name, category, description, imageUrl, status, averageRating, ratingCount,
-      })) });
-    } catch (error) {
-      console.error(error);
-      res.status(500).json({ error: "Internal server error" });
-    }
-  };
-
   //retrive one specific restaurant 
   getRestaurant = async (req: Request, res: Response): Promise<void> => {
     const id = req.params.restaurantId;

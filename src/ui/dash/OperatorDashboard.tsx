@@ -229,6 +229,7 @@ export default function OperatorDashboard({ user, onLogout }: OperatorDashboardP
     <DashboardLayout
       user={user}
       onLogout={onLogout}
+      onDashboardHome={() => setActiveSection("overview")}
       sidebar={
         <OperatorNavigation
           activeSection={activeSection}

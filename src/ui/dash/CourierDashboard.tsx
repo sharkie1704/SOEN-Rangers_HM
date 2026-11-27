@@ -66,6 +66,7 @@ export default function CourierDashboard({ user, onLogout }: CourierDashboardPro
     <DashboardLayout
       user={user}
       onLogout={onLogout}
+      onDashboardHome={() => setActiveSection("overview")}
       onCourierRatingClick={() => setActiveSection("history")}
       sidebar={
         <DashboardSidebar
@@ -83,7 +84,7 @@ export default function CourierDashboard({ user, onLogout }: CourierDashboardPro
             name={user.name ?? ""}
             description="Check your courier availability and manage assigned deliveries."
           />
-          <div style={{ maxWidth: "1200px", margin: "24px auto 0", padding: "0 16px", color: "#4B3028" }}>
+          <div style={{ marginTop: "24px", color: "#4B3028" }}>
             <h2>Courier overview</h2>
             <p>See nearby restaurants and keep track of your delivery work.</p>
           </div>

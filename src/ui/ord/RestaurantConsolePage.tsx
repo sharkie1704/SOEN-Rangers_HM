@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { api, ApiError } from "../reg/api/client";
 import { useApi } from "../reg/api/useApi";
 import { BAND_COLOURS, queueBand, type Band } from "../dash/QueueBand";
-import { page, row, input, primary, secondary } from "./MenuEditorPage";
+import { row, input, primary, secondary } from "./MenuEditorPage";
 import "./button-interactions.css";
 
 export type OrderStatus = "Placed" | "Accepted" | "Preparing" | "Ready" | "PickedUp" | "Delivered" | "Rejected" | "Cancelled";
@@ -74,8 +74,8 @@ export default function RestaurantConsolePage({ restaurantId }: RestaurantConsol
   const band: Band = queueBand({ status: restaurantStatus, queue });
 
   return (
-    <section className="restaurant-orders-page" style={{ ...page, minHeight: "auto", paddingBottom: 0 }}>
-      <div className="restaurant-orders-page__inner" style={{ maxWidth: "800px", margin: "0 auto" }}>
+    <section className="restaurant-orders-page">
+      <div>
         <header className="restaurant-orders-page__header">
           <div>
             <h2>Orders</h2>
