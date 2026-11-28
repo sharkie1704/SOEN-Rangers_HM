@@ -11,7 +11,13 @@ export class PromoService {
   }
 
   async apply(fare: FareBreakdown, code: unknown): Promise<FareBreakdown> {
-    const normalized = normalizePromoCode(code);
+    let normalized: string;
+    try {
+      normalized = normalizePromoCode(code);
+    } catch (error) {
+      console.warn(`[PROMO] refused code=${JSON.stringify(code ?? null)} reason=missing`);
+      throw error;
+    }
     const promo = await this.promos.findByCode(normalized);
     if (!promo) {
       console.warn(`[PROMO] refused code=${normalized} reason=unknown`);
