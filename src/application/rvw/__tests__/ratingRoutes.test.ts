@@ -5,7 +5,7 @@ import { Order } from "../../../domain/ord/Order.ts";
 import { Role } from "../../../domain/reg/Role.ts";
 import { Session } from "../../../domain/reg/Session.ts";
 import { FakePasswordHasher, InMemoryUserRepository } from "../../../domain/reg/__tests__/fakes";
-import type { Rating } from "../../../domain/rvw/Rating.ts";
+import { Rating } from "../../../domain/rvw/Rating.ts";
 import { JwtSessionTokenService } from "../../../technical-services/reg/JwtSessionTokenService";
 import { subscribeToUserOutputEvents, type OutputEvent } from "../../http/CommandEvents.ts";
 import {
@@ -52,8 +52,16 @@ beforeEach(async () => {
       scale: { min: 2, max: 7 },
       repository: {
         existsForOrder: async (id) => stored.has(id),
-        findRatedOrderIds: async (customerId) => [...stored.values()]
-          .filter((rating) => rating.customerId === customerId).map((rating) => rating.orderId),
+        findForCustomer: async (customerId) => [...stored.values()]
+          .filter((rating) => rating.customerId === customerId)
+          .map(({ orderId, restaurantScore, courierScore }) => ({ orderId, restaurantScore, courierScore })),
+        averageCourierScore: async (courierId) => {
+          const courierRatings = [...stored.values()].filter((rating) => rating.courierId === courierId);
+          return courierRatings.length === 0 ? null : {
+            average: courierRatings.reduce((total, rating) => total + rating.courierScore, 0) / courierRatings.length,
+            count: courierRatings.length,
+          };
+        },
         create: async (rating) => { stored.set(rating.orderId, rating); },
       },
     },
@@ -61,6 +69,58 @@ beforeEach(async () => {
 });
 
 describe("rating routes", () => {
+  it("returns the correct average and count for the authenticated courier", async () => {
+    stored.set(1, new Rating({
+      orderId: 1, customerId: "customer-a", restaurantId: "restaurant-a", courierId: "courier-a",
+      restaurantScore: 3, courierScore: 4,
+    }, { min: 2, max: 7 }));
+    stored.set(2, new Rating({
+      orderId: 2, customerId: "customer-b", restaurantId: "restaurant-a", courierId: "courier-a",
+      restaurantScore: 3, courierScore: 6,
+    }, { min: 2, max: 7 }));
+
+    const response = await request(app).get("/api/couriers/me/rating")
+      .set("Authorization", authorization("courier-a", Role.COURIER));
+    expect(response.status).toBe(200);
+    expect(response.body).toEqual({ scale: { min: 2, max: 7 }, rating: { average: 5, count: 2 } });
+  });
+
+  it("returns no rating when the courier has not been rated", async () => {
+    const response = await request(app).get("/api/couriers/me/rating")
+      .set("Authorization", authorization("courier-a", Role.COURIER));
+    expect(response.status).toBe(200);
+    expect(response.body).toEqual({ scale: { min: 2, max: 7 }, rating: null });
+  });
+
+  it("keeps two couriers' averages and counts isolated", async () => {
+    for (const [orderId, courierId, courierScore] of [
+      [1, "courier-a", 4], [2, "courier-a", 6], [3, "courier-b", 2],
+    ] as const) {
+      stored.set(orderId, new Rating({
+        orderId, customerId: `customer-${orderId}`, restaurantId: "restaurant-a", courierId,
+        restaurantScore: 3, courierScore,
+      }, { min: 2, max: 7 }));
+    }
+
+    const courierA = await request(app).get("/api/couriers/me/rating")
+      .set("Authorization", authorization("courier-a", Role.COURIER));
+    const courierB = await request(app).get("/api/couriers/me/rating")
+      .set("Authorization", authorization("courier-b", Role.COURIER));
+    expect(courierA.body.rating).toEqual({ average: 5, count: 2 });
+    expect(courierB.body.rating).toEqual({ average: 2, count: 1 });
+  });
+
+  it.each([Role.CUSTOMER, Role.RESTAURANT, Role.OPERATOR])(
+    "refuses courier average access for %s accounts", async (role) => {
+      const response = await request(app).get("/api/couriers/me/rating")
+        .set("Authorization", authorization("non-courier", role));
+      expect(response.status).toBe(403);
+      expect(response.body).toEqual({
+        code: "FORBIDDEN", error: "Only couriers can view their average rating.",
+      });
+    },
+  );
+
   it("saves both scores using session and order identities and returns customer-scoped state", async () => {
     const response = await request(app).post(path).set("Authorization", authorization()).send({
       ...scores, customerId: "forged", restaurantId: "forged", courierId: "forged",
@@ -70,10 +130,12 @@ describe("rating routes", () => {
     expect(stored.get(42)).toMatchObject({
       customerId: "customer-a", restaurantId: "restaurant-a", courierId: "courier-a", ...scores,
     });
-    for (const [customerId, ratedOrderIds] of [["customer-a", [42]], ["customer-b", []]] as const) {
+    for (const [customerId, ratedOrderIds, ratings] of [
+      ["customer-a", [42], [{ orderId: 42, ...scores }]], ["customer-b", [], []],
+    ] as const) {
       const state = await request(app).get("/api/ratings/me").set("Authorization", authorization(customerId));
       expect(state.status).toBe(200);
-      expect(state.body).toEqual({ scale: { min: 2, max: 7 }, ratedOrderIds });
+      expect(state.body).toEqual({ scale: { min: 2, max: 7 }, ratedOrderIds, ratings });
     }
   });
 
@@ -84,11 +146,16 @@ describe("rating routes", () => {
     try {
       expect((await request(app).post(path).set("Authorization", auth).send(scores)).status).toBe(201);
       const original = stored.get(42);
+      const averageBeforeRefusal = [...stored.values()].reduce((total, rating) => total + rating.restaurantScore, 0)
+        / stored.size;
       const duplicate = await request(app).post(path).set("Authorization", auth)
         .send({ restaurantScore: 7, courierScore: 2 });
       expect(duplicate.status).toBe(409);
       expect(duplicate.body).toEqual({ code: "CONFLICT", error: "This order has already been rated." });
       expect(stored.get(42)).toBe(original);
+      const averageAfterRefusal = [...stored.values()].reduce((total, rating) => total + rating.restaurantScore, 0)
+        / stored.size;
+      expect(averageAfterRefusal).toBe(averageBeforeRefusal);
       expect(events).toEqual([201, 409].map((status) => ({
         method: "POST", path, status, timestamp: expect.any(String),
       })));

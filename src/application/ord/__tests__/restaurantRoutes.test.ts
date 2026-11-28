@@ -81,8 +81,10 @@ describe("Restaurant browsing routes", () => {
   // Verify that a user who is not logged in cannot access
   it("rejects unauthenticated requests", async () => {
     const endpoints = [
+      "/api/public/restaurants",
       "/api/restaurants",
       "/api/restaurants/restaurant-1",
+      "/api/restaurants/restaurant-1/rating-summary",
       "/api/restaurants/restaurant-1/menu",
     ];
 
@@ -91,6 +93,13 @@ describe("Restaurant browsing routes", () => {
       expect(response.status).toBe(401);
     }
   });
+  it("returns 404 for the retired public restaurant list even with a session", async () => {
+    const agent = await loggedInAgent();
+    const response = await agent.get("/api/public/restaurants");
+
+    expect(response.status).toBe(404);
+  });
+
    // TEST 2: RESTAURANT LIST
   // Verify that GET /api/restaurants returns the restaurants
 
@@ -114,6 +123,28 @@ describe("Restaurant browsing routes", () => {
 
     // The response should contain our sample restaurant.
     expect(response.body.restaurant).toEqual(restaurant);
+  });
+
+  it("returns the average rating and count from the restaurant detail read", async () => {
+    restaurants.findRestaurantById = async (id) => id === restaurant.id
+      ? { ...restaurant, averageRating: 4.25, ratingCount: 4 }
+      : undefined;
+    const agent = await loggedInAgent();
+    const response = await agent.get("/api/restaurants/restaurant-1/rating-summary");
+
+    expect(response.status).toBe(200);
+    expect(response.body).toEqual({ rating: { average: 4.25, count: 4 } });
+  });
+
+  it("returns an explicit empty rating summary and a clear error for unknown restaurants", async () => {
+    const agent = await loggedInAgent();
+    const empty = await agent.get("/api/restaurants/restaurant-1/rating-summary");
+    const unknown = await agent.get("/api/restaurants/unknown/rating-summary");
+
+    expect(empty.status).toBe(200);
+    expect(empty.body).toEqual({ rating: { average: null, count: 0 } });
+    expect(unknown.status).toBe(404);
+    expect(unknown.body).toEqual({ error: "Restaurant not found" });
   });
  
   // TEST 4: RESTAURANT MENU

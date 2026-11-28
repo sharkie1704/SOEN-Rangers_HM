@@ -2,6 +2,7 @@ import { useState, type FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth, type RegisterData } from "../auth/AuthContext";
 import { registrationErrorMessage } from "../api/authErrorMessages";
+import PublicHeader from "../../pages/PublicHeader";
 import AuthWelcome from "./AuthWelcome";
 
 type PublicRole = "CUSTOMER" | "COURIER" | "RESTAURANT"; // no OPERATOR: the API refuses it anyway
@@ -38,6 +39,7 @@ export default function RegistrationPage() {
 
   return (
     <main className="auth-page">
+      <PublicHeader />
       <div className="auth-layout">
         <AuthWelcome />
         <section className="auth-card">

@@ -1,7 +1,3 @@
-.operator-welcome .welcome-page::after {
-  background: #c89f7a;
-}
-
 .operator-navigation__chevron {
   flex-shrink: 0;
   margin-left: auto;
@@ -45,10 +41,6 @@
 
 .operator-overview {
   box-sizing: border-box;
-  width: 100%;
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 32px 24px;
   color: var(--chocolate, #4B3028);
   font-family: Poppins, sans-serif;
 }
@@ -162,11 +154,10 @@
 
 .operator-overview__card {
   padding: 20px;
-  border: 1px solid rgb(200 159 122 / 65%);
+  border: 1px solid #eadbc8;
   border-radius: 14px;
   background: #fff9f2;
   overflow-wrap: anywhere;
-  box-shadow: 0 5px 16px rgb(75 48 40 / 5%);
 }
 
 .operator-overview__card dt {
@@ -273,9 +264,6 @@
 .operator-restaurants,
 .operator-simulator {
   box-sizing: border-box;
-  width: min(100% - 32px, 1200px);
-  margin: 0 auto;
-  padding: 32px 0;
   color: #4b3028;
   font-family: Poppins, sans-serif;
 }
@@ -339,14 +327,9 @@
   outline-offset: 2px;
 }
 
-.operator-restaurants__summary,
 .operator-restaurants__map-section,
 .operator-restaurants__directory {
-  margin: 20px 0;
-  padding: 20px;
-  border: 1px solid #eadbc8;
-  border-radius: 14px;
-  background: #fff9f2;
+  margin: 24px 0;
 }
 
 .operator-restaurants__summary h2,
@@ -553,11 +536,6 @@
   color: #28633a;
 }
 
-.operator-simulator {
-  max-width: 900px;
-  margin-top: 16px;
-}
-
 .operator-simulator__danger {
   display: flex;
   align-items: center;
@@ -609,10 +587,6 @@
 }
 
 @media (max-width: 480px) {
-  .operator-overview {
-    padding: 24px 16px;
-  }
-
   .operator-overview__cards {
     grid-template-columns: minmax(0, 1fr);
   }

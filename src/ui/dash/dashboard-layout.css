@@ -65,9 +65,23 @@
 }
 
 .dashboard-layout__content {
-  display: flow-root;
+  display: grid;
+  grid-template-columns: minmax(0, 1200px);
+  align-content: start;
+  justify-content: center;
   flex: 1;
   min-width: 0;
+  padding: 32px 24px;
+}
+
+.dashboard-restaurant-map {
+  width: min(100% - 32px, 1200px);
+  margin: 24px auto;
+}
+
+.dashboard-layout__content .dashboard-restaurant-map {
+  width: 100%;
+  margin: 0 0 24px;
 }
 
 .dashboard-layout__content[hidden] {
@@ -79,6 +93,10 @@
 }
 
 @media (max-width: 768px) {
+  .dashboard-layout__content {
+    padding: 24px 16px;
+  }
+
   .dashboard-layout__body {
     flex-direction: column;
   }

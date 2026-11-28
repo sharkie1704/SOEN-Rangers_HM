@@ -16,7 +16,7 @@
   font: inherit;
   font-weight: 600;
   cursor: pointer;
-  transition: background-color 150ms ease, color 150ms ease, box-shadow 150ms ease;
+  transition: background-color 150ms ease, color 150ms ease;
 }
 
 .customer-tab:hover {
@@ -27,7 +27,6 @@
   border-color: #c66b32;
   background: #c66b32;
   color: #fff;
-  box-shadow: 0 4px 10px rgb(198 107 50 / 20%);
 }
 
 .customer-tab:focus-visible {

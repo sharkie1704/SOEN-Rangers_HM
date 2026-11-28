@@ -90,6 +90,15 @@ export default function OrderSummaryList({ operatorView = false, restaurantView 
     reload: loadSummaries,
   } = useApi(() => api<{ summaries: HistoryRecord[] }>(historyEndpoint), "Could not load order summaries.", [historyEndpoint]);
   const summaries = data?.summaries ?? [];
+  const courierRating = useApi(
+    () => api<{
+      scale: { min: number; max: number };
+      rating: { average: number; count: number } | null;
+      ratings: { orderId: number; courierScore: number; createdAt: string }[];
+    }>("/api/couriers/me/ratings"),
+    "Could not load courier rating.",
+    [courierView],
+  );
   const [message, setMessage] = useState("");
   const [refundingOrderId, setRefundingOrderId] = useState<number | null>(null);
 
@@ -120,6 +129,40 @@ export default function OrderSummaryList({ operatorView = false, restaurantView 
         </button>
       </header>
 
+      {courierView && <section className="courier-received-ratings" aria-label="Courier ratings" aria-live="polite">
+        <header className="courier-received-ratings__heading">
+          <h3>Ratings received</h3>
+          {courierRating.loading ? <p>Loading ratings…</p>
+            : courierRating.error ? <p>Ratings unavailable</p>
+              : courierRating.data?.rating ? (
+                <p>
+                  <strong>★ {courierRating.data.rating.average.toFixed(1)} / {courierRating.data.scale.max}</strong>
+                  {summaries.length >= 5 && ` (${courierRating.data.rating.count} ${courierRating.data.rating.count === 1 ? "rating" : "ratings"})`}
+                </p>
+              ) : <p>No ratings yet</p>}
+        </header>
+        {courierRating.error && <p className="courier-received-ratings__error" role="alert">{courierRating.error}</p>}
+        {!courierRating.loading && !courierRating.error && !courierRating.data?.rating && (
+          <p className="courier-received-ratings__empty">Customer ratings appear here after a delivered order is reviewed.</p>
+        )}
+        {!courierRating.loading && !courierRating.error && courierRating.data?.rating && summaries.length < 5 && (
+          <div className="courier-received-ratings__privacy">
+            <p>Order ratings and their count appear after 5 deliveries to protect customer anonymity.</p>
+            <div role="progressbar" aria-label="Deliveries completed toward showing ratings"
+              aria-valuemin={0} aria-valuemax={5} aria-valuenow={Math.min(summaries.length, 5)}>
+              <span style={{ width: `${Math.min(summaries.length, 5) * 20}%` }} />
+            </div>
+            <small>{Math.min(summaries.length, 5)} of 5 deliveries completed</small>
+          </div>
+        )}
+        {!courierRating.loading && !courierRating.error && summaries.length >= 5 && courierRating.data?.ratings?.map((rating) => (
+          <p className="courier-received-ratings__row" key={rating.orderId}>
+            <span>Order #{rating.orderId}</span>
+            <strong>★ {rating.courierScore} / {courierRating.data?.scale.max}</strong>
+            <time dateTime={rating.createdAt}>{new Date(rating.createdAt).toLocaleDateString()}</time>
+          </p>
+        ))}
+      </section>}
       {loading && <p role="status">Loading order summaries…</p>}
       {error && <p className="order-summaries__error" role="alert">{error}</p>}
       {message && <p className="order-summaries__message" role="status">{message}</p>}

@@ -1,5 +1,6 @@
 import { OrderError, requireId } from "../../domain/ord/OrderError.ts";
 import { hasPermission, type PermissionUser } from "../../domain/reg/permissions/index.ts";
+import { Role } from "../../domain/reg/Role.ts";
 import { Rating, type RatingScale } from "../../domain/rvw/Rating.ts";
 import type { OrderRepository } from "../ord/OrderRepository.ts";
 import type { RatingRepository } from "./RatingRepository.ts";
@@ -56,7 +57,47 @@ export class RatingService {
 
   async getState(actor: PermissionUser | undefined) {
     const customerId = this.requireCustomer(actor);
-    return { scale: this.scale, ratedOrderIds: await this.ratings.findRatedOrderIds(customerId) };
+    const ratings = await this.ratings.findForCustomer(customerId);
+    return { scale: this.scale, ratedOrderIds: ratings.map(({ orderId }) => orderId), ratings };
+  }
+
+  async getCourierAverage(actor: PermissionUser | undefined) {
+    if (!actor || actor.role !== "COURIER" || !actor.id.trim()) {
+      throw new OrderError("FORBIDDEN", "Only couriers can view their average rating.");
+    }
+    return { scale: this.scale, rating: await this.ratings.averageCourierScore(actor.id) };
+  }
+
+  async getCourierRatings(actor: PermissionUser | undefined) {
+    if (!actor || actor.role !== Role.COURIER || !actor.id.trim()) {
+      throw new OrderError("FORBIDDEN", "Only couriers can view their ratings.");
+    }
+    const [rating, ratings] = await Promise.all([
+      this.ratings.averageCourierScore(actor.id),
+      this.ratings.findForCourier?.(actor.id) ?? Promise.resolve([]),
+    ]);
+    return { scale: this.scale, rating, ratings };
+  }
+
+  async getRestaurantRatings(actor: PermissionUser | undefined, restaurantId: string) {
+    const isOperator = actor?.role === Role.OPERATOR && !!actor.id.trim();
+    const isRestaurantStaff = actor?.role === Role.RESTAURANT
+      && !!actor.id.trim() && actor.restaurantId === restaurantId;
+    if (!isOperator && !isRestaurantStaff) {
+      throw new OrderError("FORBIDDEN", "Only this restaurant's staff or an operator can view its ratings.");
+    }
+    if (!restaurantId.trim()) throw new OrderError("INVALID_INPUT", "Restaurant ID is required.");
+    if (!this.ratings.findForRestaurant) {
+      throw new OrderError("CONFLICT", "Restaurant ratings are unavailable.");
+    }
+    const ratings = await this.ratings.findForRestaurant(restaurantId);
+    const total = ratings.reduce((sum, rating) => sum + rating.restaurantScore, 0);
+    return {
+      scale: this.scale,
+      average: ratings.length === 0 ? null : total / ratings.length,
+      count: ratings.length,
+      ratings,
+    };
   }
 
   private requireCustomer(actor: PermissionUser | undefined): string {

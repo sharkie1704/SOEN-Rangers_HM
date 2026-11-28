@@ -1,7 +1,5 @@
 .courier-deliveries {
   box-sizing: border-box;
-  width: min(100% - 32px, 960px);
-  margin: 24px auto;
   color: #4B3028;
   font-family: Poppins, sans-serif;
 }

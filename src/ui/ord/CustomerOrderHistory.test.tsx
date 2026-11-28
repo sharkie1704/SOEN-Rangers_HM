@@ -3,6 +3,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { afterEach, expect, it, vi } from "vitest";
 import { useApi } from "../reg/api/useApi";
 import OrderRatingForm from "../rvw/OrderRatingForm";
+import { subscribeToRestaurantRatingUpdates } from "../rvw/ratingEvents";
 import CustomerOrderHistory from "./CustomerOrderHistory";
 
 vi.mock("react", async (importOriginal) => {
@@ -21,7 +22,7 @@ afterEach(() => vi.clearAllMocks());
 
 function historyView() {
   const orders = ["Delivered", "Delivered", "Refunded", "Placed"].map((status, index) => ({
-    id: index + 1, status, placedAt: "2026-11-25T12:00:00Z", lines: [],
+    id: index + 1, restaurantId: "restaurant-a", status, placedAt: "2026-11-25T12:00:00Z", lines: [],
   }));
   let feedback: unknown = {};
   const setFeedback = (update: unknown) => {
@@ -32,9 +33,9 @@ function historyView() {
     vi.mocked(useApi)
       .mockReturnValueOnce({ ...resource, data: { summaries: [] } })
       .mockReturnValueOnce({ ...resource, data: orders })
-      .mockReturnValueOnce({ ...resource, data: { scale: { min: 1, max: 5 }, ratedOrderIds: [2] } });
+      .mockReturnValueOnce({ ...resource, data: { scale: { min: 1, max: 5 }, ratedOrderIds: [2], ratings: [{ orderId: 2, restaurantScore: 4, courierScore: 5 }] } });
     vi.mocked(useState)
-      .mockReturnValueOnce(["delivered", vi.fn()])
+      .mockReturnValueOnce(["all", vi.fn()])
       .mockReturnValueOnce([feedback, setFeedback])
       .mockReturnValueOnce([null, vi.fn()]);
     return renderToStaticMarkup(createElement(CustomerOrderHistory));
@@ -49,9 +50,20 @@ it("offers a rating only for a delivered, unrated order", () => {
 it("hides the form and confirms submission after a successful save", () => {
   const render = historyView();
   expect(render()).toContain("Rate order #1");
-  vi.mocked(OrderRatingForm).mock.calls[0][0].onSaved();
+  vi.mocked(OrderRatingForm).mock.calls[0][0].onSaved({ orderId: 1, restaurantScore: 3, courierScore: 4 });
 
   const html = render();
   expect(html).not.toContain("Rate order #1");
   expect(html).toContain("Rating submitted. Thank you!");
+});
+
+it("notifies the matching restaurant details panel to refresh after a rating is saved", () => {
+  const updatedRestaurantIds: string[] = [];
+  const unsubscribe = subscribeToRestaurantRatingUpdates("restaurant-a", () => updatedRestaurantIds.push("restaurant-a"));
+  const render = historyView();
+  render();
+  vi.mocked(OrderRatingForm).mock.calls[0][0].onSaved({ orderId: 1, restaurantScore: 3, courierScore: 4 });
+  unsubscribe();
+
+  expect(updatedRestaurantIds).toEqual(["restaurant-a"]);
 });

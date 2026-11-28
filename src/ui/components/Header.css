@@ -5,17 +5,9 @@
   flex-wrap: wrap;
   gap: 16px;
   padding: 18px 32px;
-  background-color: #EADBC8;
-  border-bottom: 1px solid #C89F7A;
-  box-shadow: 0 2px 8px rgb(75 48 40 / 7%);
+  border-bottom: 1px solid #EADBC8;
   color: #4B3028;
   font-family: Poppins, sans-serif;
-}
-
-.app-header__brand {
-  font-size: 26px;
-  font-weight: 700;
-  letter-spacing: -0.035em;
 }
 
 .app-header__right {
@@ -39,6 +31,22 @@
 .app-header__role {
   font-size: 13px;
   color: #765F53;
+}
+
+.app-header__role--link {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  font-family: inherit;
+  font-size: 13px;
+  line-height: inherit;
+  cursor: pointer;
+}
+
+.app-header__role--link:hover,
+.app-header__role--link:focus-visible {
+  color: #4B3028;
+  text-decoration: underline;
 }
 
 .app-header__logout {

@@ -31,6 +31,18 @@ export class RatingRoutes {
     res.json(await this.ratings.getState(req.user));
   });
 
+  getCourierAverage = (req: Request, res: Response) => this.respond(res, async () => {
+    res.json(await this.ratings.getCourierAverage(req.user));
+  });
+
+  getCourierRatings = (req: Request, res: Response) => this.respond(res, async () => {
+    res.json(await this.ratings.getCourierRatings(req.user));
+  });
+
+  getRestaurantRatings = (req: Request, res: Response) => this.respond(res, async () => {
+    res.json(await this.ratings.getRestaurantRatings(req.user, String(req.params.restaurantId)));
+  });
+
   private async respond(res: Response, action: () => Promise<void>): Promise<void> {
     try {
       await action();

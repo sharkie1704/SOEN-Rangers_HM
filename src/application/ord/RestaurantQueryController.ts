@@ -40,6 +40,29 @@ export class RestaurantQueryController {
     }
   };
 
+  getRatingSummary = async (req: Request, res: Response): Promise<void> => {
+    const id = req.params.restaurantId;
+    if (typeof id !== "string" || !id.trim()) {
+      res.status(400).json({ error: "Invalid restaurant ID" });
+      return;
+    }
+
+    try {
+      const restaurant = await this.restaurants.findRestaurantById(id);
+      if (!restaurant) {
+        res.status(404).json({ error: "Restaurant not found" });
+        return;
+      }
+      res.status(200).json({ rating: {
+        average: restaurant.averageRating ?? null,
+        count: restaurant.ratingCount ?? 0,
+      } });
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  };
+
   //retrive the menu of a specific restaurant
 
   getMenu = async (req: Request, res: Response): Promise<void> => {

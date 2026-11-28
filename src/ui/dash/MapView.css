@@ -32,7 +32,7 @@
   transform: rotate(-45deg);
   border: 2px solid #fff;
   border-radius: 50% 50% 50% 0;
-  box-shadow: 0 1px 5px rgb(34 34 34 / 50%);
+  box-shadow: 0 1px 2px rgb(34 34 34 / 25%);
 }
 
 .map-view__restaurant-icon--selected .map-view__restaurant-pin {
@@ -48,7 +48,7 @@
   border: 2px solid #fff;
   border-radius: 50%;
   background: #35577c;
-  box-shadow: 0 1px 5px rgb(34 34 34 / 45%);
+  box-shadow: 0 1px 2px rgb(34 34 34 / 25%);
   color: #fff;
   font-size: 13px;
   font-weight: 700;
@@ -62,7 +62,7 @@
   border: 2px solid #fff;
   border-radius: 50%;
   background: #35577c;
-  box-shadow: 0 1px 5px rgb(34 34 34 / 50%);
+  box-shadow: 0 1px 2px rgb(34 34 34 / 25%);
 }
 
 .map-view__home-icon svg {
@@ -117,7 +117,7 @@
   padding: 24px 20px;
   background: #fff9f2;
   color: #4b3028;
-  box-shadow: 0 8px 24px rgb(34 34 34 / 20%);
+  box-shadow: 0 2px 8px rgb(34 34 34 / 12%);
 }
 
 .map-view__drawer-close {
@@ -146,6 +146,12 @@
 .map-view__drawer h2 {
   margin: 0 32px 18px 0;
   font-size: 1.35rem;
+}
+
+.map-view__drawer-rating {
+  margin: -8px 0 18px;
+  color: #835900;
+  font-weight: 700;
 }
 
 .map-view__drawer-status {

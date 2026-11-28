@@ -5,6 +5,7 @@ import type { Summary } from "../prc/OrderSummaryList";
 import type { OrderDTO } from "../../application/ord/OrderDTO.ts";
 import type { RatingScale } from "../../domain/rvw/Rating.ts";
 import OrderRatingForm from "../rvw/OrderRatingForm";
+import { publishRestaurantRatingUpdate } from "../rvw/ratingEvents";
 import "./customer-orders.css";
 
 type Order = {
@@ -19,11 +20,15 @@ type Order = {
   rejectionReason: string;
 };
 
-type RatingState = { scale: RatingScale; ratedOrderIds: number[] };
+type RatingState = {
+  scale: RatingScale;
+  ratedOrderIds: number[];
+  ratings: { orderId: number; restaurantScore: number; courierScore: number }[];
+};
 type RatingFeedback = { saved: true } | { saved: false; message: string };
 
 export default function CustomerOrderHistory() {
-  const [section, setSection] = useState<"active" | "delivered" | "cancelled">("active");
+  const [statusFilter, setStatusFilter] = useState("all");
   const summaryResource = useApi(
     () => api<{ summaries: Summary[] }>("/api/order-summaries"),
     "Could not load delivery summaries.",
@@ -64,11 +69,9 @@ export default function CustomerOrderHistory() {
     }
   }
 
-  const visibleOrders = orders.filter((order) => section === "delivered"
-    ? order.status === "Delivered" || order.status === "Refunded"
-    : section === "cancelled"
-      ? order.status === "Cancelled" || order.status === "Rejected"
-      : ["Placed", "Accepted", "Preparing", "Ready", "PickedUp"].includes(order.status));
+  const visibleOrders = [...orders]
+    .sort((first, second) => new Date(second.placedAt).getTime() - new Date(first.placedAt).getTime())
+    .filter((order) => statusFilter === "all" || order.status === statusFilter);
 
   return (
     <main className="customer-order-history" aria-label="Customer order history">
@@ -83,21 +86,31 @@ export default function CustomerOrderHistory() {
             {refreshingList ? "Refreshing…" : "Refresh orders"}
           </button>
         </header>
-        <div className="customer-history-filters" role="group" aria-label="Order history sections">
-          {([ ["active", "Active"], ["delivered", "Delivered"], ["cancelled", "Cancelled/Rejected"] ] as const).map(([id, label]) => (
-            <button key={id} type="button" aria-pressed={section === id} onClick={() => setSection(id)}>{label}</button>
-          ))}
+        <div className="customer-history-controls">
+          <label htmlFor="order-status-filter">Filter by status</label>
+          <select id="order-status-filter" value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}>
+            <option value="all">All orders</option>
+            <option value="Placed">Placed</option>
+            <option value="Accepted">Accepted</option>
+            <option value="Preparing">Preparing</option>
+            <option value="Ready">Ready</option>
+            <option value="PickedUp">Picked up</option>
+            <option value="Delivered">Delivered</option>
+            <option value="Refunded">Refunded</option>
+            <option value="Cancelled">Cancelled</option>
+            <option value="Rejected">Rejected</option>
+          </select>
         </div>
-        {section === "delivered" && summaryError && <p role="alert">{summaryError}</p>}
-        {section === "delivered" && ratingResource.error && <p role="alert">{ratingResource.error}</p>}
+        {(statusFilter === "all" || statusFilter === "Delivered" || statusFilter === "Refunded") && summaryError && <p role="alert">{summaryError}</p>}
+        {(statusFilter === "all" || statusFilter === "Delivered" || statusFilter === "Refunded") && ratingResource.error && <p role="alert">{ratingResource.error}</p>}
         <div className="orders-count">{visibleOrders.length} {visibleOrders.length === 1 ? "order" : "orders"}</div>
         {loading && <div className="orders-message" role="status"><span className="orders-spinner" />Loading your orders…</div>}
         {error && <div className="orders-error" role="alert"><span>{error}</span><button type="button" onClick={refreshHistory}>Try again</button></div>}
         {!loading && !error && visibleOrders.length === 0 && (
           <section className="orders-empty">
             <span className="orders-empty-icon" aria-hidden="true">♡</span>
-            <h2>No orders in this section yet</h2>
-            <p>Choose another section or refresh your orders.</p>
+            <h2>No orders found</h2>
+            <p>Try another status or refresh your order history.</p>
           </section>
         )}
         <div className="orders-list">
@@ -106,6 +119,7 @@ export default function CustomerOrderHistory() {
             const completed = order.status === "Delivered" || order.status === "Refunded";
             const notCharged = order.status === "Cancelled" || order.status === "Rejected";
             const rating = ratingResource.data;
+            const orderRating = rating?.ratings.find((item) => item.orderId === order.id);
             const feedback = ratingFeedback[order.id];
             let fareLabel = "Saved order total";
             if (!order.fare) fareLabel = "Final charge unavailable";
@@ -149,18 +163,31 @@ export default function CustomerOrderHistory() {
                 : <p>{summariesLoading ? "Loading delivery summary…" : summaryError ? "Delivery summary could not be loaded." : "Delivery summary unavailable."}</p>)}
               {order.status === "Delivered" && (
                 <>
+                  {orderRating && <section className="order-rating-result" aria-label={`Your rating for order #${order.id}`}>
+                    <h3>Your rating</h3>
+                    <p>Restaurant: {orderRating.restaurantScore} ★</p>
+                    <p>Courier: {orderRating.courierScore} ★</p>
+                  </section>}
+                  {feedback?.saved && !orderRating && <p>Rating submitted. Thank you!</p>}
                   {rating && !ratingResource.error && !rating.ratedOrderIds.includes(order.id) && !feedback && (
                     <OrderRatingForm
                       orderId={order.id}
                       scale={rating.scale}
-                      onSaved={() => setRatingFeedback((current) => ({ ...current, [order.id]: { saved: true } }))}
+                      onSaved={(savedRating) => {
+                        ratingResource.setData((current) => current ? {
+                          ...current,
+                          ratedOrderIds: [...current.ratedOrderIds, order.id],
+                          ratings: [...current.ratings, savedRating],
+                        } : current);
+                        setRatingFeedback((current) => ({ ...current, [order.id]: { saved: true } }));
+                        publishRestaurantRatingUpdate(order.restaurantId);
+                      }}
                       onDuplicate={(message) => {
                         setRatingFeedback((current) => ({ ...current, [order.id]: { saved: false, message } }));
                         ratingResource.reload();
                       }}
                     />
                   )}
-                  <div role="status">{feedback?.saved ? "Rating submitted. Thank you!" : null}</div>
                   {feedback && !feedback.saved && <p role="alert">{feedback.message}</p>}
                 </>
               )}

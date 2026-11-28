@@ -8,13 +8,49 @@ export class PrismaRatingRepository implements RatingRepository {
     return (await prisma.rating.findUnique({ where: { orderId }, select: { orderId: true } })) !== null;
   }
 
-  async findRatedOrderIds(customerId: string): Promise<readonly number[]> {
+  async findForCustomer(customerId: string): Promise<readonly { orderId: number; restaurantScore: number; courierScore: number }[]> {
     const rows = await prisma.rating.findMany({
       where: { customerId },
-      select: { orderId: true },
+      select: { orderId: true, restaurantScore: true, courierScore: true },
       orderBy: { orderId: "asc" },
     });
-    return rows.map(({ orderId }) => orderId);
+    return rows;
+  }
+
+  async averageCourierScore(courierId: string): Promise<{ readonly average: number; readonly count: number } | null> {
+    const result = await prisma.rating.aggregate({
+      where: { courierId },
+      _avg: { courierScore: true },
+      _count: { _all: true },
+    });
+    return result._avg.courierScore === null ? null : {
+      average: result._avg.courierScore,
+      count: result._count._all,
+    };
+  }
+
+  async findForCourier(courierId: string): Promise<readonly { orderId: number; courierScore: number; createdAt: Date }[]> {
+    const completedDeliveries = await prisma.order.count({
+      where: {
+        status: { in: ["DELIVERED", "REFUNDED"] },
+        events: { some: { actorId: courierId, action: "DELIVER", toStatus: "DELIVERED" } },
+      },
+    });
+    if (completedDeliveries < 5) return [];
+
+    return prisma.rating.findMany({
+      where: { courierId },
+      select: { orderId: true, courierScore: true, createdAt: true },
+      orderBy: { createdAt: "desc" },
+    });
+  }
+
+  async findForRestaurant(restaurantId: string): Promise<readonly { orderId: number; restaurantScore: number; createdAt: Date }[]> {
+    return prisma.rating.findMany({
+      where: { restaurantId },
+      select: { orderId: true, restaurantScore: true, createdAt: true },
+      orderBy: { createdAt: "desc" },
+    });
   }
 
   async create(rating: Rating): Promise<void> {

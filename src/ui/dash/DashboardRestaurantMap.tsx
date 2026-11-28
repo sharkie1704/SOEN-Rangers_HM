@@ -13,9 +13,13 @@ interface Props {
 type RestaurantSummary = {
   id: string;
   name: string;
+  category: string;
+  imageUrl: string;
   status: MapRestaurant["status"];
   lat: number | null;
   lng: number | null;
+  averageRating: number | null;
+  ratingCount: number;
 };
 
 export default function DashboardRestaurantMap({ user, onViewMenu }: Props) {
@@ -55,9 +59,12 @@ export default function DashboardRestaurantMap({ user, onViewMenu }: Props) {
           for (const [restaurantId, count] of queueResults) queueCounts.set(restaurantId, count);
         }
 
+        const imageReadySummaries = summaries.filter((restaurant) =>
+          restaurant.imageUrl.trim().length > 0 && restaurant.category.toLowerCase() !== "test" && !restaurant.id.startsWith("race-it-"),
+        );
         const visibleSummaries = user.role === "RESTAURANT" && user.restaurantId
-          ? summaries.filter((restaurant) => restaurant.id === user.restaurantId)
-          : summaries;
+          ? imageReadySummaries.filter((restaurant) => restaurant.id === user.restaurantId)
+          : imageReadySummaries;
 
         const mapRestaurants = visibleSummaries.flatMap((restaurant) => (
           restaurant.lat === null || restaurant.lng === null ? [] : [{
@@ -66,6 +73,8 @@ export default function DashboardRestaurantMap({ user, onViewMenu }: Props) {
             status: restaurant.status,
             lat: restaurant.lat,
             lng: restaurant.lng,
+            averageRating: restaurant.averageRating,
+            ratingCount: restaurant.ratingCount,
             queue: { length: queueCounts.get(restaurant.id) ?? 0 },
           }]
         ));
@@ -95,7 +104,7 @@ export default function DashboardRestaurantMap({ user, onViewMenu }: Props) {
   const selectedOrders: PanelOrder[] = [];
 
   return (
-    <section aria-label="Restaurant map" style={{ width: "min(100% - 32px, 1200px)", margin: "24px auto" }}>
+    <section aria-label="Restaurant map" className="dashboard-restaurant-map">
       {error && <p className="error" role="alert">{error}</p>}
       <div style={{ height: "420px", border: "1px solid #EADBC8", borderRadius: "12px", overflow: "hidden" }}>
         <MapView

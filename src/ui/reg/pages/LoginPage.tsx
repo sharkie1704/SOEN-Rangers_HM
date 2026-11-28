@@ -2,6 +2,7 @@ import { useState, type FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 import { loginErrorMessage } from "../api/authErrorMessages";
+import PublicHeader from "../../pages/PublicHeader";
 import AuthWelcome from "./AuthWelcome";
 
 export default function LoginPage() {
@@ -24,6 +25,7 @@ export default function LoginPage() {
 
   return (
     <main className="auth-page">
+      <PublicHeader />
       <div className="auth-layout">
         <AuthWelcome />
         <section className="auth-card">
