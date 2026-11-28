@@ -34,6 +34,13 @@ export class PrismaLedgerRepository implements LedgerRepository {
           finalizedAt: row.finalizedAt,
           deliveredAt: row.deliveredAt,
           totalChargeCents: row.totalChargeCents,
+          ...(row.subtotalCents !== null ? { subtotalCents: row.subtotalCents } : {}),
+          ...(row.deliveryFeeCents !== null ? { deliveryFeeCents: row.deliveryFeeCents } : {}),
+          ...(row.serviceFeeCents !== null ? { serviceFeeCents: row.serviceFeeCents } : {}),
+          ...(row.smallOrderSurchargeCents !== null ? { smallOrderSurchargeCents: row.smallOrderSurchargeCents } : {}),
+          ...(row.promoCode !== null && row.discountCents !== null
+            ? { promoCode: row.promoCode, discountCents: row.discountCents }
+            : {}),
         });
       });
       return { currentEpoch: state.epoch, entries };

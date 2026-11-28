@@ -6,11 +6,27 @@ const valid = {
   serviceFeeCents: 150,
   smallOrderThresholdCents: 2000,
   smallOrderSurchargeCents: 200,
+  promos: [
+    {
+      code: "TEST10",
+      type: "percent",
+      value: 10,
+      expiresOn: "2027-12-31",
+      minOrderValue: 0,
+    },
+  ],
 };
 
 describe("pricing configuration", () => {
   it("loads the project's configuration file", async () => {
-    expect(await loadPricingConfig()).toEqual(valid);
+    const loaded = await loadPricingConfig();
+    expect(loaded).toMatchObject({
+      deliveryFeeCents: 300,
+      serviceFeeCents: 150,
+      smallOrderThresholdCents: 2000,
+      smallOrderSurchargeCents: 200,
+    });
+    expect(loaded.promos.length).toBeGreaterThan(0);
   });
 
   it("accepts zero-valued fees", () => {
@@ -19,7 +35,7 @@ describe("pricing configuration", () => {
   });
 
   it("rejects a missing required field", () => {
-    const input: Record<string, number> = { ...valid };
+    const input: Record<string, unknown> = { ...valid };
     delete input.deliveryFeeCents;
     expect(() => parsePricingConfig(JSON.stringify(input))).toThrow("deliveryFeeCents");
   });

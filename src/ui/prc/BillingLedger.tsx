@@ -12,6 +12,12 @@ type LedgerEntry = {
   finalizedAt: string;
   deliveredAt: string | null;
   totalChargeCents: number | null;
+  subtotalCents?: number;
+  deliveryFeeCents?: number;
+  serviceFeeCents?: number;
+  smallOrderSurchargeCents?: number;
+  discountCents?: number;
+  promoCode?: string;
 };
 
 type LedgerSnapshot = {
@@ -97,6 +103,9 @@ export default function BillingLedger() {
                 <th scope="col">Placed</th>
                 <th scope="col">Finalized</th>
                 {showHistory && <th scope="col">Ledger period</th>}
+                <th scope="col">Items subtotal</th>
+                <th scope="col">Promo discount</th>
+                <th scope="col">Fees</th>
                 <th scope="col">Total charge</th>
               </tr>
             </thead>
@@ -108,6 +117,13 @@ export default function BillingLedger() {
                   <td>{new Date(entry.placedAt).toLocaleString()}</td>
                   <td>{new Date(entry.deliveredAt ?? entry.finalizedAt).toLocaleString()}</td>
                   {showHistory && <td>{entry.epoch}</td>}
+                  <td>{entry.subtotalCents === undefined ? "Unavailable" : money(entry.subtotalCents)}</td>
+                  <td>{entry.promoCode && entry.discountCents !== undefined
+                    ? `${entry.promoCode}: ${money(entry.discountCents)}`
+                    : "None"}</td>
+                  <td>{entry.deliveryFeeCents === undefined
+                    ? "Unavailable"
+                    : money(entry.deliveryFeeCents + (entry.serviceFeeCents ?? 0) + (entry.smallOrderSurchargeCents ?? 0))}</td>
                   <td>{money(entry.totalChargeCents)}</td>
                 </tr>
               ))}

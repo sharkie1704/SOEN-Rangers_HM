@@ -49,6 +49,10 @@ describe("createLedgerEntry", () => {
       finalizedAt: new Date("2026-11-07T10:30:00Z"),
       deliveredAt: new Date("2026-11-07T10:30:00Z"),
       totalChargeCents: 1550,
+      subtotalCents: 900,
+      deliveryFeeCents: 300,
+      serviceFeeCents: 150,
+      smallOrderSurchargeCents: 200,
     });
     expect(Object.isFrozen(entry)).toBe(true);
   });

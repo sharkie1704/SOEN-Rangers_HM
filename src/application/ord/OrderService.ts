@@ -211,7 +211,14 @@ export class OrderService {
 
   // Quote and placement share the same checks, menu prices and fare calculation.
   private async prepareOrder(actor: OrderActor | null, input: PlaceOrderDTO) {
+    if (input.promoCode !== undefined && !actor) {
+      console.warn("[PROMO] refused role=MISSING reason=valid session is required");
+    }
     const customer = this.requireActor(actor);
+    if (input.promoCode !== undefined && actor?.role !== Role.CUSTOMER) {
+      console.warn(`[PROMO] refused role=${actor?.role ?? "MISSING"} reason=only customers can apply promo codes`);
+      throw new OrderError("FORBIDDEN", "Only customers can apply promo codes.");
+    }
     if (!hasPermission({ name: "placeOrder" }, { ...customer, id: customer.userId })) {
       throw new OrderError("FORBIDDEN", "Only customers can place orders.");
     }

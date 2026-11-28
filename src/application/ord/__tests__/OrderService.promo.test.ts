@@ -19,7 +19,7 @@ beforeEach(() => {
     .addItem({ menuItemId: 1, restaurantId: "rest-a", name: "Eclair", unitPriceCents: 500 });
   const promos = new PromoService({
     findByCode: async (code) => code === "SAVE20"
-      ? new PromoCode("SAVE20", 20, Money.ZERO, new Date("2027-12-31T23:59:59Z"))
+      ? new PromoCode("SAVE20", "percent", 20, Money.ZERO, new Date("2027-12-31T23:59:59Z"))
       : null,
   });
   orders = new InMemoryOrderRepository();
@@ -27,6 +27,63 @@ beforeEach(() => {
 });
 
 describe("OrderService with promo codes", () => {
+  it("matches the documented WELCOME10 worked example", () => {
+    const welcome = new PromoCode("WELCOME10", "percent", 10, Money.ZERO, new Date("2027-12-31T23:59:59Z"));
+    const fare = welcome.applyTo({
+      subtotalCents: 2000,
+      deliveryFeeCents: 300,
+      serviceFeeCents: 150,
+      smallOrderSurchargeCents: 0,
+      totalCents: 2450,
+    });
+    expect(fare.promo).toEqual({ code: "WELCOME10", discountCents: 200 });
+    expect(fare.totalCents).toBe(2250);
+  });
+
+  it("applies a fixed discount and caps it at the subtotal", async () => {
+    const fixed = new PromoCode("FIVE", "fixed", 500, Money.ZERO, new Date("2027-12-31T23:59:59Z"));
+    const small = await new PromoService({
+      findByCode: async () => fixed,
+    }).apply({
+      subtotalCents: 300,
+      deliveryFeeCents: 300,
+      serviceFeeCents: 150,
+      smallOrderSurchargeCents: 200,
+      totalCents: 950,
+    }, "FIVE");
+    expect(small.promo).toEqual({ code: "FIVE", discountCents: 300 });
+    expect(small.totalCents).toBe(650);
+  });
+
+  it("refuses a second code and preserves the first promo", () => {
+    const first = new PromoCode("SAVE20", "percent", 20, Money.ZERO, new Date("2027-12-31T23:59:59Z"));
+    const fare = first.applyTo({
+      subtotalCents: 2000,
+      deliveryFeeCents: 300,
+      serviceFeeCents: 150,
+      smallOrderSurchargeCents: 0,
+      totalCents: 2450,
+    });
+    const second = new PromoCode("FIVE", "fixed", 500, Money.ZERO, new Date("2027-12-31T23:59:59Z"));
+    expect(() => second.applyTo(fare)).toThrow(/already has promo code SAVE20/);
+    expect(fare.promo).toEqual({ code: "SAVE20", discountCents: 400 });
+  });
+
+  it("rejects promo use with no session or a non-customer role", async () => {
+    await expect(service.quote(null, { restaurantId: "rest-a", lines, promoCode: "SAVE20" }))
+      .rejects.toMatchObject({ code: "FORBIDDEN" });
+    await expect(service.quote({ userId: "operator-1", role: Role.OPERATOR }, { restaurantId: "rest-a", lines, promoCode: "SAVE20" }))
+      .rejects.toMatchObject({ code: "FORBIDDEN" });
+  });
+
+  it("rejects expired codes and minimum-order violations", () => {
+    const expired = new PromoCode("OLD", "percent", 10, Money.ZERO, new Date("2020-01-01T00:00:00Z"));
+    expect(() => expired.validateFor(Money.fromCents(2000, "subtotalCents"), new Date("2026-11-26T00:00:00Z"))).toThrow(/has expired/);
+
+    const minimum = new PromoCode("SAVE20", "percent", 20, Money.fromCents(3000, "minOrderCents"), new Date("2027-12-31T23:59:59Z"));
+    expect(() => minimum.validateFor(Money.fromCents(2000, "subtotalCents"), new Date("2026-11-26T00:00:00Z"))).toThrow(/minimum order/);
+  });
+
   it("shows the discount in the quote", async () => {
     const { fare } = await service.quote(alice, { restaurantId: "rest-a", lines, promoCode: "save20" });
     expect(fare).toEqual({

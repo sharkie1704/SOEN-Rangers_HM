@@ -13,6 +13,12 @@ export interface LedgerEntry {
   readonly finalizedAt: Date;
   readonly deliveredAt: Date | null;
   readonly totalChargeCents: number | null;
+  readonly subtotalCents?: number;
+  readonly deliveryFeeCents?: number;
+  readonly serviceFeeCents?: number;
+  readonly smallOrderSurchargeCents?: number;
+  readonly discountCents?: number;
+  readonly promoCode?: string;
 }
 
 function isLedgerFinalState(status: string): status is LedgerFinalState {
@@ -53,5 +59,15 @@ export function createLedgerEntry(order: Order, event: StateChangeEvent, epoch: 
     finalizedAt: new Date(event.occurredAt),
     deliveredAt,
     totalChargeCents,
+    ...(order.fare ? {
+      subtotalCents: order.fare.subtotalCents,
+      deliveryFeeCents: order.fare.deliveryFeeCents,
+      serviceFeeCents: order.fare.serviceFeeCents,
+      smallOrderSurchargeCents: order.fare.smallOrderSurchargeCents,
+      ...(order.fare.promo ? {
+        discountCents: order.fare.promo.discountCents,
+        promoCode: order.fare.promo.code,
+      } : {}),
+    } : {}),
   });
 }

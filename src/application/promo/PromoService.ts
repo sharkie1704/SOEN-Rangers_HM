@@ -14,8 +14,18 @@ export class PromoService {
     const normalized = normalizePromoCode(code);
     const promo = await this.promos.findByCode(normalized);
     if (!promo) {
+      console.warn(`[PROMO] refused code=${normalized} reason=unknown`);
       throw new OrderError("INVALID_INPUT", `Promo code ${normalized} does not exist.`);
     }
-    return promo.applyTo(fare);
+    try {
+      const applied = promo.applyTo(fare);
+      console.info(`[PROMO] applied code=${applied.promo?.code} discountCents=${applied.promo?.discountCents}`);
+      return applied;
+    } catch (error) {
+      if (error instanceof OrderError) {
+        console.warn(`[PROMO] refused code=${normalized} reason=${error.message}`);
+      }
+      throw error;
+    }
   }
 }

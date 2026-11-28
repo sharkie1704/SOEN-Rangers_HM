@@ -2,5 +2,35 @@
   "deliveryFeeCents": 300,
   "serviceFeeCents": 150,
   "smallOrderThresholdCents": 2000,
-  "smallOrderSurchargeCents": 200
+  "smallOrderSurchargeCents": 200,
+  "promos": [
+    {
+      "code": "WELCOME10",
+      "type": "percent",
+      "value": 10,
+      "expiresOn": "2027-12-31",
+      "minOrderValue": 0
+    },
+    {
+      "code": "SAVE20",
+      "type": "percent",
+      "value": 20,
+      "expiresOn": "2027-12-31",
+      "minOrderValue": 3000
+    },
+    {
+      "code": "FIVEOFF",
+      "type": "fixed",
+      "value": 500,
+      "expiresOn": "2027-12-31",
+      "minOrderValue": 1000
+    },
+    {
+      "code": "SPRING15",
+      "type": "percent",
+      "value": 15,
+      "expiresOn": "2026-05-31",
+      "minOrderValue": 0
+    }
+  ]
 }

@@ -92,7 +92,6 @@ export const restaurants = [
     lng: -73.5802,
   },
 ] as const;
-
 export const menuItems = [
   {
     restaurantId: RESTAURANT_IDS.DEMO_BAKERY,
@@ -267,7 +266,6 @@ export const menuItems = [
     available: true,
   },
 ] as const;
-
 export const users = [
   {
     name: "Demo Customer",
@@ -415,10 +413,4 @@ export const users = [
     deliveryLat: 45.5180,
     deliveryLng: -73.5720,
   },
-] as const;
-
-export const promoCodes = [
-  { code: "WELCOME10", percentOff: 10, minOrderCents: 0, expiresAt: new Date("2027-12-31T23:59:59Z") },
-  { code: "SAVE20", percentOff: 20, minOrderCents: 3000, expiresAt: new Date("2027-12-31T23:59:59Z") },
-  { code: "SPRING15", percentOff: 15, minOrderCents: 0, expiresAt: new Date("2026-05-31T23:59:59Z") },
 ] as const;
