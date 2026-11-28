@@ -130,7 +130,7 @@ export const menuItems = [
     restaurantId: RESTAURANT_IDS.DEMO_BAKERY,
     name: "Lemon Tart",
     description: "Tangy lemon tart. Currently sold out.",
-    imageUrl: "", // TODO: replace
+    imageUrl: "https://images.unsplash.com/photo-1578985545062-69928b1d9587?auto=format&fit=crop&w=800&q=85",
     priceCents: 500,
     available: false,
   },
@@ -139,7 +139,7 @@ export const menuItems = [
     restaurantId: RESTAURANT_IDS.DEMO_BAKERY,
     name: "Vanilla Macaron",
     description: "Light vanilla macaron.",
-    imageUrl: "", // TODO: replace
+    imageUrl: "https://images.unsplash.com/photo-1558326567-98ae2405596b?auto=format&fit=crop&w=800&q=85",
     priceCents: 250,
     available: true,
   },
@@ -148,7 +148,7 @@ export const menuItems = [
     restaurantId: RESTAURANT_IDS.SWEET_SPOT,
     name: "Cannoli",
     description: "Crisp shell filled with sweet ricotta cream.",
-    imageUrl: "", // TODO: replace
+    imageUrl: "https://images.unsplash.com/photo-1569864358642-9d1684040f43?auto=format&fit=crop&w=800&q=85",
     priceCents: 400,
     available: true,
   },
@@ -157,7 +157,7 @@ export const menuItems = [
     restaurantId: RESTAURANT_IDS.MAPLE_SWEETS,
     name: "Maple Fudge",
     description: "Soft maple fudge squares.",
-    imageUrl: "", // TODO: replace
+    imageUrl: "https://images.unsplash.com/photo-1555507036-ab1f4038808a?auto=format&fit=crop&w=800&q=85",
     priceCents: 350,
     available: true,
   },
@@ -165,7 +165,7 @@ export const menuItems = [
     restaurantId: RESTAURANT_IDS.MAPLE_SWEETS,
     name: "Maple Cream Donut",
     description: "Donut filled with maple cream.",
-    imageUrl: "", // TODO: replace
+    imageUrl: "https://images.unsplash.com/photo-1606313564200-e75d5e30476c?auto=format&fit=crop&w=800&q=85",
     priceCents: 400,
     available: true,
   },

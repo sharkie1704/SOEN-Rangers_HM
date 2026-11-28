@@ -290,7 +290,8 @@ export default function RestaurantMenuPage({
               gridTemplateColumns:
                 "repeat(auto-fill, minmax(min(100%, 250px), 1fr))",
               gap: "24px",
-              maxWidth: "900px",
+              maxWidth: "1100px",
+              alignItems: "stretch",
             }}
           >
             {menuItems.map((item) => (
