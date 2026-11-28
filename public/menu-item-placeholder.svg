@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500">
+  <rect width="800" height="500" fill="#f4e8dc"/>
+  <circle cx="400" cy="260" r="150" fill="#eadbc8"/>
+  <path d="M275 285c0-70 56-126 125-126s125 56 125 126H275Z" fill="#c66b32"/>
+  <path d="M300 286c0-55 45-100 100-100s100 45 100 100H300Z" fill="#f7d7a8"/>
+  <path d="M340 225c22-23 57-28 83-13 18 10 31 28 35 48" fill="none" stroke="#fff" stroke-linecap="round" stroke-width="12"/>
+  <text x="400" y="390" fill="#765f53" font-family="sans-serif" font-size="25" text-anchor="middle">A sweet treat</text>
+</svg>

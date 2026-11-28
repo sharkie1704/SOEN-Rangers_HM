@@ -1,0 +1,90 @@
+.menu-item-card {
+  box-sizing: border-box;
+  display: flex;
+  min-width: 0;
+  height: 100%;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid #e8d1bd;
+  border-radius: 16px;
+  background: #fff;
+  color: #321a12;
+  transition: transform 160ms ease;
+}
+
+.menu-item-card:hover { transform: translateY(-3px); }
+
+.menu-item-card__image {
+  display: block;
+  width: 100%;
+  height: clamp(150px, 18vw, 210px);
+  flex: 0 0 auto;
+  object-fit: cover;
+}
+
+.menu-item-card__content {
+  display: grid;
+  flex: 1;
+  grid-template-rows: auto minmax(3.2em, 1fr) auto auto auto;
+  gap: 10px;
+  padding: 18px;
+}
+
+.menu-item-card__content h3 {
+  margin: 0;
+  color: #4b3028;
+  font-size: 1.15rem;
+  line-height: 1.3;
+}
+
+.menu-item-card__description {
+  margin: 0;
+  color: #765f53;
+  font-size: 0.87rem;
+  line-height: 1.45;
+}
+
+.menu-item-card__price {
+  margin: 0;
+  color: #4b3028;
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+.menu-item-card__availability {
+  justify-self: start;
+  width: max-content;
+  max-width: 100%;
+  border-radius: 999px;
+  padding: 5px 10px;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.menu-item-card__availability--available { background: #dceedc; color: #28633a; }
+.menu-item-card__availability--sold-out { background: #f2d8d5; color: #923c32; }
+
+.menu-item-card__action {
+  justify-self: start;
+  width: 100%;
+  min-height: 40px;
+  margin: 0;
+  padding: 9px 14px;
+  border: 0;
+  border-radius: 9px;
+  background: #c66b32;
+  color: #fff;
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.menu-item-card__action:hover:not(:disabled) { background: #a95123; }
+.menu-item-card__action:disabled { background: #bca99b; cursor: not-allowed; }
+.menu-item-card__action:focus-visible { outline: 3px solid #4b3028; outline-offset: 3px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .menu-item-card { transition: none; }
+  .menu-item-card:hover { transform: none; }
+}
